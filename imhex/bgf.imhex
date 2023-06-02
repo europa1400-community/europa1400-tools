@@ -1,0 +1,263 @@
+#include <std/io.pat>
+#include <std/mem.pat>
+#include <std/string.pat>
+
+using Polygon;
+using GameObject;
+
+// Helper structs
+
+fn is_zero(u32 count) {
+    u32 offset = 0;
+
+    for (u32 i = 0, i < count, i += 1) {
+        u8 read_byte = std::mem::read_unsigned($ + offset, 1);
+
+        if (read_byte != 0) {
+            return false;
+        }
+
+        offset += 1;
+    }
+
+    return true;
+};
+
+struct SkipOptional<auto Value, auto Padding> {
+    char read_value[std::string::length(Value)] [[no_unique_address]];
+    bool skipped = false;
+
+    if (read_value == Value) {
+        padding[Padding];
+        skipped = true;
+    }
+
+} [[sealed, hidden, no_unique_address]];
+
+struct SkipRequired<auto Value, auto Padding> {
+    char read_value[std::string::length(Value)] [[no_unique_address]];
+
+    if (read_value == Value) {
+        padding[Padding];
+    } else {
+        std::error("Could not find required value!");
+    }
+} [[sealed, hidden, no_unique_address]];
+
+struct SkipZero<auto Count> {
+    if (is_zero(Count)) {
+        padding[Count];
+    } else {
+        std::error("Value was not zero!");
+    }
+} [[sealed, hidden, no_unique_address]];
+
+struct SkipUntil<auto Value> {
+    char read_value[while(std::mem::read_unsigned($, 1) != Value)];
+    padding[1];
+} [[sealed, hidden, no_unique_address]];
+
+// Low level structs
+
+struct Vertex {
+  float x [[color("FF0000")]];
+  float y [[color("00FF00")]];
+  float z [[color("0000FF")]];
+};
+
+struct VertexMapping {
+    float x;
+    float y;
+    float z;
+    float alpha;
+    float beta;
+    float gamma;
+};
+
+struct Face {
+    u32 a;
+    u32 b;
+    u32 c;
+};
+
+struct Polygon {
+    Face face;
+
+    SkipOptional<"\x1E", 1>;
+
+    Vertex v1 [[color("FF8C00")]];
+    Vertex v2 [[color("00CED1")]];
+    Vertex v3 [[color("BA55D3")]];
+
+    SkipOptional<"\x1F", 1> skip_normal;
+
+    if (skip_normal.skipped) {
+        Vertex normal;
+    }
+
+    SkipOptional<"\x20", 1> skip_texture;
+
+    if (skip_texture.skipped) {
+        u8 texture_index;
+    }
+
+    SkipOptional<"\x1D", 1>;
+};
+
+struct PolygonMapping {
+    Face face;
+
+    Vertex v1 [[color("FF8C00")]];
+    Vertex v2 [[color("00CED1")]];
+    Vertex v3 [[color("BA55D3")]];
+
+    u8 texture_index;
+};
+
+// High level checker functions
+
+fn is_texture(u32 address) {
+    return std::mem::read_unsigned(address, 2) == 0x0605;
+};
+
+fn is_game_object(u32 address) {
+    u32 offset = 0;
+
+    if (std::mem::read_unsigned(address + offset, 1) == 0x28) {
+        offset += 1;
+    }
+
+    bool is_1415 = std::mem::read_unsigned(address + offset, 2) == 0x1514;
+
+    return (is_1415);
+};
+
+// High level structs
+
+struct BgfHeader {
+    char name[];
+
+    SkipRequired<"\x2E", 1>;
+    u32 mapping_address;
+
+    SkipRequired<"\x01\x01", 2>;
+    u8 num1;
+
+    SkipRequired<"\xCD\xAB\x02", 3>;
+    u8 num2;
+
+    SkipOptional<"\x37", 1> skip_anim;
+
+    if (skip_anim.skipped) {
+        u16 anim_count;
+        SkipZero<2>;
+    }
+
+    SkipRequired<"\x03\x04", 2>;
+    u16 texture_count;
+    SkipZero<2>;
+};
+
+struct Texture {
+    SkipRequired<"\x05\x06", 2>;
+    u16 id;
+    SkipZero<2>;
+
+    SkipOptional<"\x07", 1>;
+    SkipOptional<"\x08", 1>;
+
+    char name[];
+
+    SkipOptional<"\x08", 1> skip08;
+    SkipOptional<"\x09", 1> skip09;
+
+    if (skip08.skipped || skip09.skipped) {
+        char name_appendix[];
+    }
+
+    SkipUntil<0x28>;
+};
+
+struct Model {
+    SkipRequired<"\x19", 1>;
+    u16 vertex_count;
+    SkipZero<2>;
+
+    SkipRequired<"\x1A", 1>;
+    u16 polygon_count;
+    SkipZero<2>;
+
+    SkipRequired<"\x1B", 1>;
+
+    Vertex vertices[vertex_count];
+
+    SkipRequired<"\x1C\x1D", 2>;
+
+    Polygon poylgons[polygon_count];
+};
+
+struct AnimData {
+    SkipRequired<"\x38", 1>;
+    char name[];
+    SkipRequired<"\x39", 1>;
+    float x1;
+    float y1;
+    float z1;
+    u8 val;
+    float x2;
+    float y2;
+    float z2;
+};
+
+struct GameObject {
+    SkipOptional<"\x28", 1>;
+    SkipOptional<"\x14\x15", 2>;
+
+    char name[];
+
+    SkipOptional<"\x16\x01", 5>;
+    SkipOptional<"\x17\x18", 6> skip_model;
+
+    if (skip_model.skipped) {
+        Model model;
+    }
+
+    SkipOptional<"\x28", 1>;
+    SkipOptional<"\x28", 1>;
+
+    SkipOptional<"\x28", 1>;
+    SkipOptional<"\x37", 1> skip_anim;
+
+    if (skip_anim.skipped) {
+        u16 anim_count;
+        SkipZero<2>;
+        AnimData animData[anim_count];
+    }
+};
+
+struct MappingObject {
+    SkipRequired<"\x2F\x2D", 2>;
+
+    u8 num1;
+    u16 num2;
+    padding[1];
+    u16 num3;
+
+    SkipRequired<"\xB5\xFA", 2>;
+    u32 texture_count;
+    u32 vertex_mapping_count;
+    u32 polygon_mapping_count;
+
+    VertexMapping vertex_mappings[vertex_mapping_count];
+    VertexMapping box_vertex_mappings[8];
+    float some_float;
+    PolygonMapping polygons[polygon_mapping_count];
+};
+
+BgfHeader bgf_header @ $;
+
+Texture textures[while(is_texture($))] @ $;
+
+GameObject game_objects[while(is_game_object($))] @ $;
+
+MappingObject mapping_object @ $;

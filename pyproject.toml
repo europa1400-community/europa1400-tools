@@ -1,15 +1,15 @@
 [tool.poetry]
-name = "gilde-decoder"
-version = "1.0.0"
+name = "europa-1400-tools"
+version = "0.0.0"
 description = ""
 authors = ["Lennard Beers <l.beers@outlook.de>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "gilde_decoder"}]
+packages = [{include = "europa_1400_tools"}]
 
 [tool.poetry.scripts]
-gilde-decoder = "gilde_decoder.main:main"
-models = "gilde_decoder.models_decoder:main"
+main = "europa_1400_tools.main:main"
+models = "europa_1400_tools.models_decoder:main"
 
 [tool.poetry.dependencies]
 python = "^3.10"
