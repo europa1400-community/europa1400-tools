@@ -1,0 +1,61 @@
+#include <std/core.pat>
+#include <std/io.pat>
+#include <std/mem.pat>
+#include <std/string.pat>
+
+using SoundbankDefinition;
+
+struct Sound {
+    u32 length = parent.sound_definitions[std::core::array_index()].length;
+    u8 data[length];
+};
+
+struct SoundDefinition {
+    u32 sound_type;
+    u32 length;
+    u32 magic;
+};
+
+struct SoundbankHeader {
+    u32 sound_count;
+    u32 magic1;
+    u32 magic2;
+};
+
+struct Soundbank {
+    SoundbankDefinition soundbank_definition = parent.soundbank_definitions[std::core::array_index()];
+    u32 sound_count = 1;
+
+    if (soundbank_definition.soundbank_type == 2) {
+        SoundbankHeader soundbank_header;
+        sound_count = soundbank_header.sound_count;
+    }
+
+    SoundDefinition sound_definitions[sound_count];
+    Sound sounds[sound_count];
+};
+
+struct SoundbankDefinition {
+    u32 address;
+    char name[];
+    u32 name_length = std::string::length(name);
+    padding[50 - name_length];
+    u16 soundbank_type;
+    padding[8];
+};
+
+struct Sbf {
+    char name[];
+    u32 name_length = std::string::length(name);
+    padding[308 - name_length];
+    u32 soundbank_count;
+    u32 magic;
+    padding[8];
+
+    SoundbankDefinition soundbank_definitions[soundbank_count];
+    Soundbank soundbanks[soundbank_count];
+};
+
+
+
+Sbf sbf @ $;
