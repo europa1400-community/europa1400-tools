@@ -247,7 +247,7 @@ def extract_zipfile(input_path: Path, output_path: Path) -> None:
 
 
 def get_files(
-    path: Path, extension: str | None = None, exclude: list[Path] = []
+    path: Path, extension: str | None = None, exclude: list[Path] | None = None
 ) -> list[Path]:
     """Returns a list of files in the specified directory and its subdirectories."""
 

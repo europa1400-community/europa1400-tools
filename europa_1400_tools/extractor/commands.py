@@ -29,7 +29,7 @@ def extract(
         files = BIN_FILES
 
     for file in files:
-        bin_path = common_options.resources_path / file
+        bin_path = common_options.resources_game_path / file
         output_subdir = common_options.extracted_path / bin_path.stem
 
         if not bin_path.exists():

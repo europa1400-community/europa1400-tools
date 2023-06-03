@@ -1,5 +1,6 @@
 """Constants for the europa_1400_tools package."""
 
+from enum import IntEnum
 from pathlib import Path
 
 # Game Directories and Files
@@ -60,6 +61,37 @@ BIN_FILES = [
 # Output Directories and Files
 
 EXTRACTED_DIR = "extracted"
+DECODED_DIR = "decoded"
+
+# File Extensions
+
+BGF_EXTENSION = ".bgf"
+OBJ_EXTENSION = ".obj"
+MTL_EXTENSION = ".mtl"
+BAF_EXTENSION = ".baf"
+GLTF_EXTENSION = ".gltf"
+GLB_EXTENSION = ".glb"
+PNG_EXTENSION = ".png"
+INI_EXTENSION = ".ini"
+SBF_EXTENSION = ".sbf"
+PICKLE_EXTENSION = ".pickle"
+
+# Construct
+
+
+class SoundbankType(IntEnum):
+    """Soundbank types."""
+
+    SINGLE = 1
+    MULTI = 2
+
+
+class SoundType(IntEnum):
+    """Sbf types."""
+
+    WAV = 1
+    MP3 = 2
+
 
 BGF_DIR = "bgf"
 OBJ_DIR = "obj"
@@ -77,15 +109,6 @@ MODELS_REDUCED_FOOTER_FILES = [
 
 BGF_EXCLUDE: list[Path] = []
 BAF_EXCLUDE: list[Path] = []
-
-BGF_EXTENSION = ".bgf"
-OBJ_EXTENSION = ".obj"
-MTL_EXTENSION = ".mtl"
-BAF_EXTENSION = ".baf"
-GLTF_EXTENSION = ".gltf"
-GLB_EXTENSION = ".glb"
-PNG_EXTENSION = ".png"
-INI_EXTENSION = ".ini"
 
 WAVEFRONT_ENCODING = "utf-8"
 
