@@ -3,7 +3,9 @@ import io
 import os
 import re
 import struct
+import tkinter as tk
 from pathlib import Path
+from tkinter import filedialog
 from typing import BinaryIO
 from zipfile import ZipFile
 
@@ -11,6 +13,20 @@ import construct as cs
 from PIL import Image
 
 from europa_1400_tools.const import MODELS_STRING_ENCODING
+
+
+def ask_for_game_path() -> Path:
+    """Ask the user for the game path using a file dialog."""
+
+    root = tk.Tk()
+    root.withdraw()
+
+    game_path = filedialog.askdirectory(title="Select the game directory")
+
+    if not game_path:
+        raise RuntimeError("No game path selected")
+
+    return Path(game_path)
 
 
 def find_texture_path(texture_name: str, search_path: Path) -> Path | None:
