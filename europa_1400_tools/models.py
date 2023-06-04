@@ -3,7 +3,13 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from europa_1400_tools.const import DECODED_DIR, EXTRACTED_DIR, RESOURCES_DIR, SFX_DIR
+from europa_1400_tools.const import (
+    CONVERTED_DIR,
+    DECODED_DIR,
+    EXTRACTED_DIR,
+    RESOURCES_DIR,
+    SFX_DIR,
+)
 
 
 @dataclass
@@ -33,3 +39,8 @@ class CommonOptions:
     def decoded_path(self) -> Path:
         """Return the path to the decoded directory."""
         return self.output_path / DECODED_DIR
+
+    @property
+    def converted_path(self) -> Path:
+        """Return the path to the converted directory."""
+        return self.output_path / CONVERTED_DIR

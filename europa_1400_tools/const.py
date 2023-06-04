@@ -1,6 +1,6 @@
 """Constants for the europa_1400_tools package."""
 
-from enum import IntEnum
+from enum import Enum, IntEnum
 from pathlib import Path
 
 # Game Directories and Files
@@ -62,6 +62,7 @@ BIN_FILES = [
 
 EXTRACTED_DIR = "extracted"
 DECODED_DIR = "decoded"
+CONVERTED_DIR = "converted"
 
 # File Extensions
 
@@ -75,6 +76,8 @@ PNG_EXTENSION = ".png"
 INI_EXTENSION = ".ini"
 SBF_EXTENSION = ".sbf"
 PICKLE_EXTENSION = ".pickle"
+WAV_EXTENSION = ".wav"
+MP3_EXTENSION = ".mp3"
 
 # Construct
 
@@ -91,6 +94,16 @@ class SoundType(IntEnum):
 
     WAV = 1
     MP3 = 2
+
+
+# Converter
+
+
+class TargetAudioFormat(Enum):
+    """Target audio formats."""
+
+    WAV = "wav"
+    MP3 = "mp3"
 
 
 BGF_DIR = "bgf"

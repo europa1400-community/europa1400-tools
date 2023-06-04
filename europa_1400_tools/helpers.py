@@ -33,6 +33,8 @@ def find_texture_path(texture_name: str, search_path: Path) -> Path | None:
     texture_name = texture_name.lower()
 
     for root, dirs, files in os.walk(search_path):
+        _ = dirs
+
         for file in files:
             if file.lower() == texture_name:
                 return Path(root) / file
