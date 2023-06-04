@@ -1,0 +1,81 @@
+#include <std/string.pat>
+#include <std/io.pat>
+#include <std/mem.pat>
+
+fn is_zero(u32 count) {
+    u32 offset = 0;
+
+    for (u32 i = 0, i < count, i += 1) {
+        u8 read_byte = std::mem::read_unsigned($ + offset, 1);
+
+        if (read_byte != 0) {
+            return false;
+        }
+
+        offset += 1;
+    }
+
+    return true;
+};
+
+struct SkipZero<auto Count, auto error_on_not_zero, auto print_on_not_zero> {
+
+    bool is_zero = is_zero(Count);
+
+    padding[Count];
+
+    if (!is_zero) {
+        if (error_on_not_zero) {
+            std::error("Value was not zero!");
+        } else {
+            if (print_on_not_zero) {
+                std::print("Value was not zero!");
+            }
+        }
+    }
+} [[sealed, hidden, no_unique_address]];
+
+struct Point {
+    u8 a;
+    u8 b;
+    u8 c;
+};
+
+struct Building {
+    u8 building_group_id;
+
+    char name[];
+    u32 name_length = std::string::length(name);
+    SkipZero<32 - name_length, true, true>;
+
+    u8 magic_byte1;
+
+    u8 size_data1;
+    u16 data1[size_data1];
+    SkipZero<136 - size_data1 * 2, true, true>;
+
+    u32 data2[size_data1];
+    SkipZero<248 - size_data1 * 4, true, true>;
+
+    u8 data3[size_data1];
+    SkipZero<65 - size_data1, true, true>;
+
+    u8 data4[size_data1];
+    SkipZero<63 - size_data1, true, true>;
+
+    u8 d[26];
+
+    Point point_a;
+    Point point_b;
+
+    u32 time;
+    u8 level;
+    u8 magic_byte2;
+    u32 price;
+};
+
+struct AGeb {
+    Building buildings[88];
+};
+
+AGeb ageb @ $;

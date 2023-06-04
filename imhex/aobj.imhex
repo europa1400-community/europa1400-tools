@@ -1,0 +1,69 @@
+#include <std/string.pat>
+#include <std/io.pat>
+#include <std/mem.pat>
+
+fn is_zero(u32 count) {
+    u32 offset = 0;
+
+    for (u32 i = 0, i < count, i += 1) {
+        u8 read_byte = std::mem::read_unsigned($ + offset, 1);
+
+        if (read_byte != 0) {
+            return false;
+        }
+
+        offset += 1;
+    }
+
+    return true;
+};
+
+struct SkipZero<auto Count, auto error_on_not_zero, auto print_on_not_zero> {
+
+    bool is_zero = is_zero(Count);
+
+    padding[Count];
+
+    if (!is_zero) {
+        if (error_on_not_zero) {
+            std::error("Value was not zero!");
+        } else {
+            if (print_on_not_zero) {
+                std::print("Value was not zero!");
+            }
+        }
+    }
+} [[sealed, hidden, no_unique_address]];
+
+struct Object {
+    u8 type;
+
+    char name[32];
+    u32 name_length = std::string::length(name);
+
+    u8 level;
+
+    u32 time;
+
+    u16 data1[4];
+    u16 data2[4];
+
+    u16 magic;
+
+    u16 price;
+
+    SkipZero<2, true, true>;
+
+    u16 magic2;
+
+    SkipZero<2, true, true>;
+
+    u8 magic3;
+};
+
+struct AObj {
+    Object objects[732];
+    //Object objects[117];
+};
+
+AObj aobj @ $;
