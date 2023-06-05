@@ -9,12 +9,14 @@ import typer
 from europa_1400_tools.const import (
     OUTPUT_AGEB_DIR,
     OUTPUT_AOBJ_DIR,
+    OUTPUT_GFX_DIR,
     OUTPUT_SFX_DIR,
     PICKLE_EXTENSION,
     SBF_EXTENSION,
 )
 from europa_1400_tools.construct.ageb import AGeb
 from europa_1400_tools.construct.aobj import AObj
+from europa_1400_tools.construct.gfx import Gfx
 from europa_1400_tools.construct.sbf import Sbf
 from europa_1400_tools.helpers import get_files, rebase_path
 from europa_1400_tools.models import CommonOptions
@@ -91,6 +93,36 @@ def decode_aobj(
             )
 
         pickle_output_paths.append(pickle_output_path)
+
+    return pickle_output_paths
+
+
+@app.command("gfx")
+def decode_gfx(
+    ctx: typer.Context,
+) -> list[Path]:
+    """Decode GFX file."""
+
+    common_options: CommonOptions = ctx.obj
+    decoded_gfx_path = common_options.decoded_path / OUTPUT_GFX_DIR
+    pickle_output_paths: list[Path] = []
+
+    typer.echo(f"Decoding {common_options.gfx_game_path}...")
+
+    gfx = Gfx.from_file(common_options.gfx_game_path)
+
+    pickle_output_path = decoded_gfx_path / Path(
+        common_options.gfx_game_path.stem
+    ).with_suffix(PICKLE_EXTENSION)
+
+    if not pickle_output_path.parent.exists():
+        pickle_output_path.parent.mkdir(parents=True)
+
+    with open(pickle_output_path, "wb") as pickle_output_file:
+        pickle.dump(
+            gfx,
+            pickle_output_file,
+        )
 
     return pickle_output_paths
 

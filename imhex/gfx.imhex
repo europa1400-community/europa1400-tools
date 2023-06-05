@@ -96,7 +96,7 @@ struct Graphic {
     }
 };
 
-struct Shapebank<auto size_footer> {
+struct Shapebank {
     char const_shapbank[8];
 
     u8 magic1;
@@ -115,12 +115,12 @@ struct Shapebank<auto size_footer> {
     //SkipZero<6, false, true>;
     padding[6];
 
-    u16 magic4;
+    u16 size_without_footer;
 
 //    SkipZero<3, false, true>;
     padding[3];
 
-    u16 magic5;
+    u16 magic4;
 
     u32 graphics_offsets[graphics_count];
 
@@ -129,7 +129,12 @@ struct Shapebank<auto size_footer> {
 
     Graphic graphics[graphics_count];
 
-    padding[size_footer];
+    bool has_footer = size_without_footer != 0;
+    u32 size_footer = graphics_count * 8;
+
+    if (has_footer) {
+        padding[size_footer];
+    }
 };
 
 struct ShapebankDefinition {
@@ -163,11 +168,7 @@ struct Gfx {
     u32 shapebank_count;
 
     ShapebankDefinition shapebank_definitions[shapebank_count];
-
-//    Shapebank<0> system_icons @ 0x29530;
-//    Shapebank<0> win_border @ 0x2DC15;
-//    Shapebank<0> mouse_cursor @ 0x2F146;
-//    Shapebank<96> win_icons @ 0x8000D;
+    //Shapebank shapebanks[197];
 };
 
 Gfx gfx @ $;

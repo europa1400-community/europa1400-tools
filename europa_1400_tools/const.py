@@ -66,6 +66,7 @@ CONVERTED_DIR = "converted"
 OUTPUT_AGEB_DIR = "ageb"
 OUTPUT_AOBJ_DIR = "aobj"
 OUTPUT_SFX_DIR = "sfx"
+OUTPUT_GFX_DIR = "gfx"
 
 # File Extensions
 

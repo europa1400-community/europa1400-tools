@@ -10,6 +10,8 @@ from europa_1400_tools.const import (
     DATA_DIR,
     DECODED_DIR,
     EXTRACTED_DIR,
+    GFX_DIR,
+    GILDE_ADD_ON_GERMAN_GFX,
     RESOURCES_DIR,
     SFX_DIR,
 )
@@ -31,6 +33,12 @@ class CommonOptions:
     def data_game_path(self) -> Path:
         """Return the path to the data directory."""
         return self.game_path / DATA_DIR
+
+    @property
+    def gfx_game_path(self) -> Path:
+        """Return the path to the GFX directory."""
+
+        return self.game_path / GFX_DIR / GILDE_ADD_ON_GERMAN_GFX
 
     @property
     def sfx_game_path(self) -> Path:
