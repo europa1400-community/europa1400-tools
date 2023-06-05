@@ -6,8 +6,8 @@ from pathlib import Path
 # Game Directories and Files
 
 DATA_DIR = "Data"
-A_GEB_DAT = "A_GEB.DAT"
-A_OBJ_DAT = "A_OBJ.DAT"
+A_GEB_DAT = "A_Geb.dat"
+A_OBJ_DAT = "A_Obj.dat"
 
 GFX_DIR = "GFX"
 BMP_DIR = "Bmp"
@@ -63,6 +63,9 @@ BIN_FILES = [
 EXTRACTED_DIR = "extracted"
 DECODED_DIR = "decoded"
 CONVERTED_DIR = "converted"
+OUTPUT_AGEB_DIR = "ageb"
+OUTPUT_AOBJ_DIR = "aobj"
+OUTPUT_SFX_DIR = "sfx"
 
 # File Extensions
 

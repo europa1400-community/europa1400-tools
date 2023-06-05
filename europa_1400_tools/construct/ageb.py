@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
+from europa_1400_tools.construct.base_construct import BaseConstruct
+
 
 @dataclass
 class Point(DataclassMixin):
@@ -23,10 +25,10 @@ class Building(DataclassMixin):
     name: str = csfield(cs.PaddedString(32, "ascii"))
     magic_byte: int = csfield(cs.Byte)
     size_data: int = csfield(cs.Byte)
-    data1: list[int] = csfield(cs.Padded(136, cs.Array(size_data * 2, cs.Int16ul)))
-    data2: list[int] = csfield(cs.Padded(248, cs.Array(size_data * 4, cs.Int32ul)))
-    data3: list[int] = csfield(cs.Padded(65, cs.Array(size_data, cs.Byte)))
-    data4: list[int] = csfield(cs.Padded(63, cs.Array(size_data, cs.Byte)))
+    data1: list[int] = csfield(cs.Padded(136, cs.Array(cs.this.size_data, cs.Int16ul)))
+    data2: list[int] = csfield(cs.Padded(248, cs.Array(cs.this.size_data, cs.Int32ul)))
+    data3: list[int] = csfield(cs.Padded(65, cs.Array(cs.this.size_data, cs.Byte)))
+    data4: list[int] = csfield(cs.Padded(63, cs.Array(cs.this.size_data, cs.Byte)))
     data5: list[int] = csfield(cs.Array(26, cs.Byte))
     point1: Point = csfield(DataclassStruct(Point))
     point2: Point = csfield(DataclassStruct(Point))
@@ -37,7 +39,7 @@ class Building(DataclassMixin):
 
 
 @dataclass
-class AGeb(DataclassMixin):
+class AGeb(BaseConstruct):
     """Structure of A_Geb file."""
 
     buildings: list[Building] = csfield(cs.Array(88, DataclassStruct(Building)))

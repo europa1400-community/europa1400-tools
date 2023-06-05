@@ -1,12 +1,12 @@
 """Construct structures for SBF files."""
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
 from europa_1400_tools.const import SoundbankType, SoundType
+from europa_1400_tools.construct.base_construct import BaseConstruct
 
 
 @dataclass
@@ -83,7 +83,7 @@ class Soundbank(DataclassMixin):
 
 
 @dataclass
-class Sbf(DataclassMixin):
+class Sbf(BaseConstruct):
     """Structure of SBF file."""
 
     name: str = csfield(cs.PaddedString(308, "ascii"))
@@ -96,10 +96,3 @@ class Sbf(DataclassMixin):
     soundbanks: list[Soundbank] = csfield(
         cs.Array(cs.this.soundbank_count, DataclassStruct(Soundbank))
     )
-
-    @classmethod
-    def from_file(cls, file_path: Path) -> "Sbf":
-        """Create Sbf struct from file."""
-
-        sbf = DataclassStruct(cls).parse_file(file_path)
-        return sbf
