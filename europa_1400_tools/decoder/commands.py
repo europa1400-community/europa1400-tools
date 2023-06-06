@@ -100,6 +100,9 @@ def decode_aobj(
 @app.command("gfx")
 def decode_gfx(
     ctx: typer.Context,
+    file_path: Annotated[
+        Optional[Path], typer.Option("--file", "-f", help=".gfx file to decode.")
+    ] = None,
 ) -> list[Path]:
     """Decode GFX file."""
 
@@ -109,7 +112,10 @@ def decode_gfx(
 
     typer.echo(f"Decoding {common_options.gfx_game_path}...")
 
-    gfx = Gfx.from_file(common_options.gfx_game_path)
+    if not file_path:
+        file_path = common_options.gfx_game_path
+
+    gfx = Gfx.from_file(file_path)
 
     pickle_output_path = decoded_gfx_path / Path(
         common_options.gfx_game_path.stem
@@ -123,6 +129,8 @@ def decode_gfx(
             gfx,
             pickle_output_file,
         )
+
+    pickle_output_paths.append(pickle_output_path)
 
     return pickle_output_paths
 

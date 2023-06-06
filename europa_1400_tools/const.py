@@ -82,6 +82,7 @@ SBF_EXTENSION = ".sbf"
 PICKLE_EXTENSION = ".pickle"
 WAV_EXTENSION = ".wav"
 MP3_EXTENSION = ".mp3"
+GFX_EXTENSION = ".gfx"
 
 # Construct
 

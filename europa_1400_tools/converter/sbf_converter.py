@@ -11,13 +11,14 @@ from europa_1400_tools.const import (
     TargetAudioFormat,
 )
 from europa_1400_tools.construct.sbf import Sbf
+from europa_1400_tools.converter.base_converter import BaseConverter
 
 
-class SbfConverter:
+class SbfConverter(BaseConverter[Sbf, dict[str, list[bytes]]]):
     """Class for converting SBF files."""
 
     @staticmethod
-    def convert_mp3_to_wav(mp3_bytes: bytes) -> bytes:
+    def _convert_mp3_to_wav(mp3_bytes: bytes) -> bytes:
         """Convert MP3 to WAV"""
 
         process = (
@@ -31,7 +32,7 @@ class SbfConverter:
         return wav_bytes
 
     @staticmethod
-    def convert_wav_to_mp3(wav_bytes: bytes):
+    def _convert_wav_to_mp3(wav_bytes: bytes):
         """Convert WAV to MP3"""
 
         process = (
@@ -45,7 +46,7 @@ class SbfConverter:
         return mp3_bytes
 
     @staticmethod
-    def convert_to_wav(sbf: Sbf) -> dict[str, list[bytes]]:
+    def _convert_to_wav(sbf: Sbf) -> dict[str, list[bytes]]:
         """Convert SBF to WAV"""
 
         wav_bytes_dict: dict[str, list[bytes]] = {}
@@ -58,7 +59,7 @@ class SbfConverter:
 
                 wav_bytes: bytes
                 if sound_definition.sound_type == SoundType.MP3:
-                    wav_bytes = SbfConverter.convert_mp3_to_wav(sound)
+                    wav_bytes = SbfConverter._convert_mp3_to_wav(sound)
                 else:
                     wav_bytes = sound
 
@@ -69,7 +70,7 @@ class SbfConverter:
         return wav_bytes_dict
 
     @staticmethod
-    def convert_to_mp3(sbf: Sbf) -> dict[str, list[bytes]]:
+    def _convert_to_mp3(sbf: Sbf) -> dict[str, list[bytes]]:
         """Convert SBF to MP3"""
 
         mp3_bytes_dict: dict[str, list[bytes]] = {}
@@ -84,7 +85,7 @@ class SbfConverter:
                 if sound_definition.sound_type == SoundType.MP3:
                     mp3_bytes = sound
                 else:
-                    mp3_bytes = SbfConverter.convert_wav_to_mp3(sound)
+                    mp3_bytes = SbfConverter._convert_wav_to_mp3(sound)
 
                 mp3_bytes_list.append(mp3_bytes)
 
@@ -93,25 +94,56 @@ class SbfConverter:
         return mp3_bytes_dict
 
     @staticmethod
-    def convert_and_export(
-        sbf: Sbf, output_path: Path, target_audio_format: TargetAudioFormat
-    ) -> list[Path]:
+    def convert(value: Sbf, **kwargs) -> dict[str, list[bytes]]:
+        """Convert SBF to another format."""
+
+        target_audio_format: TargetAudioFormat = kwargs.get(
+            "target_audio_format", TargetAudioFormat.WAV
+        )
+
+        audio_bytes_dict: dict[str, list[bytes]] = {}
+
+        for soundbank in value.soundbanks:
+            audio_bytes_list: list[bytes] = []
+
+            for i, sound in enumerate(soundbank.sounds):
+                sound_definition = soundbank.sound_definitions[i]
+
+                audio_bytes: bytes = sound
+
+                if sound_definition.sound_type != target_audio_format:
+                    if target_audio_format == TargetAudioFormat.MP3:
+                        audio_bytes = SbfConverter._convert_wav_to_mp3(sound)
+                    else:
+                        audio_bytes = SbfConverter._convert_mp3_to_wav(sound)
+
+                audio_bytes_list.append(audio_bytes)
+
+            audio_bytes_dict[soundbank.soundbank_definition.name] = audio_bytes_list
+
+        return audio_bytes_dict
+
+    @staticmethod
+    def convert_and_export(value: Sbf, output_path: Path, **kwargs) -> list[Path]:
         """Convert SBF and export to output_path."""
 
+        target_audio_format: TargetAudioFormat = kwargs.get(
+            "target_audio_format", TargetAudioFormat.WAV
+        )
         audio_output_paths: list[Path] = []
         audio_bytes_dict: dict[str, list[bytes]]
         extension: str
 
         if target_audio_format == TargetAudioFormat.MP3:
-            audio_bytes_dict = SbfConverter.convert_to_mp3(sbf)
+            audio_bytes_dict = SbfConverter._convert_to_mp3(value)
             extension = MP3_EXTENSION
         else:
-            audio_bytes_dict = SbfConverter.convert_to_wav(sbf)
+            audio_bytes_dict = SbfConverter._convert_to_wav(value)
             extension = WAV_EXTENSION
 
         for soundbank_name, audio_bytes_list in audio_bytes_dict.items():
             for i, audio_bytes in enumerate(audio_bytes_list):
-                name = f"{sbf.name}_{soundbank_name}"
+                name = f"{value.name}_{soundbank_name}"
                 if len(audio_bytes_list) > 1:
                     name += f"_{i}"
 
