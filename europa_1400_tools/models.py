@@ -23,6 +23,7 @@ class CommonOptions:
 
     game_path: Path
     output_path: Path
+    verbose: bool
 
     @property
     def resources_game_path(self) -> Path:

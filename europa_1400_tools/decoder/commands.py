@@ -1,6 +1,7 @@
 """Commands for the decoder."""
 
 import pickle
+import time
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -110,27 +111,49 @@ def decode_gfx(
     decoded_gfx_path = common_options.decoded_path / OUTPUT_GFX_DIR
     pickle_output_paths: list[Path] = []
 
-    typer.echo(f"Decoding {common_options.gfx_game_path}...")
-
     if not file_path:
         file_path = common_options.gfx_game_path
 
+    decode_time = time.time()
+    typer.echo(f"Decoding {common_options.gfx_game_path}...")
+
     gfx = Gfx.from_file(file_path)
 
-    pickle_output_path = decoded_gfx_path / Path(
-        common_options.gfx_game_path.stem
-    ).with_suffix(PICKLE_EXTENSION)
+    typer.echo(f"Decoded {file_path} in {time.time() - decode_time:.2f} seconds.")
 
-    if not pickle_output_path.parent.exists():
-        pickle_output_path.parent.mkdir(parents=True)
+    dump_time = time.time()
+    typer.echo("Dumping shapebanks...")
 
-    with open(pickle_output_path, "wb") as pickle_output_file:
-        pickle.dump(
-            gfx,
-            pickle_output_file,
-        )
+    for shapebank_definition in gfx.shapebank_definitions:
+        if not shapebank_definition.shapebank:
+            continue
 
-    pickle_output_paths.append(pickle_output_path)
+        pickle_output_path = decoded_gfx_path / Path(
+            shapebank_definition.name
+        ).with_suffix(PICKLE_EXTENSION)
+
+        if not pickle_output_path.parent.exists():
+            pickle_output_path.parent.mkdir(parents=True)
+
+        dump_shapebank_time = time.time()
+        if common_options.verbose:
+            typer.echo(f"Dumping {pickle_output_path}...")
+
+        with open(pickle_output_path, "wb") as pickle_output_file:
+            pickle.dump(
+                shapebank_definition,
+                pickle_output_file,
+            )
+
+        if common_options.verbose:
+            typer.echo(
+                f"Dumped {pickle_output_path} in "
+                + f"{time.time() - dump_shapebank_time:.2f} seconds."
+            )
+
+        pickle_output_paths.append(pickle_output_path)
+
+    typer.echo(f"Dumped shapebanks in {time.time() - dump_time:.2f} seconds.")
 
     return pickle_output_paths
 

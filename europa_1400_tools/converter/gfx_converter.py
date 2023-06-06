@@ -15,13 +15,15 @@ class GfxConverter(BaseConverter[Gfx, dict[str, dict[str, Image.Image]]]):
     def convert(value: Gfx, **kwargs) -> dict[str, dict[str, Image.Image]]:
         """Convert Gfx graphics to images."""
 
-        shapebanks: dict[str, dict[str, Image.Image]] = {}
+        shapebank_images: dict[str, dict[str, Image.Image]] = {}
 
-        for shapebank in value.shapebanks:
-            images = ShapebankConverter.convert(shapebank)
-            shapebanks[shapebank.name] = images
+        for shapebank_definition in value.shapebank_definitions:
+            if not shapebank_definition.shapebank:
+                continue
+            images = ShapebankConverter.convert(shapebank_definition)
+            shapebank_images[shapebank_definition.name] = images
 
-        return shapebanks
+        return shapebank_images
 
     @staticmethod
     def convert_and_export(value: Gfx, output_path: Path, **kwargs) -> list[Path]:
@@ -32,9 +34,9 @@ class GfxConverter(BaseConverter[Gfx, dict[str, dict[str, Image.Image]]]):
 
         output_file_paths = []
 
-        shapebanks = GfxConverter.convert(value, **kwargs)
+        shapebank_images = GfxConverter.convert(value, **kwargs)
 
-        for name, images in shapebanks.items():
+        for name, images in shapebank_images.items():
             shapebank_output_path = output_path / name
 
             if not shapebank_output_path.exists():

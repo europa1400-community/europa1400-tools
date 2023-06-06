@@ -15,5 +15,7 @@ class BaseConstruct(DataclassMixin):
     def from_file(cls: Type[T], file_path: Path) -> T:
         """Read the file and return the construct."""
 
-        obj = DataclassStruct(cls).parse_file(file_path)
+        obj = DataclassStruct(cls).parse_file(
+            file_path,
+        )
         return obj

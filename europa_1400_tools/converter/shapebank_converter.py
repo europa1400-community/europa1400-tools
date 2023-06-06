@@ -3,25 +3,31 @@ from pathlib import Path
 from PIL import Image
 
 from europa_1400_tools.const import PNG_EXTENSION
-from europa_1400_tools.construct.gfx import Shapebank
+from europa_1400_tools.construct.gfx import ShapebankDefinition
 from europa_1400_tools.converter.base_converter import BaseConverter
 from europa_1400_tools.converter.graphic_converter import GraphicConverter
 
 
-class ShapebankConverter(BaseConverter[Shapebank, dict[str, Image.Image]]):
+class ShapebankConverter(BaseConverter[ShapebankDefinition, dict[str, Image.Image]]):
     @staticmethod
-    def convert(value: Shapebank, **kwargs) -> dict[str, Image.Image]:
+    def convert(value: ShapebankDefinition, **kwargs) -> dict[str, Image.Image]:
         """Convert Shapebank graphics to images."""
+
+        if not value.shapebank:
+            raise ValueError("Shapebank not found.")
 
         images: dict[str, Image.Image] = {}
 
-        for graphic in value.graphics:
-            images[graphic.name] = GraphicConverter.convert(graphic)
+        for i, graphic in enumerate(value.shapebank.graphics):
+            graphic_name = f"{value.name}_{i}"
+            images[graphic_name] = GraphicConverter.convert(graphic)
 
         return images
 
     @staticmethod
-    def convert_and_export(value: Shapebank, output_path: Path, **kwargs) -> list[Path]:
+    def convert_and_export(
+        value: ShapebankDefinition, output_path: Path, **kwargs
+    ) -> list[Path]:
         """Convert Shapebank graphics to images."""
 
         if not output_path.exists():

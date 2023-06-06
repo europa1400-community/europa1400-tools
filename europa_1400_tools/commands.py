@@ -28,6 +28,7 @@ def main(
     output_path: Path = typer.Option(
         DEFAULT_OUTPUT_PATH, "--output-path", "-o", help="Path to the output directory."
     ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output."),
 ) -> None:
     """Main entry point."""
 
@@ -39,4 +40,6 @@ def main(
     if game_path is None:
         game_path = ask_for_game_path()
 
-    ctx.obj = CommonOptions(game_path=game_path, output_path=output_path)
+    ctx.obj = CommonOptions(
+        game_path=game_path, output_path=output_path, verbose=verbose
+    )
