@@ -1,0 +1,16 @@
+
+
+struct String {
+    char string[];
+};
+
+struct Txs {
+    u32 magic;
+    u32 some_count;
+    u32 some_count2;
+
+    String strings[some_count * some_count2];
+};
+
+
+Txs txs @ $;
