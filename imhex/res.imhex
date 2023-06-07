@@ -7,6 +7,10 @@ fn get_text_count(u32 address, u32 next_address) {
     u32 cur_offset = address;
     u32 count = 0;
 
+    if (std::mem::read_unsigned(cur_offset, 1) == 0x00) {
+        return 1;
+    }
+
     while (cur_offset < next_address) {
 
         while (true) {
@@ -36,20 +40,26 @@ struct Text {
 
 struct Texts {
     u32 cur_index = std::core::array_index();
+    bool is_last = cur_index == parent.offset_count - 1;
 
-    u32 address = $;
-    u32 prev_offset = parent.text_offsets[cur_index];
-    u32 next_offset = parent.text_offsets[cur_index + 1];
-    u32 offset = next_offset - prev_offset;
-    u32 next_address = address + offset;
-    u32 text_count = get_text_count(address, next_address);
+    u32 text_count = 1;
+
+    if (!is_last) {
+        u32 address = $;
+        u32 prev_offset = parent.text_offsets[cur_index];
+        u32 next_offset = parent.text_offsets[cur_index + 1];
+        u32 offset = next_offset - prev_offset;
+        u32 next_address = address + offset;
+        text_count = get_text_count(address, next_address);
+    }
+
     Text texts[text_count];
 };
 
 struct Res {
     u32 offset_count;
-    padding[4];
-    u32 text_count;
+    u32 some_count1;
+    u32 some_count2;
 
     u32 text_offsets[offset_count];
 
@@ -59,8 +69,7 @@ struct Res {
 
     u32 magic;
 
-    Texts texts[text_count];
-    Text last_text;
+    Texts texts[offset_count];
 };
 
 Res res @ $;
