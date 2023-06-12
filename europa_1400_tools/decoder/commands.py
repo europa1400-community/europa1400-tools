@@ -8,9 +8,13 @@ from typing import Annotated, Optional
 import typer
 
 from europa_1400_tools.const import (
+    GROUPS_BIN,
+    LFS_EXTENSION,
+    OGR_EXTENSION,
     OUTPUT_AGEB_DIR,
     OUTPUT_AOBJ_DIR,
     OUTPUT_GFX_DIR,
+    OUTPUT_GROUPS_DIR,
     OUTPUT_SFX_DIR,
     PICKLE_EXTENSION,
     SBF_EXTENSION,
@@ -18,7 +22,9 @@ from europa_1400_tools.const import (
 from europa_1400_tools.construct.ageb import AGeb
 from europa_1400_tools.construct.aobj import AObj
 from europa_1400_tools.construct.gfx import Gfx
+from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.construct.sbf import Sbf
+from europa_1400_tools.extractor.commands import extract
 from europa_1400_tools.helpers import get_files, rebase_path
 from europa_1400_tools.models import CommonOptions
 
@@ -30,6 +36,55 @@ def decode_all() -> None:
     """Decode all files."""
 
     raise NotImplementedError()
+
+
+@app.command("groups")
+def decode_groups(
+    ctx: typer.Context,
+    file_paths: Annotated[
+        Optional[list[Path]],
+        typer.Option("--file", "-f", help=".ogr files to decode."),
+    ] = None,
+) -> list[Path]:
+    """Decode OGR files."""
+
+    common_options: CommonOptions = ctx.obj
+    groups_bin_path = common_options.resources_game_path / GROUPS_BIN
+    extracted_groups_path = common_options.extracted_path / OUTPUT_GROUPS_DIR
+    decoded_groups_path = common_options.decoded_path / OUTPUT_GROUPS_DIR
+    pickle_output_paths: list[Path] = []
+
+    if not file_paths:
+        file_paths = extract(ctx, [groups_bin_path])
+
+    for file_path in file_paths:
+        typer.echo(f"Decoding {file_path}...")
+
+        if file_path.suffix == LFS_EXTENSION:
+            typer.echo(f"Skipping LFS file: {file_path}")
+            continue
+
+        if file_path.suffix != OGR_EXTENSION:
+            raise ValueError(f"Unknown file extension: {file_path.suffix}")
+
+        group = Ogr.from_file(file_path)
+
+        pickle_output_path = rebase_path(
+            file_path, extracted_groups_path, decoded_groups_path
+        ).with_suffix(PICKLE_EXTENSION)
+
+        if not pickle_output_path.parent.exists():
+            pickle_output_path.parent.mkdir(parents=True)
+
+        with open(pickle_output_path, "wb") as pickle_output_file:
+            pickle.dump(
+                group,
+                pickle_output_file,
+            )
+
+        pickle_output_paths.append(pickle_output_path)
+
+    return pickle_output_paths
 
 
 @app.command("ageb")

@@ -34,13 +34,13 @@ def extract(
 
     for file_path in file_paths:
         output_subdir = common_options.extracted_path / file_path.stem
-        output_path = extract_file(file_path, output_subdir)
-        output_paths.append(output_path)
+        extracted_paths = extract_file(file_path, output_subdir)
+        output_paths.extend(extracted_paths)
 
     return output_paths
 
 
-def extract_file(file_path: Path, output_path: Path) -> Path:
+def extract_file(file_path: Path, output_path: Path) -> list[Path]:
     """Extract a single file."""
 
     if not file_path.exists():
@@ -51,6 +51,6 @@ def extract_file(file_path: Path, output_path: Path) -> Path:
 
     typer.echo(f"Extracting {file_path.name} to {output_path}.")
 
-    extract_zipfile(file_path, output_path)
+    file_paths = extract_zipfile(file_path, output_path)
 
-    return output_path
+    return file_paths

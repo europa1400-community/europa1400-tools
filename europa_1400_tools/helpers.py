@@ -230,22 +230,24 @@ def sanitize_filename(path, replacement="_"):
     return sanitized_path
 
 
-def extract_zipfile(input_path: Path, output_path: Path) -> None:
+def extract_zipfile(input_path: Path, output_path: Path) -> list[Path]:
     """Extracts the contents of a zip file to the specified output path."""
 
     if not input_path.is_file():
         raise FileNotFoundError(f"File not found: {input_path}")
 
     if not output_path.is_dir():
-        raise FileNotFoundError(f"Directory not found: {output_path}")
+        raise FileNotFoundError(f"Path is not a directory: {output_path}")
 
-    output_subdir = output_path / input_path.stem
-
-    if not output_subdir.is_dir():
-        output_subdir.mkdir()
+    if not output_path.exists():
+        os.makedirs(output_path)
 
     with ZipFile(input_path, "r") as zip_file:
         zip_file.extractall(output_path)
+
+    file_paths = get_files(output_path)
+
+    return file_paths
 
 
 def get_files(

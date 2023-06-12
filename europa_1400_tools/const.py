@@ -67,6 +67,7 @@ OUTPUT_AGEB_DIR = "ageb"
 OUTPUT_AOBJ_DIR = "aobj"
 OUTPUT_SFX_DIR = "sfx"
 OUTPUT_GFX_DIR = "gfx"
+OUTPUT_GROUPS_DIR = "groups"
 
 # File Extensions
 
@@ -83,6 +84,9 @@ PICKLE_EXTENSION = ".pickle"
 WAV_EXTENSION = ".wav"
 MP3_EXTENSION = ".mp3"
 GFX_EXTENSION = ".gfx"
+LFS_EXTENSION = ".lfs"
+OGR_EXTENSION = ".ogr"
+JSON_EXTENSION = ".json"
 
 # Construct
 
@@ -109,6 +113,14 @@ class TargetAudioFormat(Enum):
 
     WAV = "wav"
     MP3 = "mp3"
+
+
+class OgrElementType(Enum):
+    """Ogr element types."""
+
+    OBJECT = "object"
+    LIGHT = "light"
+    DUMMY = "dummy"
 
 
 BGF_DIR = "bgf"

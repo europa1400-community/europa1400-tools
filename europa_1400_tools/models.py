@@ -1,5 +1,6 @@
 """Models for the Europa 1400 tools."""
 
+from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -71,3 +72,66 @@ class CommonOptions:
     def aobj_game_path(self) -> Path:
         """Return the path to the A_Obj file."""
         return self.data_game_path / A_OBJ_DAT
+
+
+@dataclass
+class VertexJson:
+    """Vertex in JSON format."""
+
+    x: float
+    y: float
+    z: float
+
+
+@dataclass
+class OgrTransformJson:
+    """OGR element data in JSON format."""
+
+    position: VertexJson
+    rotation: VertexJson
+
+
+@dataclass
+class OgrElementJson(ABC):
+    """OGR element in JSON format."""
+
+    name: str
+    type: str
+
+
+@dataclass
+class OgrObjectElementJson(OgrElementJson):
+    """OGR object element in JSON format."""
+
+    object_name: str
+    transform: OgrTransformJson
+    additional_transform: OgrTransformJson | None
+
+
+@dataclass
+class OgrDummyElementJson(OgrElementJson):
+    """OGR dummy element in JSON format."""
+
+    transform: OgrTransformJson
+
+
+@dataclass
+class OgrLightBlockJson:
+    """OGR light block in JSON format."""
+
+    values: list[float]
+
+
+@dataclass
+class OgrLightElementJson(OgrElementJson):
+    """OGR light element in JSON format."""
+
+    blocks: list[OgrLightBlockJson]
+
+
+@dataclass
+class OgrJson:
+    """OGR in JSON format."""
+
+    name: str
+    elements: list[OgrElementJson]

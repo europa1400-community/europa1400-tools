@@ -9,17 +9,21 @@ import typer
 
 from europa_1400_tools.const import (
     GFX_EXTENSION,
+    OGR_EXTENSION,
     OUTPUT_GFX_DIR,
+    OUTPUT_GROUPS_DIR,
     PICKLE_EXTENSION,
     SBF_EXTENSION,
     SFX_DIR,
     TargetAudioFormat,
 )
 from europa_1400_tools.construct.gfx import ShapebankDefinition
+from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.construct.sbf import Sbf
+from europa_1400_tools.converter.ogr_converter import OgrConverter
 from europa_1400_tools.converter.sbf_converter import SbfConverter
 from europa_1400_tools.converter.shapebank_converter import ShapebankConverter
-from europa_1400_tools.decoder.commands import decode_gfx, decode_sfx
+from europa_1400_tools.decoder.commands import decode_gfx, decode_groups, decode_sfx
 from europa_1400_tools.helpers import rebase_path
 from europa_1400_tools.models import CommonOptions
 
@@ -31,6 +35,76 @@ def convert_all():
     """Convert all files"""
 
     raise NotImplementedError()
+
+
+@app.command("groups")
+def convert_groups(
+    ctx: typer.Context,
+    file_paths: Annotated[
+        Optional[list[Path]],
+        typer.Option("--file", "-f", help=".ogr or .pickle files to convert."),
+    ] = None,
+) -> list[Path]:
+    """Convert SBF files"""
+
+    common_options: CommonOptions = ctx.obj
+    output_file_paths: list[Path] = []
+
+    if not file_paths:
+        file_paths = decode_groups(ctx)
+
+    if not all(file_path.suffix == file_paths[0].suffix for file_path in file_paths):
+        raise ValueError("All files must have the same extension")
+
+    suffix = file_paths[0].suffix
+
+    if suffix not in [OGR_EXTENSION, PICKLE_EXTENSION]:
+        raise ValueError(f"Unknown file extension: {suffix}")
+
+    is_ogr: bool = suffix == OGR_EXTENSION
+
+    if is_ogr and len(file_paths) > 1:
+        raise ValueError("Can only convert one .ogr file at a time")
+
+    if is_ogr:
+        file_paths = decode_groups(ctx)
+
+    load_time = time.time()
+    typer.echo(f"Loading {len(file_paths)} files")
+
+    ogrs: list[Ogr] = []
+
+    for file_path in file_paths:
+        with open(file_path, "rb") as pickle_file:
+            ogr: Ogr = pickle.load(pickle_file)
+
+        if common_options.verbose:
+            typer.echo(f"Loaded {file_path.name} in {time.time() - load_time:.2f}s")
+
+        ogrs.append(ogr)
+
+    convert_time = time.time()
+    typer.echo(f"Converting {len(ogrs)} groups...")
+
+    for i, ogr in enumerate(ogrs):
+        convert_shapebank_time = time.time()
+        file_path = file_paths[i]
+        name = file_path.stem
+
+        group_output_file_paths = OgrConverter.convert_and_export(
+            ogr, common_options.converted_path / OUTPUT_GROUPS_DIR, name=name
+        )
+
+        output_file_paths.extend(group_output_file_paths)
+
+        if common_options.verbose:
+            typer.echo(
+                f"Converted {name} in " + f"{time.time() - convert_shapebank_time:.2f}s"
+            )
+
+    typer.echo(f"Converted {len(ogrs)} groups in {time.time() - convert_time:.2f}s")
+
+    return output_file_paths
 
 
 @app.command("gfx")
@@ -93,9 +167,11 @@ def convert_gfx(
     for shapebank_definition in shapebank_definitions:
         convert_shapebank_time = time.time()
 
-        output_file_paths = ShapebankConverter.convert_and_export(
+        shapebank_output_file_paths = ShapebankConverter.convert_and_export(
             shapebank_definition, common_options.converted_path / OUTPUT_GFX_DIR
         )
+
+        output_file_paths.extend(shapebank_output_file_paths)
 
         if common_options.verbose:
             typer.echo(

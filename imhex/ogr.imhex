@@ -1,0 +1,97 @@
+#include <std/mem.pat>
+#include <std/string.pat>
+#include <std/core.pat>
+
+struct Skip0 {
+    padding[while(!std::mem::eof() && std::mem::read_unsigned($, 1) == 0x0)];
+};
+
+struct Skip01 {
+    padding[while(std::mem::read_unsigned($, 1) == 0x0 || std::mem::read_unsigned($, 1) == 0x1)];
+};
+
+struct Skip013 {
+    u8 skipped[while(
+        std::mem::read_unsigned($, 1) == 0x0 ||
+        std::mem::read_unsigned($, 1) == 0x1 ||
+        std::mem::read_unsigned($, 1) == 0x3)];
+    u32 count = sizeof(skipped);
+};
+
+struct Skip012345678 {
+    padding[while(
+        std::mem::read_unsigned($, 1) == 0x0 ||
+        std::mem::read_unsigned($, 1) == 0x1 ||
+        std::mem::read_unsigned($, 1) == 0x2 ||
+        std::mem::read_unsigned($, 1) == 0x3 ||
+        std::mem::read_unsigned($, 1) == 0x4 ||
+        std::mem::read_unsigned($, 1) == 0x5 ||
+        std::mem::read_unsigned($, 1) == 0x6 ||
+        std::mem::read_unsigned($, 1) == 0x7 ||
+        std::mem::read_unsigned($, 1) == 0x8)];
+};
+
+struct Block06 {
+    float data[11];
+    padding[4];
+};
+
+struct FooterBlock<auto Padding> {
+    float data[9];
+    u8 zeros[12];
+
+    if (Padding > 0) {
+        u8 skipped[Padding];
+    }
+};
+
+struct GroupElement {
+
+    Skip012345678 skip012345678_1;
+    char name[];
+    Skip013 skip013;
+    u8 type;
+
+    if (type == 0x2) {
+        padding[4];
+        float offsets[3];
+        float data[3];
+    } else if (type == 0x4) {
+        Skip012345678;
+        char object_name[];
+        float offsets[3];
+        float data[3];
+
+        if (std::mem::read_unsigned($, 1) == 1) {
+            padding[1];
+            float offsets2[3];
+            float data2[3];
+        }
+
+    } else if (type == 0x5 || type == 0x6 || type == 0x7 || type == 0x8) {
+        padding[6];
+        u32 footer_padding = skip013.count;
+
+        if (skip013.count == 8 && type != 0x7 && type != 0x8){
+            FooterBlock<footer_padding> blocks[8];
+        } else {
+            FooterBlock<footer_padding> blocks[7];
+        }
+    } else {
+        std::print("unknown_type");
+    }
+
+    Skip0;
+};
+
+struct Ogr {
+    u8 type;
+    u8 magic1;
+    u16 magic2;
+    Skip012345678;
+    $ -= 1;
+
+    GroupElement group_elements[while(std::mem::read_unsigned($, 1) == 1)];
+};
+
+Ogr ogr @ $;
