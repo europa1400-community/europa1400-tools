@@ -36,20 +36,32 @@ struct Header {
     SkipRequired<"\xCD\xAB\x23", 3>;
     u32 num_keys;
 
-    SkipRequired<"\x33\x01\x24\x00", 4>;
+    SkipOptional<"\x33\x01", 2>;
+    SkipRequired<"\x24\x00", 2>;
 
-    SkipRequired<"\x37", 1>;
-    u32 b;
-    SkipRequired<"\x36", 1>;
-    u32 groups_per_key;
-    SkipRequired<"\x34", 1>;
-    u32 num_points;
-    SkipOptional<"\x29", 1> opt_d;
-    if (!opt_d.skipped) {
+    bool has_37 = std::mem::read_unsigned($, 1) == 0x37;
+    if (has_37) {
+        padding[1];
+        u32 b;
+    }
+    bool has_36 = std::mem::read_unsigned($, 1) == 0x36;
+    if (has_36) {
+        padding[1];
+        u32 groups_per_key;
+    }
+    bool has_34 = std::mem::read_unsigned($, 1) == 0x34;
+    if (has_34) {
+        padding[1];
+        u32 num_points;
+    }
+    bool has_29 = std::mem::read_unsigned($, 1) == 0x29;
+    if (has_29) {
+        padding[1];
         u32 d;
     }
-    SkipOptional<"\x2A", 1> opt_e;
-    if (!opt_e.skipped) {
+    bool has_2a = std::mem::read_unsigned($, 1) == 0x2A;
+    if (has_2a) {
+        padding[1];
         u32 e;
     }
 };
@@ -61,18 +73,20 @@ struct Point {
 };
 
 struct Skeleton {
-    SkipRequired<"\x38", 1>;
+    if (std::mem::read_unsigned($, 1) == 0x38) {
+        padding[1];
 
-    char name[];
+        char name[];
 
-    SkipOptional<"\x39", 1> opt_39;
+        SkipOptional<"\x39", 1> opt_39;
 
-    if (!opt_39.skipped) {
-        Point a;
+        if (!opt_39.skipped) {
+            Point a;
 
-        SkipRequired<"\x3A", 1>;
+            SkipRequired<"\x3A", 1>;
 
-        Point b;
+            Point b;
+        }
     }
 };
 
@@ -107,14 +121,24 @@ struct Object {
 struct Key {
     // Jedes dieser Unterobjekte entspricht einer group in der zugehörigen obj file
     // Erkennbar ist dies an der passenden Anzahl Punkte pro Group
-    PointContainer points[header.groups_per_key];
+
+    u32 groups_per_key = 1;
+
+    if (parent.parent.header.has_36) {
+        groups_per_key = parent.parent.header.groups_per_key;
+    }
+
+    PointContainer points[groups_per_key];
 };
 
 
 struct Body {
-    Key keys[header.num_keys];
+    Key keys[parent.header.num_keys];
 };
 
-Header header @ $ [[color("FF0000")]];
+struct Baf {
+    Header header;
+    Body body;
+};
 
-Body body @ $ [[color("00FF00")]];
+Baf baf @ $;

@@ -8,10 +8,15 @@ from typing import Annotated, Optional
 import typer
 
 from europa_1400_tools.const import (
+    ANIMATIONS_BIN,
+    BAF_EXTENSION,
     GROUPS_BIN,
+    INI_EXTENSION,
     LFS_EXTENSION,
+    OAM_EXTENSION,
     OGR_EXTENSION,
     OUTPUT_AGEB_DIR,
+    OUTPUT_ANIMATIONS_DIR,
     OUTPUT_AOBJ_DIR,
     OUTPUT_GFX_DIR,
     OUTPUT_GROUPS_DIR,
@@ -21,6 +26,7 @@ from europa_1400_tools.const import (
 )
 from europa_1400_tools.construct.ageb import AGeb
 from europa_1400_tools.construct.aobj import AObj
+from europa_1400_tools.construct.baf import Baf, BafIni
 from europa_1400_tools.construct.gfx import Gfx
 from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.construct.sbf import Sbf
@@ -36,6 +42,63 @@ def decode_all() -> None:
     """Decode all files."""
 
     raise NotImplementedError()
+
+
+@app.command("animations")
+def decode_animations(
+    ctx: typer.Context,
+    file_paths: Annotated[
+        Optional[list[Path]],
+        typer.Option("--file", "-f", help=".baf files to decode."),
+    ] = None,
+) -> list[Path]:
+    """Decode BAF files."""
+
+    common_options: CommonOptions = ctx.obj
+    extracted_animations_path = common_options.extracted_path / OUTPUT_ANIMATIONS_DIR
+    decoded_animations_path = common_options.decoded_path / OUTPUT_ANIMATIONS_DIR
+    pickle_output_paths: list[Path] = []
+
+    if not file_paths:
+        animations_bin_path = common_options.resources_game_path / ANIMATIONS_BIN
+        file_paths = extract(ctx, [animations_bin_path])
+
+    for file_path in file_paths:
+        typer.echo(f"Decoding {file_path}...")
+
+        if file_path.suffix == OAM_EXTENSION:
+            continue
+
+        if file_path.suffix.lower() == INI_EXTENSION:
+            continue
+
+        if file_path.suffix.lower() != BAF_EXTENSION:
+            raise ValueError(f"Unknown file extension: {file_path.suffix}")
+
+        baf = Baf.from_file(file_path)
+
+        baf_ini_file_path = file_path.with_suffix(INI_EXTENSION)
+
+        if baf_ini_file_path.exists():
+            baf_ini_file = BafIni.from_file(baf_ini_file_path)
+            baf.baf_ini = baf_ini_file
+
+        pickle_output_path = rebase_path(
+            file_path, extracted_animations_path, decoded_animations_path
+        ).with_suffix(PICKLE_EXTENSION)
+
+        if not pickle_output_path.parent.exists():
+            pickle_output_path.parent.mkdir(parents=True)
+
+        with open(pickle_output_path, "wb") as pickle_output_file:
+            pickle.dump(
+                baf,
+                pickle_output_file,
+            )
+
+        pickle_output_paths.append(pickle_output_path)
+
+    return pickle_output_paths
 
 
 @app.command("groups")
