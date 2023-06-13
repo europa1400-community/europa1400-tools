@@ -152,3 +152,8 @@ BAF_INI_FILE_LOOP_OUT = "LoopOut"
 
 
 DEFAULT_OUTPUT_PATH = Path("output")
+
+
+BAF_TO_BGF = {
+    "Aufrichten_BAER": "Tanzbaer_BAER",
+}
