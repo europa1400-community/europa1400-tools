@@ -10,6 +10,8 @@ import typer
 from europa_1400_tools.const import (
     ANIMATIONS_BIN,
     BAF_EXTENSION,
+    BGF_EXTENSION,
+    ED3_EXTENSION,
     GROUPS_BIN,
     INI_EXTENSION,
     LFS_EXTENSION,
@@ -20,13 +22,16 @@ from europa_1400_tools.const import (
     OUTPUT_AOBJ_DIR,
     OUTPUT_GFX_DIR,
     OUTPUT_GROUPS_DIR,
+    OUTPUT_SCENES_DIR,
     OUTPUT_SFX_DIR,
     PICKLE_EXTENSION,
     SBF_EXTENSION,
+    SCENES_BIN,
 )
 from europa_1400_tools.construct.ageb import AGeb
 from europa_1400_tools.construct.aobj import AObj
 from europa_1400_tools.construct.baf import Baf, BafIni
+from europa_1400_tools.construct.ed3 import Ed3
 from europa_1400_tools.construct.gfx import Gfx
 from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.construct.sbf import Sbf
@@ -63,6 +68,10 @@ def decode_animations(
         animations_bin_path = common_options.resources_game_path / ANIMATIONS_BIN
         file_paths = extract(ctx, [animations_bin_path])
 
+    if not file_paths:
+        typer.echo("No files to decode.")
+        return []
+
     for file_path in file_paths:
         typer.echo(f"Decoding {file_path}...")
 
@@ -93,6 +102,58 @@ def decode_animations(
         with open(pickle_output_path, "wb") as pickle_output_file:
             pickle.dump(
                 baf,
+                pickle_output_file,
+            )
+
+        pickle_output_paths.append(pickle_output_path)
+
+    return pickle_output_paths
+
+
+@app.command("scenes")
+def decode_scenes(
+    ctx: typer.Context,
+    file_paths: Annotated[
+        Optional[list[Path]],
+        typer.Option("--file", "-f", help=".ed3 files to decode."),
+    ] = None,
+) -> list[Path]:
+    """Decode ED3 files."""
+
+    common_options: CommonOptions = ctx.obj
+    scenes_bin_path = common_options.resources_game_path / SCENES_BIN
+    extracted_scenes_path = common_options.extracted_path / OUTPUT_SCENES_DIR
+    decoded_scenes_path = common_options.decoded_path / OUTPUT_SCENES_DIR
+    pickle_output_paths: list[Path] = []
+
+    if not file_paths:
+        file_paths = extract(ctx, [scenes_bin_path])
+
+    if not file_paths:
+        typer.echo("No files to decode.")
+        return []
+
+    for file_path in file_paths:
+        typer.echo(f"Decoding {file_path}...")
+
+        if file_path.suffix == BGF_EXTENSION:
+            continue
+
+        if file_path.suffix != ED3_EXTENSION:
+            raise ValueError(f"Unknown file extension: {file_path.suffix}")
+
+        group = Ed3.from_file(file_path)
+
+        pickle_output_path = rebase_path(
+            file_path, extracted_scenes_path, decoded_scenes_path
+        ).with_suffix(PICKLE_EXTENSION)
+
+        if not pickle_output_path.parent.exists():
+            pickle_output_path.parent.mkdir(parents=True)
+
+        with open(pickle_output_path, "wb") as pickle_output_file:
+            pickle.dump(
+                group,
                 pickle_output_file,
             )
 

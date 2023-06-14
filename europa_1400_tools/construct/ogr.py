@@ -5,17 +5,17 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa_1400_tools.animations_decoder import Vertex
+from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.base_construct import BaseConstruct
+
+
+def is_01(obj, ctx):
+    return obj == 1
 
 
 def cancel_on_unacceptable(obj, ctx):
     if obj not in ctx.acceptable_values:
         raise cs.CancelParsing
-
-
-def is_01(obj, ctx):
-    return obj == 1
 
 
 @dataclass
