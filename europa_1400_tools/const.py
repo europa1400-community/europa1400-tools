@@ -70,6 +70,7 @@ OUTPUT_GFX_DIR = "gfx"
 OUTPUT_GROUPS_DIR = "groups"
 OUTPUT_ANIMATIONS_DIR = "animations"
 OUTPUT_SCENES_DIR = "scenes"
+OUTPUT_OBJECTS_DIR = "objects"
 
 # File Extensions
 
@@ -91,6 +92,7 @@ OGR_EXTENSION = ".ogr"
 JSON_EXTENSION = ".json"
 OAM_EXTENSION = ".oam"
 ED3_EXTENSION = ".ed3"
+TXS_EXTENSION = ".txs"
 
 # Construct
 

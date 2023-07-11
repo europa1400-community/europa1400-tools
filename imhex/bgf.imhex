@@ -254,10 +254,15 @@ struct MappingObject {
     PolygonMapping polygons[polygon_mapping_count];
 };
 
-BgfHeader bgf_header @ $;
+struct Bgf {
 
-Texture textures[while(is_texture($))] @ $;
+    BgfHeader bgf_header;
 
-GameObject game_objects[while(is_game_object($))] @ $;
+    Texture textures[while(is_texture($))];
 
-MappingObject mapping_object @ $;
+    GameObject game_objects[while(is_game_object($))];
+
+    MappingObject mapping_object;
+};
+
+Bgf bgf @ $;
