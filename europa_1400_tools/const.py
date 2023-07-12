@@ -121,6 +121,13 @@ class TargetAudioFormat(Enum):
     MP3 = "mp3"
 
 
+class TargetObjectFormat(Enum):
+    """Target object formats."""
+
+    WAVEFRONT = "wavefront"
+    GLTF = "gltf"
+
+
 class OgrElementType(Enum):
     """Ogr element types."""
 

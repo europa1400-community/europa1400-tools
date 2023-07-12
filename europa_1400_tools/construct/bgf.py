@@ -31,14 +31,52 @@ class Face(DataclassMixin):
 
 
 @dataclass
+class TextureCoordinate(DataclassMixin):
+    """Structure of texture coordinate."""
+
+    u: float = csfield(cs.Float32l)
+    v: float = csfield(cs.Float32l)
+    w: float = csfield(cs.Float32l)
+
+
+@dataclass
+class TextureMapping(DataclassMixin):
+    """Structure of texture mapping."""
+
+    vertex_u: Vertex = csfield(DataclassStruct(Vertex))
+    vertex_v: Vertex = csfield(DataclassStruct(Vertex))
+    vertex_w: Vertex = csfield(DataclassStruct(Vertex))
+
+    a: TextureCoordinate = csfield(
+        cs.Computed(
+            lambda ctx: TextureCoordinate(
+                ctx.vertex_u.x, ctx.vertex_v.x, ctx.vertex_w.x
+            )
+        )
+    )
+    b: TextureCoordinate = csfield(
+        cs.Computed(
+            lambda ctx: TextureCoordinate(
+                ctx.vertex_u.y, ctx.vertex_v.y, ctx.vertex_w.y
+            )
+        )
+    )
+    c: TextureCoordinate = csfield(
+        cs.Computed(
+            lambda ctx: TextureCoordinate(
+                ctx.vertex_u.z, ctx.vertex_v.z, ctx.vertex_w.z
+            )
+        )
+    )
+
+
+@dataclass
 class Polygon(DataclassMixin):
     """Structure of polygon."""
 
     face: Face = csfield(DataclassStruct(Face))
     skip_optional_1E: bytes | None = csfield(cs.Optional(cs.Const(b"\x1E")))
-    v1: Vertex = csfield(DataclassStruct(Vertex))
-    v2: Vertex = csfield(DataclassStruct(Vertex))
-    v3: Vertex = csfield(DataclassStruct(Vertex))
+    texture_mapping: TextureMapping = csfield(DataclassStruct(TextureMapping))
     skip_optional_1f: bytes | None = csfield(cs.Optional(cs.Const(b"\x1F")))
     normal: Vertex | None = csfield(
         cs.If(lambda ctx: ctx.skip_optional_1f is not None, DataclassStruct(Vertex))
