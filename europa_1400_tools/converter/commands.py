@@ -25,7 +25,10 @@ from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.construct.gfx import ShapebankDefinition
 from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.construct.sbf import Sbf
-from europa_1400_tools.converter.object_converter import ObjectWavefrontConverter
+from europa_1400_tools.converter.object_gltf_converter import ObjectGltfConverter
+from europa_1400_tools.converter.object_wavefront_converter import (
+    ObjectWavefrontConverter,
+)
 from europa_1400_tools.converter.ogr_converter import OgrConverter
 from europa_1400_tools.converter.sbf_converter import SbfConverter
 from europa_1400_tools.converter.shapebank_converter import ShapebankConverter
@@ -64,7 +67,9 @@ def convert_objects(
 
     common_options: CommonOptions = ctx.obj
     decoded_objects_path: Path = common_options.decoded_path / OUTPUT_OBJECTS_DIR
-    converted_objects_path: Path = common_options.converted_path / OUTPUT_OBJECTS_DIR
+    converted_objects_path: Path = (
+        common_options.converted_path / OUTPUT_OBJECTS_DIR / target_object_format.value
+    )
     output_file_paths: list[Path] = []
 
     if not file_paths:
@@ -121,7 +126,7 @@ def convert_objects(
 
         output_file_path = rebase_path(
             file_path, decoded_objects_path, converted_objects_path
-        ).parent
+        ).parent / Path(name)
 
         if target_object_format == TargetObjectFormat.WAVEFRONT:
             ObjectWavefrontConverter.convert_and_export(
@@ -130,6 +135,18 @@ def convert_objects(
                 path=file_path,
                 extracted_textures_path=extracted_textures_path,
             )
+        elif target_object_format == TargetObjectFormat.GLTF_STATIC:
+            ObjectGltfConverter.convert_and_export(
+                bgf,
+                output_file_path,
+                path=file_path,
+                extracted_textures_path=extracted_textures_path,
+                name=name,
+            )
+        elif target_object_format == TargetObjectFormat.GLTF:
+            raise NotImplementedError()
+        else:
+            raise ValueError(f"Unknown object format: {target_object_format}")
 
         if common_options.verbose:
             typer.echo(

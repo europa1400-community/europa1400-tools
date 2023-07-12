@@ -12,7 +12,7 @@ from zipfile import ZipFile
 import construct as cs
 from PIL import Image
 
-from europa_1400_tools.const import MODELS_STRING_ENCODING
+from europa_1400_tools.const import OBJECTS_STRING_ENCODING
 
 
 def ask_for_game_path() -> Path:
@@ -102,7 +102,7 @@ def read_string(file: BinaryIO) -> str:
     value = ""
     buffer = file.read(1)
     while buffer != b"\x00":
-        value += buffer.decode(MODELS_STRING_ENCODING)
+        value += buffer.decode(OBJECTS_STRING_ENCODING)
         buffer = file.read(1)
     return value
 

@@ -126,6 +126,7 @@ class TargetObjectFormat(Enum):
 
     WAVEFRONT = "wavefront"
     GLTF = "gltf"
+    GLTF_STATIC = "gltf_static"
 
 
 class OgrElementType(Enum):
@@ -142,7 +143,7 @@ TEX_DIR = "tex"
 GLTF_DIR = "gltf"
 BAF_DIR = "baf"
 
-MODELS_STRING_ENCODING = "latin-1"
+OBJECTS_STRING_ENCODING = "latin-1"
 
 MODELS_REDUCED_FOOTER_FILES = [
     "ob_DREIFACHGALGEN.bgf",

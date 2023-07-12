@@ -78,9 +78,12 @@ class ObjectWavefrontConverter(BaseConverter[Bgf, tuple[str, tuple[str, str]]]):
             for face_index, (face, material) in enumerate(zip(faces, materials)):
                 obj_string += f"usemtl {material}\n"
                 obj_string += (
-                    f"f {face.a + 1 + face_offset}/{face_index * 3 + 1 + tex_offset}/{face_index + 1} "
-                    + f"{face.b + 1 + face_offset}/{face_index * 3 + 2 + tex_offset}/{face_index + 1} "
-                    + f"{face.c + 1 + face_offset}/{face_index * 3 + 3 + tex_offset}/{face_index + 1}\n"
+                    f"f {face.a + 1 + face_offset}/"
+                    + f"{face_index * 3 + 1 + tex_offset}/{face_index + 1} "
+                    + f"{face.b + 1 + face_offset}/"
+                    + f"{face_index * 3 + 2 + tex_offset}/{face_index + 1} "
+                    + f"{face.c + 1 + face_offset}/"
+                    + f"{face_index * 3 + 3 + tex_offset}/{face_index + 1}\n"
                 )
             face_offset += len(vertices)
             tex_offset += len(texture_mappings * 3)

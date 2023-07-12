@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
+from europa_1400_tools.const import OBJECTS_STRING_ENCODING
 from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
@@ -177,12 +178,8 @@ class BgfGameObject(DataclassMixin):
 class VertexMapping(DataclassMixin):
     """Construct for VertexMapping."""
 
-    x: float = csfield(cs.Float32l)
-    y: float = csfield(cs.Float32l)
-    z: float = csfield(cs.Float32l)
-    alpha: float = csfield(cs.Float32l)
-    beta: float = csfield(cs.Float32l)
-    gamma: float = csfield(cs.Float32l)
+    vertex1: Vertex = csfield(DataclassStruct(Vertex))
+    vertex2: Vertex = csfield(DataclassStruct(Vertex))
 
 
 @dataclass
@@ -190,9 +187,7 @@ class PolygonMapping(DataclassMixin):
     """Construct for PolygonMapping."""
 
     face: Face = csfield(DataclassStruct(Face))
-    v1: Vertex = csfield(DataclassStruct(Vertex))
-    v2: Vertex = csfield(DataclassStruct(Vertex))
-    v3: Vertex = csfield(DataclassStruct(Vertex))
+    texture_mapping: TextureMapping = csfield(DataclassStruct(TextureMapping))
     texture_index: int = csfield(cs.Byte)
 
 
@@ -203,7 +198,7 @@ class BgfMappingObject(DataclassMixin):
     skip_required_2f_2d: bytes = csfield(cs.Const(b"\x2F\x2D"))
     num1: int = csfield(cs.Byte)
     num2: int = csfield(cs.Int16ul)
-    padding_1: bytes = csfield(cs.Padded(1, cs.Pass))
+    padding_1: None = csfield(cs.Padded(1, cs.Pass))
     num3: int = csfield(cs.Int16ul)
     skip_required_b5_fa: bytes = csfield(cs.Const(b"\xB5\xFA"))
     texture_count: int = csfield(cs.Int32ul)
@@ -276,6 +271,46 @@ class BgfHeader(DataclassMixin):
 
 
 @dataclass
+class BgfFooter(DataclassMixin):
+    """Construct for BgfFooter."""
+
+    footer_bytes: bytes = csfield(cs.GreedyBytes)
+    texture_names: list[str] = csfield(
+        cs.Computed(
+            lambda ctx: BgfFooter.get_texture_names(ctx._.textures, ctx.footer_bytes)
+        )
+    )
+
+    @staticmethod
+    def get_texture_names(textures: list[BgfTexture], footer_bytes: bytes) -> list[str]:
+        """Extract texture names from footer bytes."""
+
+        texture_names_to_position: dict[str, int] = {}
+
+        for texture in textures:
+            texture_full_name = texture.name
+            texture_name = texture.name.split(".")[0]
+            texture_name_bytes = texture_name.encode(OBJECTS_STRING_ENCODING)
+
+            if texture_full_name in texture_names_to_position:
+                continue
+
+            position = footer_bytes.find(texture_name_bytes)
+
+            if position == -1:
+                continue
+
+            texture_names_to_position[texture_full_name] = position
+
+        texture_names = list(texture_names_to_position.keys())
+        texture_names.sort(
+            key=lambda texture_name: texture_names_to_position[texture_name]
+        )
+
+        return texture_names
+
+
+@dataclass
 class Bgf(BaseConstruct):
     """Construct for BGF files."""
 
@@ -284,8 +319,5 @@ class Bgf(BaseConstruct):
     game_objects: list[BgfGameObject] = csfield(
         cs.GreedyRange(DataclassStruct(BgfGameObject))
     )
-    # game_objects: list[BgfGameObject] = csfield(
-    #     cs.Array(5, DataclassStruct(BgfGameObject))
-    # )
-    # remainder: bytes = csfield(cs.GreedyBytes)
     mapping_object: BgfMappingObject = csfield(DataclassStruct(BgfMappingObject))
+    footer: BgfFooter = csfield(DataclassStruct(BgfFooter))
