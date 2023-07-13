@@ -46,18 +46,21 @@ app = typer.Typer()
 
 
 @app.command("all")
-def convert_all():
+def convert_all(ctx: typer.Context):
     """Convert all files"""
 
-    raise NotImplementedError()
+    convert_gfx(ctx)
+    convert_sfx(ctx)
+    convert_objects(ctx)
+    convert_groups(ctx)
 
 
 @app.command("objects")
 def convert_objects(
     ctx: typer.Context,
-    target_object_format: TargetObjectFormat = typer.Option(
-        default=TargetObjectFormat.WAVEFRONT.value
-    ),
+    target_object_format: Annotated[
+        TargetObjectFormat, typer.Option()
+    ] = TargetObjectFormat.GLTF,
     file_paths: Annotated[
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".bgf or .pickle files to convert."),
@@ -144,7 +147,13 @@ def convert_objects(
                 name=name,
             )
         elif target_object_format == TargetObjectFormat.GLTF:
-            raise NotImplementedError()
+            ObjectGltfConverter.convert_and_export(
+                bgf,
+                output_file_path,
+                path=file_path,
+                extracted_textures_path=extracted_textures_path,
+                name=name,
+            )
         else:
             raise ValueError(f"Unknown object format: {target_object_format}")
 

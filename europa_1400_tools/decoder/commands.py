@@ -47,10 +47,17 @@ app = typer.Typer()
 
 
 @app.command("all")
-def decode_all() -> None:
+def decode_all(ctx: typer.Context) -> None:
     """Decode all files."""
 
-    raise NotImplementedError()
+    decode_ageb(ctx)
+    decode_aobj(ctx)
+    decode_animations(ctx)
+    decode_gfx(ctx)
+    decode_groups(ctx)
+    decode_objects(ctx)
+    decode_scenes(ctx)
+    decode_sfx(ctx)
 
 
 @app.command("animations")
