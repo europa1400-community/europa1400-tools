@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Type, TypeVar
+from typing import IO, Type, TypeVar
 
-from construct_typed import DataclassMixin, DataclassStruct
+import construct as cs
+from construct_typed import DataclassMixin, DataclassStruct, csfield
 
 T = TypeVar("T", bound="BaseConstruct")
 
@@ -11,6 +12,8 @@ T = TypeVar("T", bound="BaseConstruct")
 class BaseConstruct(DataclassMixin):
     """Base construct class."""
 
+    path: Path = csfield(cs.Computed(lambda ctx: Path(ctx._io.name)))
+
     @classmethod
     def from_file(cls: Type[T], file_path: Path) -> T:
         """Read the file and return the construct."""
@@ -18,4 +21,5 @@ class BaseConstruct(DataclassMixin):
         obj = DataclassStruct(cls).parse_file(
             file_path,
         )
+
         return obj

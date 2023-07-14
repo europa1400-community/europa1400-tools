@@ -11,6 +11,7 @@ from europa_1400_tools.const import (
     BGF_EXTENSION,
     GFX_EXTENSION,
     OGR_EXTENSION,
+    OUTPUT_ANIMATIONS_DIR,
     OUTPUT_GFX_DIR,
     OUTPUT_GROUPS_DIR,
     OUTPUT_OBJECTS_DIR,
@@ -21,6 +22,7 @@ from europa_1400_tools.const import (
     TargetAudioFormat,
     TargetObjectFormat,
 )
+from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.construct.gfx import ShapebankDefinition
 from europa_1400_tools.construct.ogr import Ogr
@@ -33,6 +35,7 @@ from europa_1400_tools.converter.ogr_converter import OgrConverter
 from europa_1400_tools.converter.sbf_converter import SbfConverter
 from europa_1400_tools.converter.shapebank_converter import ShapebankConverter
 from europa_1400_tools.decoder.commands import (
+    decode_animations,
     decode_gfx,
     decode_groups,
     decode_objects,
@@ -40,6 +43,7 @@ from europa_1400_tools.decoder.commands import (
 )
 from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import rebase_path
+from europa_1400_tools.mapper.commands import map_animations
 from europa_1400_tools.models import CommonOptions
 
 app = typer.Typer()
@@ -60,7 +64,7 @@ def convert_objects(
     ctx: typer.Context,
     target_object_format: Annotated[
         TargetObjectFormat, typer.Option()
-    ] = TargetObjectFormat.GLTF,
+    ] = TargetObjectFormat.GLTF.value,
     file_paths: Annotated[
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".bgf or .pickle files to convert."),
@@ -119,6 +123,18 @@ def convert_objects(
     convert_time = time.time()
     typer.echo(f"Converting {len(bgfs)} objects...")
 
+    if target_object_format == TargetObjectFormat.GLTF:
+        _ = decode_animations(ctx)
+        decoded_animations_path = common_options.decoded_path / OUTPUT_ANIMATIONS_DIR
+        decoded_objects_path = common_options.decoded_path / OUTPUT_OBJECTS_DIR
+
+        mapped_animations_path = map_animations(
+            ctx, decoded_animations_path, decoded_objects_path
+        )
+
+        with open(mapped_animations_path, "rb") as pickle_file:
+            mapped_animations = pickle.load(pickle_file)
+
     for i, bgf in enumerate(bgfs):
         convert_shapebank_time = time.time()
         file_path = file_paths[i]
@@ -147,12 +163,31 @@ def convert_objects(
                 name=name,
             )
         elif target_object_format == TargetObjectFormat.GLTF:
+            extracted_objects_path = common_options.extracted_path / OUTPUT_OBJECTS_DIR
+            extracted_animations_path = (
+                common_options.extracted_path / OUTPUT_ANIMATIONS_DIR
+            )
+            stripped_bgf_path = bgf.path.relative_to(extracted_objects_path)
+
+            baf_path: Path | None = None
+            baf: Baf | None = None
+
+            for mapped_baf_path, mapped_bgf_paths in mapped_animations.items():
+                if stripped_bgf_path in mapped_bgf_paths:
+                    baf_path = extracted_animations_path / mapped_baf_path
+                    break
+
+            if baf_path is not None:
+                with open(baf_path, "rb") as pickle_file:
+                    baf = pickle.load(pickle_file)
+
             ObjectGltfConverter.convert_and_export(
                 bgf,
                 output_file_path,
                 path=file_path,
                 extracted_textures_path=extracted_textures_path,
                 name=name,
+                baf=baf,
             )
         else:
             raise ValueError(f"Unknown object format: {target_object_format}")
