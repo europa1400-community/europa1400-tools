@@ -13,6 +13,8 @@ from europa_1400_tools.const import (
     EXTRACTED_DIR,
     GFX_DIR,
     GILDE_ADD_ON_GERMAN_GFX,
+    OUTPUT_ANIMATIONS_DIR,
+    OUTPUT_OBJECTS_DIR,
     RESOURCES_DIR,
     SFX_DIR,
 )
@@ -72,6 +74,36 @@ class CommonOptions:
     def aobj_game_path(self) -> Path:
         """Return the path to the A_Obj file."""
         return self.data_game_path / A_OBJ_DAT
+
+    @property
+    def extracted_objects_path(self) -> Path:
+        """Return the path to the extracted objects directory."""
+        return self.extracted_path / OUTPUT_OBJECTS_DIR
+
+    @property
+    def decoded_objects_path(self) -> Path:
+        """Return the path to the decoded objects directory."""
+        return self.decoded_path / OUTPUT_OBJECTS_DIR
+
+    @property
+    def converted_objects_path(self) -> Path:
+        """Return the path to the converted objects directory."""
+        return self.converted_path / OUTPUT_OBJECTS_DIR
+
+    @property
+    def extracted_animations_path(self) -> Path:
+        """Return the path to the extracted animations directory."""
+        return self.extracted_path / OUTPUT_ANIMATIONS_DIR
+
+    @property
+    def decoded_animations_path(self) -> Path:
+        """Return the path to the decoded animations directory."""
+        return self.decoded_path / OUTPUT_ANIMATIONS_DIR
+
+    @property
+    def converted_animations_path(self) -> Path:
+        """Return the path to the converted animations directory."""
+        return self.converted_path / OUTPUT_ANIMATIONS_DIR
 
 
 @dataclass

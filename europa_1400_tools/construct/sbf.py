@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa_1400_tools.const import SoundbankType, SoundType
+from europa_1400_tools.const import SoundbankType, SoundType, SourceFormat
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
 
@@ -96,3 +96,9 @@ class Sbf(BaseConstruct):
     soundbanks: list[Soundbank] = csfield(
         cs.Array(cs.this.soundbank_count, DataclassStruct(Soundbank))
     )
+
+    @property
+    def format(self) -> SourceFormat:
+        """Return the format of the construct."""
+
+        return SourceFormat.SBF

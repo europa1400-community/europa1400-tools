@@ -4,17 +4,13 @@ from pathlib import Path
 
 import ffmpeg
 
-from europa_1400_tools.const import (
-    MP3_EXTENSION,
-    WAV_EXTENSION,
-    SoundType,
-    TargetAudioFormat,
-)
+from europa_1400_tools.const import SoundType, TargetFormat
 from europa_1400_tools.construct.sbf import Sbf
 from europa_1400_tools.converter.base_converter import BaseConverter
+from europa_1400_tools.helpers import rebase_path
 
 
-class SbfConverter(BaseConverter[Sbf, dict[str, list[bytes]]]):
+class SbfConverter(BaseConverter):
     """Class for converting SBF files."""
 
     @staticmethod
@@ -93,26 +89,40 @@ class SbfConverter(BaseConverter[Sbf, dict[str, list[bytes]]]):
 
         return mp3_bytes_dict
 
-    @staticmethod
-    def convert(value: Sbf, **kwargs) -> dict[str, list[bytes]]:
+    def convert_file(
+        self,
+        file_path: Path,
+        output_path: Path,
+        base_path: Path,
+        target_format: TargetFormat,
+        create_subdirectories: bool = False,
+    ) -> list[Path]:
         """Convert SBF to another format."""
 
-        target_audio_format: TargetAudioFormat = kwargs.get(
-            "target_audio_format", TargetAudioFormat.WAV
-        )
+        sbf = Sbf.from_file(file_path)
 
         audio_bytes_dict: dict[str, list[bytes]] = {}
+        audio_output_paths: list[Path] = []
 
-        for soundbank in value.soundbanks:
+        if target_format == TargetFormat.MP3:
+            audio_bytes_dict = SbfConverter._convert_to_mp3(sbf)
+        else:
+            audio_bytes_dict = SbfConverter._convert_to_wav(sbf)
+
+        for soundbank in sbf.soundbanks:
             audio_bytes_list: list[bytes] = []
 
             for i, sound in enumerate(soundbank.sounds):
                 sound_definition = soundbank.sound_definitions[i]
-
                 audio_bytes: bytes = sound
 
-                if sound_definition.sound_type != target_audio_format:
-                    if target_audio_format == TargetAudioFormat.MP3:
+                if (
+                    sound_definition.sound_type == SoundType.WAV
+                    and target_format != TargetFormat.WAV
+                    or sound_definition.sound_type == SoundType.MP3
+                    and target_format != TargetFormat.MP3
+                ):
+                    if target_format == TargetFormat.MP3:
                         audio_bytes = SbfConverter._convert_wav_to_mp3(sound)
                     else:
                         audio_bytes = SbfConverter._convert_mp3_to_wav(sound)
@@ -121,33 +131,19 @@ class SbfConverter(BaseConverter[Sbf, dict[str, list[bytes]]]):
 
             audio_bytes_dict[soundbank.soundbank_definition.name] = audio_bytes_list
 
-        return audio_bytes_dict
-
-    @staticmethod
-    def convert_and_export(value: Sbf, output_path: Path, **kwargs) -> list[Path]:
-        """Convert SBF and export to output_path."""
-
-        target_audio_format: TargetAudioFormat = kwargs.get(
-            "target_audio_format", TargetAudioFormat.WAV
-        )
-        audio_output_paths: list[Path] = []
-        audio_bytes_dict: dict[str, list[bytes]]
-        extension: str
-
-        if target_audio_format == TargetAudioFormat.MP3:
-            audio_bytes_dict = SbfConverter._convert_to_mp3(value)
-            extension = MP3_EXTENSION
-        else:
-            audio_bytes_dict = SbfConverter._convert_to_wav(value)
-            extension = WAV_EXTENSION
+        sbf_output_path = rebase_path(file_path.parent, base_path, output_path)
 
         for soundbank_name, audio_bytes_list in audio_bytes_dict.items():
             for i, audio_bytes in enumerate(audio_bytes_list):
-                name = f"{value.name}_{soundbank_name}"
+                name = f"{sbf.name}_{soundbank_name}"
                 if len(audio_bytes_list) > 1:
                     name += f"_{i}"
 
-                audio_output_path = output_path / Path(name).with_suffix(extension)
+                audio_output_path = (
+                    sbf_output_path
+                    / soundbank_name
+                    / Path(name).with_suffix(target_format.extension)
+                )
 
                 if not audio_output_path.parent.exists():
                     audio_output_path.parent.mkdir(parents=True)

@@ -12,6 +12,7 @@ from europa_1400_tools.const import (
     BAF_INI_FILE_LOOP_OUT,
     BAF_INI_FILE_NUM_KEYS,
     BAF_INI_FILE_SECTION,
+    SourceFormat,
 )
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
@@ -185,3 +186,9 @@ class Baf(BaseConstruct):
             vertices_per_key.append(vertices)
 
         return np.array(vertices_per_key, dtype=np.float32)
+
+    @property
+    def format(self) -> SourceFormat:
+        """Return the format of the construct."""
+
+        return SourceFormat.BAF

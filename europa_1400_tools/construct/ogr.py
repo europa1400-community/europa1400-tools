@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
+from europa_1400_tools.const import Format, SourceFormat
 from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
@@ -162,3 +163,7 @@ class Ogr(BaseConstruct):
     group_elements: list[GroupElement] = csfield(
         cs.GreedyRange(DataclassStruct(GroupElement) * is_01)
     )
+
+    @property
+    def format(self) -> SourceFormat:
+        return SourceFormat.OGR

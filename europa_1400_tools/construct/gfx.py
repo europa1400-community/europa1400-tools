@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
+from europa_1400_tools.const import SourceFormat
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
 
@@ -148,3 +149,9 @@ class Gfx(BaseConstruct):
     shapebank_definitions: list[ShapebankDefinition] = csfield(
         cs.Array(lambda ctx: ctx.shapebank_count, DataclassStruct(ShapebankDefinition))
     )
+
+    @property
+    def format(self) -> SourceFormat:
+        """Return the format of the construct."""
+
+        return SourceFormat.GFX

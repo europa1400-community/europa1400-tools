@@ -2,38 +2,55 @@
 
 from enum import Enum, IntEnum
 from pathlib import Path
+from typing import Optional
 
 # Game Directories and Files
 
 DATA_DIR = "Data"
+DATA_PATH = Path(DATA_DIR)
 A_GEB_DAT = "A_Geb.dat"
+AGEB_PATH = DATA_PATH / A_GEB_DAT
 A_OBJ_DAT = "A_Obj.dat"
+AOBJ_PATH = DATA_PATH / A_OBJ_DAT
 
-GFX_DIR = "GFX"
+GFX_DIR = "gfx"
+GFX_PATH = Path(GFX_DIR)
 BMP_DIR = "Bmp"
 GROUNDPLANS_DIR = "GroundPlans"
 MAPS_DIR = "Maps"
 CHARACTER_NAMES_DAT = "character_names.dat"
 GILDE_ADD_ON_GERMAN_GFX = "Gilde_add_on_german.gfx"
+GILDE_ADD_ON_GERMAN_GFX_PATH = GFX_PATH / GILDE_ADD_ON_GERMAN_GFX
 NO_COMPRESSION_INI = "no_compression.ini"
 
 MOVIE_DIR = "Movie"
 MSX_DIR = "msx"
 
 RESOURCES_DIR = "Resources"
+RESOURCES_PATH = Path(RESOURCES_DIR)
 ANIMATIONS_BIN = "animations.bin"
+ANIMATIONS_PATH = RESOURCES_PATH / ANIMATIONS_BIN
 FORMS_BIN0 = "forms.bin0"
+FORMS_BIN0_PATH = RESOURCES_PATH / FORMS_BIN0
 GROUPS_BIN = "groups.bin"
+GROUPS_PATH = RESOURCES_PATH / GROUPS_BIN
 OBJECTS_BIN = "objects.bin"
+OBJECTS_PATH = RESOURCES_PATH / OBJECTS_BIN
 SCENES_BIN = "scenes.bin"
+SCENES_PATH = RESOURCES_PATH / SCENES_BIN
 SCRIPTS_BIN = "scripts.bin"
+SCRIPTS_PATH = RESOURCES_PATH / SCRIPTS_BIN
 SCRIPTS_BIN1 = "scripts.bin1"
+SCRIPTS_PATH1 = RESOURCES_PATH / SCRIPTS_BIN1
 TEXBIN_GERMAN_BIN = "textbin_german.bin"
+TEXBIN_GERMAN_PATH = RESOURCES_PATH / TEXBIN_GERMAN_BIN
 TEXTURES_BIN = "textures.bin"
+TEXTURES_PATH = RESOURCES_PATH / TEXTURES_BIN
 
 SERVER_DIR = "server"
 
 SFX_DIR = "sfx"
+SFX_PATH = Path(SFX_DIR)
 
 AI_METHOD_ADDON_INI = "ai_method_addon.ini"
 ALCHEMY_DATA_INI = "alchemy_data.ini"
@@ -56,6 +73,16 @@ BIN_FILES = [
     SCRIPTS_BIN1,
     TEXBIN_GERMAN_BIN,
     TEXTURES_BIN,
+]
+
+CONVERTIBLE_PATHS = [
+    AOBJ_PATH,
+    AGEB_PATH,
+    GILDE_ADD_ON_GERMAN_GFX_PATH,
+    GROUPS_PATH,
+    OBJECTS_PATH,
+    SCENES_PATH,
+    SFX_PATH,
 ]
 
 # Output Directories and Files
@@ -94,6 +121,15 @@ JSON_EXTENSION = ".json"
 OAM_EXTENSION = ".oam"
 ED3_EXTENSION = ".ed3"
 TXS_EXTENSION = ".txs"
+DAT_EXTENSION = ".dat"
+BIN_EXTENSION = ".bin"
+TXT_EXTENSION = ".txt"
+
+IGNORED_EXTENSIONS = [
+    LFS_EXTENSION,
+    TXS_EXTENSION,
+    TXT_EXTENSION,
+]
 
 # Construct
 
@@ -115,19 +151,134 @@ class SoundType(IntEnum):
 # Converter
 
 
-class TargetAudioFormat(Enum):
-    """Target audio formats."""
+class Format(Enum):
+    """Formats."""
 
-    WAV = "wav"
-    MP3 = "mp3"
+    def __str__(self) -> str:
+        return self.value[0]
+
+    @property
+    def extension(self) -> str:
+        return self.value[1]
 
 
-class TargetObjectFormat(Enum):
-    """Target object formats."""
+class TargetFormat(Format):
+    """Target formats."""
 
-    WAVEFRONT = "wavefront"
-    GLTF = "gltf"
-    GLTF_STATIC = "gltf_static"
+    WAV = ("wav", WAV_EXTENSION)
+    MP3 = ("mp3", MP3_EXTENSION)
+    WAVEFRONT = ("wavefront", OBJ_EXTENSION)
+    GLTF = ("gltf", GLTF_EXTENSION)
+    GLTF_STATIC = ("gltf-static", GLTF_EXTENSION)
+    JSON = ("json", JSON_EXTENSION)
+    PNG = ("png", PNG_EXTENSION)
+
+
+class SourceFormat(Format):
+    """Source formats."""
+
+    BAF = (
+        "baf",
+        BAF_EXTENSION,
+        [],
+        "animations",
+        ANIMATIONS_PATH,
+    )
+    BGF = (
+        "bgf",
+        BGF_EXTENSION,
+        [
+            TargetFormat.WAVEFRONT,
+            TargetFormat.GLTF,
+            TargetFormat.GLTF_STATIC,
+        ],
+        "objects",
+        OBJECTS_PATH,
+    )
+    GFX = (
+        "gfx",
+        GFX_EXTENSION,
+        [
+            TargetFormat.PNG,
+        ],
+        "graphics",
+        GFX_PATH,
+    )
+    SBF = (
+        "sbf",
+        SBF_EXTENSION,
+        [
+            TargetFormat.WAV,
+            TargetFormat.MP3,
+        ],
+        "sounds",
+        RESOURCES_PATH,
+        SFX_PATH,
+    )
+    OGR = (
+        "ogr",
+        OGR_EXTENSION,
+        [
+            TargetFormat.JSON,
+        ],
+        "groups",
+        GROUPS_PATH,
+    )
+    ED3 = (
+        "ed3",
+        ED3_EXTENSION,
+        [
+            TargetFormat.JSON,
+        ],
+        "scenes",
+        SCENES_PATH,
+    )
+    AOBJ = (
+        "aobj",
+        DAT_EXTENSION,
+        [
+            TargetFormat.JSON,
+        ],
+        "object_data",
+        AOBJ_PATH,
+    )
+    AGEB = (
+        "ageb",
+        DAT_EXTENSION,
+        [
+            TargetFormat.JSON,
+        ],
+        "building_data",
+        AGEB_PATH,
+    )
+
+    @property
+    def target_formats(self) -> list[TargetFormat]:
+        return self.value[2]
+
+    @property
+    def command(self) -> str:
+        return self.value[3]
+
+    @property
+    def source_path(self) -> Path | None:
+        return self.value[4]
+
+    @staticmethod
+    def from_path(path: Path) -> Optional["SourceFormat"]:
+        """Return the source format for the given extension."""
+
+        for source_format in SourceFormat:
+            if source_format.source_path is not None and str(path).endswith(
+                str(source_format.source_path)
+            ):
+                return source_format
+
+        for source_format in SourceFormat:
+            if source_format.value[1].lower() == path.suffix.lower():
+                return source_format
+
+        return None
 
 
 class OgrElementType(Enum):

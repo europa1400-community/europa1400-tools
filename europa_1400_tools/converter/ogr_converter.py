@@ -2,9 +2,10 @@ import dataclasses
 import json
 from pathlib import Path
 
-from europa_1400_tools.const import JSON_EXTENSION, OgrElementType
+from europa_1400_tools.const import JSON_EXTENSION, OgrElementType, TargetFormat
 from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.converter.base_converter import BaseConverter
+from europa_1400_tools.helpers import rebase_path
 from europa_1400_tools.models import (
     OgrDummyElementJson,
     OgrElementJson,
@@ -17,16 +18,22 @@ from europa_1400_tools.models import (
 )
 
 
-class OgrConverter(BaseConverter[Ogr, OgrJson]):
+class OgrConverter(BaseConverter):
     """Converter for OGR files."""
 
-    @staticmethod
-    def convert(value: Ogr, **kwargs) -> OgrJson:
-        """Convert value to another format."""
-
+    def convert_file(
+        self,
+        file_path: Path,
+        output_path: Path,
+        base_path: Path,
+        target_format: TargetFormat,
+        create_subdirectories: bool = False,
+    ) -> list[Path]:
+        name = file_path.stem
+        ogr = Ogr.from_file(file_path)
         ogr_elements_json: list[OgrElementJson] = []
 
-        for group_element in value.group_elements:
+        for group_element in ogr.group_elements:
             ogr_element_json: OgrElementJson
 
             if group_element.type == 2:
@@ -124,31 +131,14 @@ class OgrConverter(BaseConverter[Ogr, OgrJson]):
 
             ogr_elements_json.append(ogr_element_json)
 
-        name: str = kwargs.get("name", ogr_elements_json[0].name)
         ogr_json = OgrJson(name, ogr_elements_json)
-
-        return ogr_json
-
-    @staticmethod
-    def convert_and_export(value: Ogr, output_path: Path, **kwargs) -> list[Path]:
-        """Convert value and export to output_path."""
-
-        if not output_path.exists():
-            output_path.mkdir(parents=True)
-
-        if not output_path.is_dir():
-            raise ValueError("Output path is not a directory.")
-
-        name = kwargs.get("name")
-
-        if not name:
-            raise ValueError("Name is not set.")
-
-        ogr_json = OgrConverter.convert(value, **kwargs)
         ogr_dict = dataclasses.asdict(ogr_json)
         ogr_json_text = json.dumps(ogr_dict, indent=4)
 
-        json_output_path = output_path / Path(name).with_suffix(JSON_EXTENSION)
+        json_output_path = rebase_path(file_path.parent, base_path, output_path) / Path(
+            name
+        ).with_suffix(JSON_EXTENSION)
+        json_output_path.parent.mkdir(parents=True, exist_ok=True)
         json_output_path.write_text(ogr_json_text, encoding="utf-8")
 
         return [json_output_path]

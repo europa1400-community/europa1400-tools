@@ -64,7 +64,7 @@ class GltfMesh:
     primitives: list[GltfPrimitive]
 
 
-class ObjectGltfConverter(BaseConverter[Bgf, tuple[str, GLTF2]]):
+class ObjectGltfConverter(BaseConverter):
     """Class for converting the object file to gltf."""
 
     @staticmethod
@@ -127,9 +127,7 @@ class ObjectGltfConverter(BaseConverter[Bgf, tuple[str, GLTF2]]):
         return data_buffer, data_buffer_view, data_accessor
 
     @staticmethod
-    def _convert_mesh(
-        value: Bgf, baf: Baf | None, extracted_textures_path: Path, name: str
-    ) -> Mesh:
+    def _convert_mesh(value: Bgf, baf: Baf | None, name: str) -> Mesh:
         """Convert Bgf to gltf mesh."""
 
         gltf_primitives = []
@@ -270,8 +268,19 @@ class ObjectGltfConverter(BaseConverter[Bgf, tuple[str, GLTF2]]):
         return gltf_mesh
 
     @staticmethod
-    def convert(value: Bgf, **kwargs) -> tuple[str, GLTF2]:
-        """Convert Bgf to gltf."""
+    def convert_and_export(
+        value: Bgf,
+        output_path: Path,
+        name: str,
+        extracted_textures_path: Path,
+    ) -> list[Path]:
+        """Convert Bgf to gltf and export it to the given output path."""
+
+        if not output_path.exists():
+            output_path.mkdir(parents=True)
+
+        if extracted_textures_path is None:
+            raise ValueError("extracted_textures_path is required")
 
         baf: Baf | None = kwargs.get("baf", None)
         extracted_textures_path: Path | None = kwargs.get(
@@ -485,32 +494,6 @@ class ObjectGltfConverter(BaseConverter[Bgf, tuple[str, GLTF2]]):
                 ],
             )
             gltf.animations.append(animation)
-
-        return gltf
-
-    @staticmethod
-    def convert_and_export(value: Bgf, output_path: Path, **kwargs) -> list[Path]:
-        """Convert Bgf to gltf and export it to the given output path."""
-
-        if not output_path.exists():
-            output_path.mkdir(parents=True)
-
-        extracted_textures_path = kwargs.get("extracted_textures_path", None)
-
-        if extracted_textures_path is None:
-            raise ValueError("extracted_textures_path is required")
-
-        path = kwargs.get("path", None)
-
-        if path is None:
-            raise ValueError("path is required")
-
-        name = kwargs.get("name", None)
-
-        if name is None:
-            raise ValueError("name is required")
-
-        gltf = ObjectGltfConverter.convert(value, **kwargs)
 
         gltf_output_path = output_path / Path(name).with_suffix(GLTF_EXTENSION)
 

@@ -8,7 +8,7 @@ from europa_1400_tools.converter.base_converter import BaseConverter
 from europa_1400_tools.logger import logger
 
 
-class ObjectWavefrontConverter(BaseConverter[Bgf, tuple[str, tuple[str, str]]]):
+class ObjectWavefrontConverter(BaseConverter):
     """Class for converting the object file to wavefront."""
 
     @staticmethod
