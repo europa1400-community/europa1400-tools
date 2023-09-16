@@ -13,6 +13,72 @@ from europa_1400_tools.helpers import rebase_path
 class SbfConverter(BaseConverter):
     """Class for converting SBF files."""
 
+    def convert_file(
+        self,
+        file_path: Path,
+        output_path: Path,
+        base_path: Path,
+        target_format: TargetFormat,
+        create_subdirectories: bool = False,
+    ) -> list[Path]:
+        """Convert SBF to another format."""
+
+        sbf = Sbf.from_file(file_path)
+
+        audio_bytes_dict: dict[str, list[bytes]] = {}
+        audio_output_paths: list[Path] = []
+
+        if target_format == TargetFormat.MP3:
+            audio_bytes_dict = SbfConverter._convert_to_mp3(sbf)
+        else:
+            audio_bytes_dict = SbfConverter._convert_to_wav(sbf)
+
+        for soundbank in sbf.soundbanks:
+            audio_bytes_list: list[bytes] = []
+
+            for i, sound in enumerate(soundbank.sounds):
+                sound_definition = soundbank.sound_definitions[i]
+                audio_bytes: bytes = sound
+
+                if (
+                    sound_definition.sound_type == SoundType.WAV
+                    and target_format != TargetFormat.WAV
+                    or sound_definition.sound_type == SoundType.MP3
+                    and target_format != TargetFormat.MP3
+                ):
+                    if target_format == TargetFormat.MP3:
+                        audio_bytes = SbfConverter._convert_wav_to_mp3(sound)
+                    else:
+                        audio_bytes = SbfConverter._convert_mp3_to_wav(sound)
+
+                audio_bytes_list.append(audio_bytes)
+
+            audio_bytes_dict[soundbank.soundbank_definition.name] = audio_bytes_list
+
+        sbf_output_path = rebase_path(file_path.parent, base_path, output_path)
+
+        for soundbank_name, audio_bytes_list in audio_bytes_dict.items():
+            for i, audio_bytes in enumerate(audio_bytes_list):
+                name = f"{sbf.name}_{soundbank_name}"
+                if len(audio_bytes_list) > 1:
+                    name += f"_{i}"
+
+                audio_output_path = (
+                    sbf_output_path
+                    / soundbank_name
+                    / Path(name).with_suffix(target_format.extension)
+                )
+
+                if not audio_output_path.parent.exists():
+                    audio_output_path.parent.mkdir(parents=True)
+
+                with open(audio_output_path, "wb") as wav_output_file:
+                    wav_output_file.write(audio_bytes)
+
+                audio_output_paths.append(audio_output_path)
+
+        return audio_output_paths
+
     @staticmethod
     def _convert_mp3_to_wav(mp3_bytes: bytes) -> bytes:
         """Convert MP3 to WAV"""
@@ -88,69 +154,3 @@ class SbfConverter(BaseConverter):
             mp3_bytes_dict[soundbank.soundbank_definition.name] = mp3_bytes_list
 
         return mp3_bytes_dict
-
-    def convert_file(
-        self,
-        file_path: Path,
-        output_path: Path,
-        base_path: Path,
-        target_format: TargetFormat,
-        create_subdirectories: bool = False,
-    ) -> list[Path]:
-        """Convert SBF to another format."""
-
-        sbf = Sbf.from_file(file_path)
-
-        audio_bytes_dict: dict[str, list[bytes]] = {}
-        audio_output_paths: list[Path] = []
-
-        if target_format == TargetFormat.MP3:
-            audio_bytes_dict = SbfConverter._convert_to_mp3(sbf)
-        else:
-            audio_bytes_dict = SbfConverter._convert_to_wav(sbf)
-
-        for soundbank in sbf.soundbanks:
-            audio_bytes_list: list[bytes] = []
-
-            for i, sound in enumerate(soundbank.sounds):
-                sound_definition = soundbank.sound_definitions[i]
-                audio_bytes: bytes = sound
-
-                if (
-                    sound_definition.sound_type == SoundType.WAV
-                    and target_format != TargetFormat.WAV
-                    or sound_definition.sound_type == SoundType.MP3
-                    and target_format != TargetFormat.MP3
-                ):
-                    if target_format == TargetFormat.MP3:
-                        audio_bytes = SbfConverter._convert_wav_to_mp3(sound)
-                    else:
-                        audio_bytes = SbfConverter._convert_mp3_to_wav(sound)
-
-                audio_bytes_list.append(audio_bytes)
-
-            audio_bytes_dict[soundbank.soundbank_definition.name] = audio_bytes_list
-
-        sbf_output_path = rebase_path(file_path.parent, base_path, output_path)
-
-        for soundbank_name, audio_bytes_list in audio_bytes_dict.items():
-            for i, audio_bytes in enumerate(audio_bytes_list):
-                name = f"{sbf.name}_{soundbank_name}"
-                if len(audio_bytes_list) > 1:
-                    name += f"_{i}"
-
-                audio_output_path = (
-                    sbf_output_path
-                    / soundbank_name
-                    / Path(name).with_suffix(target_format.extension)
-                )
-
-                if not audio_output_path.parent.exists():
-                    audio_output_path.parent.mkdir(parents=True)
-
-                with open(audio_output_path, "wb") as wav_output_file:
-                    wav_output_file.write(audio_bytes)
-
-                audio_output_paths.append(audio_output_path)
-
-        return audio_output_paths

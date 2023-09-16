@@ -30,14 +30,18 @@ class BaseConstruct(ABC, DataclassMixin):
         """Return the dict representation of the construct."""
 
         obj_dict = asdict(self)
-
-        for key, value in obj_dict.items():
-            if isinstance(value, Path):
-                obj_dict[key] = str(value)
-            elif isinstance(value, dict):
-                obj_dict[key] = self.__class__.to_dict(value)
+        obj_dict = self._clean_dict(obj_dict)
 
         return obj_dict
+
+    def _clean_dict(self, dict_value: dict) -> dict:
+        for key, value in dict_value.items():
+            if isinstance(value, Path):
+                dict_value[key] = str(value)
+            elif isinstance(value, dict):
+                dict_value[key] = self._clean_dict(value)
+
+        return dict_value
 
     def to_json(self) -> str:
         """Return the json representation of the construct."""
