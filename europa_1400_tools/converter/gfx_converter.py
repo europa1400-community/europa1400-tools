@@ -10,6 +10,41 @@ from europa_1400_tools.converter.base_converter import BaseConverter
 class GfxConverter(BaseConverter):
     """Class for converting the GFX file."""
 
+    def convert_file(
+        self,
+        file_path: Path,
+        output_path: Path,
+        base_path: Path,
+        target_format: TargetFormat,
+        create_subdirectories: bool = False,
+    ) -> list[Path]:
+        """Convert Gfx graphics to images."""
+
+        gfx = Gfx.from_file(file_path)
+        output_file_paths: list[Path] = []
+        shapebank_images: dict[str, dict[str, Image.Image]] = {}
+
+        for shapebank_definition in gfx.shapebank_definitions:
+            if not shapebank_definition.shapebank:
+                continue
+            images = self.convert_shapebank(shapebank_definition)
+            shapebank_images[shapebank_definition.name] = images
+
+        for name, images in shapebank_images.items():
+            shapebank_output_path = output_path / name
+
+            if not shapebank_output_path.exists():
+                shapebank_output_path.mkdir(parents=True)
+
+            for image_name, image in images.items():
+                output_file_path = shapebank_output_path / Path(image_name).with_suffix(
+                    PNG_EXTENSION
+                )
+                image.save(output_file_path)
+                output_file_paths.append(output_file_path)
+
+        return output_file_paths
+
     def convert_graphic(
         self,
         graphic: Graphic,
@@ -69,38 +104,3 @@ class GfxConverter(BaseConverter):
             images[graphic_name] = self.convert_graphic(graphic)
 
         return images
-
-    def convert_file(
-        self,
-        file_path: Path,
-        output_path: Path,
-        base_path: Path,
-        target_format: TargetFormat,
-        create_subdirectories: bool = False,
-    ) -> list[Path]:
-        """Convert Gfx graphics to images."""
-
-        gfx = Gfx.from_file(file_path)
-        output_file_paths: list[Path] = []
-        shapebank_images: dict[str, dict[str, Image.Image]] = {}
-
-        for shapebank_definition in gfx.shapebank_definitions:
-            if not shapebank_definition.shapebank:
-                continue
-            images = self.convert_shapebank(shapebank_definition)
-            shapebank_images[shapebank_definition.name] = images
-
-        for name, images in shapebank_images.items():
-            shapebank_output_path = output_path / name
-
-            if not shapebank_output_path.exists():
-                shapebank_output_path.mkdir(parents=True)
-
-            for image_name, image in images.items():
-                output_file_path = shapebank_output_path / Path(image_name).with_suffix(
-                    PNG_EXTENSION
-                )
-                image.save(output_file_path)
-                output_file_paths.append(output_file_path)
-
-        return output_file_paths

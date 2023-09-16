@@ -23,9 +23,9 @@ class BaseConverter(ABC):
 
         self.common_options = common_options
 
-    @staticmethod
     @abstractmethod
     def convert_file(
+        self,
         file_path: Path,
         output_path: Path,
         base_path: Path,
