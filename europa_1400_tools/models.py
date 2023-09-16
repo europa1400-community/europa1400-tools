@@ -14,9 +14,15 @@ from europa_1400_tools.const import (
     GFX_DIR,
     GILDE_ADD_ON_GERMAN_GFX,
     OUTPUT_ANIMATIONS_DIR,
+    OUTPUT_GFX_DIR,
+    OUTPUT_GROUPS_DIR,
     OUTPUT_OBJECTS_DIR,
+    OUTPUT_SCENES_DIR,
+    OUTPUT_SFX_DIR,
+    OUTPUT_TEXTURES_DIR,
     RESOURCES_DIR,
     SFX_DIR,
+    TEXTURES_BIN,
 )
 
 
@@ -41,14 +47,22 @@ class CommonOptions:
     @property
     def gfx_game_path(self) -> Path:
         """Return the path to the GFX directory."""
-
         return self.game_path / GFX_DIR / GILDE_ADD_ON_GERMAN_GFX
 
     @property
     def sfx_game_path(self) -> Path:
         """Return the path to the SFX directory."""
-
         return self.game_path / SFX_DIR
+
+    @property
+    def textures_bin_path(self) -> Path:
+        """Return the path to the textures file."""
+        return self.resources_game_path / TEXTURES_BIN
+
+    @property
+    def extracted_textures_path(self) -> Path:
+        """Return the path to the extracted textures directory."""
+        return self.output_path / EXTRACTED_DIR / OUTPUT_TEXTURES_DIR
 
     @property
     def extracted_path(self) -> Path:
@@ -104,6 +118,26 @@ class CommonOptions:
     def converted_animations_path(self) -> Path:
         """Return the path to the converted animations directory."""
         return self.converted_path / OUTPUT_ANIMATIONS_DIR
+
+    @property
+    def converted_gfx_path(self) -> Path:
+        """Return the path to the converted gfx directory."""
+        return self.converted_path / OUTPUT_GFX_DIR
+
+    @property
+    def converted_sfx_path(self) -> Path:
+        """Return the path to the converted sfx directory."""
+        return self.converted_path / OUTPUT_SFX_DIR
+
+    @property
+    def converted_scenes_path(self) -> Path:
+        """Return the path to the converted scenes directory."""
+        return self.converted_path / OUTPUT_SCENES_DIR
+
+    @property
+    def converted_groups_path(self) -> Path:
+        """Return the path to the converted groups directory."""
+        return self.converted_path / OUTPUT_GROUPS_DIR
 
 
 @dataclass

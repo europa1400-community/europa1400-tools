@@ -20,6 +20,8 @@ from europa_1400_tools.const import (
 from europa_1400_tools.converter.ageb_converter import AGebConverter
 from europa_1400_tools.converter.aobj_converter import AObjConverter
 from europa_1400_tools.converter.base_converter import BaseConverter
+from europa_1400_tools.converter.bgf_gltf_converter import BgfGltfConverter
+from europa_1400_tools.converter.bgf_wavefront_converter import BgfWavefrontConverter
 from europa_1400_tools.converter.ed3_converter import Ed3Converter
 from europa_1400_tools.converter.gfx_converter import GfxConverter
 from europa_1400_tools.converter.ogr_converter import OgrConverter
@@ -121,16 +123,24 @@ def convert(
                 output_path = common_options.converted_path
             elif source_format == SourceFormat.OGR:
                 converter = OgrConverter(common_options)
-                output_path = common_options.converted_path / OUTPUT_GROUPS_DIR
+                output_path = common_options.converted_groups_path
             elif source_format == SourceFormat.GFX:
                 converter = GfxConverter(common_options)
-                output_path = common_options.converted_path / OUTPUT_GFX_DIR
+                output_path = common_options.converted_gfx_path
             elif source_format == SourceFormat.SBF:
                 converter = SbfConverter(common_options)
-                output_path = common_options.converted_path / OUTPUT_SFX_DIR
+                output_path = common_options.converted_sfx_path
             elif source_format == SourceFormat.ED3:
                 converter = Ed3Converter(common_options)
-                output_path = common_options.converted_path / OUTPUT_SCENES_DIR
+                output_path = common_options.converted_scenes_path
+            elif source_format == SourceFormat.BGF:
+                converter = (
+                    BgfGltfConverter(common_options)
+                    if _target_format == TargetFormat.GLTF
+                    or _target_format == TargetFormat.GLTF_STATIC
+                    else BgfWavefrontConverter(common_options)
+                )
+                output_path = common_options.converted_objects_path
             else:
                 continue
 

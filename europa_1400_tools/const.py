@@ -98,6 +98,7 @@ OUTPUT_GROUPS_DIR = "groups"
 OUTPUT_ANIMATIONS_DIR = "animations"
 OUTPUT_SCENES_DIR = "scenes"
 OUTPUT_OBJECTS_DIR = "objects"
+OUTPUT_TEXTURES_DIR = "textures"
 MAPPED_ANIMATONS_PICKLE = "mapped_animations.pickle"
 
 # File Extensions

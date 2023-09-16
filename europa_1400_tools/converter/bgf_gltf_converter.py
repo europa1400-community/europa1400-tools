@@ -33,10 +33,11 @@ from pygltflib import (
     TextureInfo,
 )
 
-from europa_1400_tools.const import GLTF_EXTENSION
+from europa_1400_tools.const import GLTF_EXTENSION, TargetFormat
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.base_converter import BaseConverter
+from europa_1400_tools.converter.bgf_converter import BgfConverter
 from europa_1400_tools.helpers import (
     bitmap_to_gltf_uri,
     bytes_to_gltf_uri,
@@ -64,208 +65,18 @@ class GltfMesh:
     primitives: list[GltfPrimitive]
 
 
-class ObjectGltfConverter(BaseConverter):
-    """Class for converting the object file to gltf."""
+class BgfGltfConverter(BgfConverter):
+    """Class for converting BGF files to gLTF."""
 
-    @staticmethod
-    def _add_gltf_data(
-        gltf: GLTF2,
-        data: np.ndarray,
-        data_type: int,
-        data_format: str,
-        name: str = "",
-        minmax: bool = True,
-        buffer_type: int | None = None,
-    ) -> tuple[Buffer, BufferView, Accessor]:
-        data_bytes = data.tobytes()
-
-        data_buffer = Buffer(
-            byteLength=len(data_bytes),
-            uri=bytes_to_gltf_uri(data_bytes),
-            extras={
-                "name": name,
-            },
-        )
-        gltf.buffers.append(data_buffer)
-
-        data_buffer_view = BufferView(
-            buffer=len(gltf.buffers) - 1,
-            byteLength=len(data_bytes),
-            byteOffset=0,
-            target=buffer_type,
-            extras={
-                "name": name,
-            },
-        )
-        gltf.bufferViews.append(data_buffer_view)
-
-        min: list[float] | None = None
-        max: list[float] | None = None
-
-        if minmax:
-            if data.ndim == 1:
-                min = [float(np.min(data))]
-                max = [float(np.max(data))]
-            else:
-                min = [float(np.min(data[:, i])) for i in range(data.shape[1])]
-                max = [float(np.max(data[:, i])) for i in range(data.shape[1])]
-
-        data_accessor = Accessor(
-            bufferView=len(gltf.bufferViews) - 1,
-            byteOffset=0,
-            componentType=data_type,
-            count=len(data),
-            type=data_format,
-            min=min,
-            max=max,
-            extras={
-                "name": name,
-            },
-        )
-        gltf.accessors.append(data_accessor)
-
-        return data_buffer, data_buffer_view, data_accessor
-
-    @staticmethod
-    def _convert_mesh(value: Bgf, baf: Baf | None, name: str) -> Mesh:
-        """Convert Bgf to gltf mesh."""
-
-        gltf_primitives = []
-        gltf_mesh = GltfMesh(
-            name=name,
-            primitives=gltf_primitives,
-        )
-
-        texture_indices = set(
-            polygon.texture_index for polygon in value.mapping_object.polygons
-        )
-
-        bgf_vertices = np.array(
-            [
-                [
-                    vertex_mapping.vertex1.x,
-                    vertex_mapping.vertex1.y,
-                    vertex_mapping.vertex1.z,
-                ]
-                for vertex_mapping in value.mapping_object.vertex_mappings
-            ],
-            dtype=np.float32,
-        )
-
-        bgf_normals = np.array(
-            [
-                [
-                    vertex_mapping.vertex2.x,
-                    vertex_mapping.vertex2.y,
-                    vertex_mapping.vertex2.z,
-                ]
-                for vertex_mapping in value.mapping_object.vertex_mappings
-            ],
-            dtype=np.float32,
-        )
-
-        bgf_vertices_per_key = None
-        if baf is not None:
-            bgf_vertices_per_key = baf.get_vertices_per_key()
-
-        for texture_index in texture_indices:
-            # skip indices of missing textures
-            if texture_index >= len(value.footer.texture_names):
-                continue
-
-            indices = []
-            vertices = []
-            normals = []
-            uvs = []
-
-            vertices_per_key = None
-            if bgf_vertices_per_key is not None:
-                # create a new empty array of the same shape as bgf_vertices_per_key,
-                # but the axis=1 will be variable and be appended to
-                vertices_per_key = [[] for _ in range(bgf_vertices_per_key.shape[0])]
-
-            polygons = [
-                polygon
-                for polygon in value.mapping_object.polygons
-                if polygon.texture_index == texture_index
-            ]
-            indices_per_polygon = np.array(
-                [
-                    [
-                        polygon.face.a,
-                        polygon.face.b,
-                        polygon.face.c,
-                    ]
-                    for polygon in polygons
-                ]
-            )
-            uvs_per_polygon = np.array(
-                [
-                    [
-                        [
-                            polygon.texture_mapping.a.u,
-                            polygon.texture_mapping.a.v,
-                        ],
-                        [
-                            polygon.texture_mapping.b.u,
-                            polygon.texture_mapping.b.v,
-                        ],
-                        [
-                            polygon.texture_mapping.c.u,
-                            polygon.texture_mapping.c.v,
-                        ],
-                    ]
-                    for polygon in polygons
-                ]
-            )
-
-            vertex_dict = {}
-
-            for face, uvs_per_face in zip(indices_per_polygon, uvs_per_polygon):
-                for vertex_index, uv in zip(face, uvs_per_face):
-                    key = (vertex_index, uv[0], uv[1])
-                    if key not in vertex_dict:
-                        vertex_dict[key] = len(vertices)
-                        vertex = bgf_vertices[vertex_index]
-                        vertices.append(vertex)
-                        normals.append(bgf_normals[vertex_index])
-                        uvs.append(uv)
-
-                        if vertices_per_key is not None:
-                            for keyframe in range(bgf_vertices_per_key.shape[0]):
-                                vertex_per_key = bgf_vertices_per_key[keyframe][
-                                    vertex_index
-                                ]
-                                vertices_per_key[keyframe].append(vertex_per_key)
-
-                    index = vertex_dict[key]
-                    indices.append(index)
-
-            indices = np.array(indices, dtype=np.uint32)
-            vertices = np.array(vertices, dtype=np.float32)
-            normals = np.array(normals, dtype=np.float32)
-            uvs = np.array(uvs, dtype=np.float32)
-
-            if vertices_per_key is not None:
-                vertices_per_key = np.array(vertices_per_key, dtype=np.float32)
-
-            if np.isnan(uvs).any():
-                uvs = np.nan_to_num(uvs)
-
-            if vertices_per_key is not None and np.isnan(vertices_per_key).any():
-                raise ValueError("vertices_per_key contains nan")
-
-            gltf_primitive = GltfPrimitive(
-                indices=indices,
-                vertices=vertices,
-                vertices_per_key=vertices_per_key,
-                normals=normals,
-                uvs=uvs,
-                texture_index=texture_index,
-            )
-            gltf_primitives.append(gltf_primitive)
-
-        return gltf_mesh
+    def convert_bgf_file(
+        self,
+        file_path: Path,
+        output_path: Path,
+        base_path: Path,
+        target_format: TargetFormat,
+        create_subdirectories: bool = False,
+    ) -> list[Path]:
+        bgf = Bgf.from_file(file_path)
 
     @staticmethod
     def convert_and_export(
@@ -500,3 +311,203 @@ class ObjectGltfConverter(BaseConverter):
         gltf.save(gltf_output_path)
 
         return [gltf_output_path]
+
+    @staticmethod
+    def _add_gltf_data(
+        gltf: GLTF2,
+        data: np.ndarray,
+        data_type: int,
+        data_format: str,
+        name: str = "",
+        minmax: bool = True,
+        buffer_type: int | None = None,
+    ) -> tuple[Buffer, BufferView, Accessor]:
+        data_bytes = data.tobytes()
+
+        data_buffer = Buffer(
+            byteLength=len(data_bytes),
+            uri=bytes_to_gltf_uri(data_bytes),
+            extras={
+                "name": name,
+            },
+        )
+        gltf.buffers.append(data_buffer)
+
+        data_buffer_view = BufferView(
+            buffer=len(gltf.buffers) - 1,
+            byteLength=len(data_bytes),
+            byteOffset=0,
+            target=buffer_type,
+            extras={
+                "name": name,
+            },
+        )
+        gltf.bufferViews.append(data_buffer_view)
+
+        min: list[float] | None = None
+        max: list[float] | None = None
+
+        if minmax:
+            if data.ndim == 1:
+                min = [float(np.min(data))]
+                max = [float(np.max(data))]
+            else:
+                min = [float(np.min(data[:, i])) for i in range(data.shape[1])]
+                max = [float(np.max(data[:, i])) for i in range(data.shape[1])]
+
+        data_accessor = Accessor(
+            bufferView=len(gltf.bufferViews) - 1,
+            byteOffset=0,
+            componentType=data_type,
+            count=len(data),
+            type=data_format,
+            min=min,
+            max=max,
+            extras={
+                "name": name,
+            },
+        )
+        gltf.accessors.append(data_accessor)
+
+        return data_buffer, data_buffer_view, data_accessor
+
+    @staticmethod
+    def _convert_mesh(value: Bgf, baf: Baf | None, name: str) -> Mesh:
+        """Convert Bgf to gltf mesh."""
+
+        gltf_primitives = []
+        gltf_mesh = GltfMesh(
+            name=name,
+            primitives=gltf_primitives,
+        )
+
+        texture_indices = set(
+            polygon.texture_index for polygon in value.mapping_object.polygons
+        )
+
+        bgf_vertices = np.array(
+            [
+                [
+                    vertex_mapping.vertex1.x,
+                    vertex_mapping.vertex1.y,
+                    vertex_mapping.vertex1.z,
+                ]
+                for vertex_mapping in value.mapping_object.vertex_mappings
+            ],
+            dtype=np.float32,
+        )
+
+        bgf_normals = np.array(
+            [
+                [
+                    vertex_mapping.vertex2.x,
+                    vertex_mapping.vertex2.y,
+                    vertex_mapping.vertex2.z,
+                ]
+                for vertex_mapping in value.mapping_object.vertex_mappings
+            ],
+            dtype=np.float32,
+        )
+
+        bgf_vertices_per_key = None
+        if baf is not None:
+            bgf_vertices_per_key = baf.get_vertices_per_key()
+
+        for texture_index in texture_indices:
+            # skip indices of missing textures
+            if texture_index >= len(value.footer.texture_names):
+                continue
+
+            indices = []
+            vertices = []
+            normals = []
+            uvs = []
+
+            vertices_per_key = None
+            if bgf_vertices_per_key is not None:
+                # create a new empty array of the same shape as bgf_vertices_per_key,
+                # but the axis=1 will be variable and be appended to
+                vertices_per_key = [[] for _ in range(bgf_vertices_per_key.shape[0])]
+
+            polygons = [
+                polygon
+                for polygon in value.mapping_object.polygons
+                if polygon.texture_index == texture_index
+            ]
+            indices_per_polygon = np.array(
+                [
+                    [
+                        polygon.face.a,
+                        polygon.face.b,
+                        polygon.face.c,
+                    ]
+                    for polygon in polygons
+                ]
+            )
+            uvs_per_polygon = np.array(
+                [
+                    [
+                        [
+                            polygon.texture_mapping.a.u,
+                            polygon.texture_mapping.a.v,
+                        ],
+                        [
+                            polygon.texture_mapping.b.u,
+                            polygon.texture_mapping.b.v,
+                        ],
+                        [
+                            polygon.texture_mapping.c.u,
+                            polygon.texture_mapping.c.v,
+                        ],
+                    ]
+                    for polygon in polygons
+                ]
+            )
+
+            vertex_dict = {}
+
+            for face, uvs_per_face in zip(indices_per_polygon, uvs_per_polygon):
+                for vertex_index, uv in zip(face, uvs_per_face):
+                    key = (vertex_index, uv[0], uv[1])
+                    if key not in vertex_dict:
+                        vertex_dict[key] = len(vertices)
+                        vertex = bgf_vertices[vertex_index]
+                        vertices.append(vertex)
+                        normals.append(bgf_normals[vertex_index])
+                        uvs.append(uv)
+
+                        if vertices_per_key is not None:
+                            for keyframe in range(bgf_vertices_per_key.shape[0]):
+                                vertex_per_key = bgf_vertices_per_key[keyframe][
+                                    vertex_index
+                                ]
+                                vertices_per_key[keyframe].append(vertex_per_key)
+
+                    index = vertex_dict[key]
+                    indices.append(index)
+
+            indices = np.array(indices, dtype=np.uint32)
+            vertices = np.array(vertices, dtype=np.float32)
+            normals = np.array(normals, dtype=np.float32)
+            uvs = np.array(uvs, dtype=np.float32)
+
+            if vertices_per_key is not None:
+                vertices_per_key = np.array(vertices_per_key, dtype=np.float32)
+
+            if np.isnan(uvs).any():
+                uvs = np.nan_to_num(uvs)
+
+            if vertices_per_key is not None and np.isnan(vertices_per_key).any():
+                raise ValueError("vertices_per_key contains nan")
+
+            gltf_primitive = GltfPrimitive(
+                indices=indices,
+                vertices=vertices,
+                vertices_per_key=vertices_per_key,
+                normals=normals,
+                uvs=uvs,
+                texture_index=texture_index,
+            )
+            gltf_primitives.append(gltf_primitive)
+
+        return gltf_mesh

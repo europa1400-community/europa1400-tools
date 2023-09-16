@@ -2,25 +2,60 @@ import logging
 import shutil
 from pathlib import Path
 
-from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION
+from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION, TargetFormat
 from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
-from europa_1400_tools.converter.base_converter import BaseConverter
+from europa_1400_tools.converter.bgf_converter import BgfConverter
 
 
-class ObjectWavefrontConverter(BaseConverter):
-    """Class for converting the object file to wavefront."""
+class BgfWavefrontConverter(BgfConverter):
+    """Class for converting BGF files to wavefront."""
+
+    def convert_bgf_file(
+        self,
+        file_path: Path,
+        output_path: Path,
+        base_path: Path,
+        target_format: TargetFormat,
+        create_subdirectories: bool = False,
+    ) -> list[Path]:
+        name = file_path.stem
+        obj_output_path = output_path / Path(name).with_suffix(OBJ_EXTENSION)
+        mtl_output_path = output_path / Path(name).with_suffix(MTL_EXTENSION)
+
+        bgf = Bgf.from_file(file_path)
+
+        name, (obj_string, mtl_string) = self.convert_bgf_to_wavefront(bgf)
+
+        with open(obj_output_path, "w") as obj_file:
+            obj_file.write(obj_string)
+
+        with open(mtl_output_path, "w") as mtl_file:
+            mtl_file.write(mtl_string)
+
+        texture_names = [Path(texture.name).stem.lower() for texture in bgf.textures]
+        texture_paths = [
+            texture_path
+            for texture_path in self.extracted_textures_paths
+            if texture_path.stem.lower() in texture_names
+        ]
+
+        if len(texture_paths) != len(texture_names):
+            logging.debug(
+                "Amount of texture files found differs "
+                "from amount specified specified in bgf file."
+            )
+
+        for texture_path in texture_paths:
+            shutil.copy(texture_path, output_path)
+
+        return [obj_output_path]
 
     @staticmethod
-    def convert(value: Bgf, **kwargs) -> tuple[str, tuple[str, str]]:
+    def convert_bgf_to_wavefront(bgf: Bgf) -> tuple[str, tuple[str, str]]:
         """Convert Bgf to wavefront."""
 
-        path = kwargs.get("path", None)
-
-        if path is None:
-            raise ValueError("path is required")
-
-        name: str = path.stem
+        name: str = bgf.path.stem
         obj_string: str = ""
         mtl_name = Path(name).with_suffix(MTL_EXTENSION)
         mtl_string: str = ""
@@ -29,14 +64,14 @@ class ObjectWavefrontConverter(BaseConverter):
 
         models: list[BgfModel] = [
             game_object.model
-            for game_object in value.game_objects
+            for game_object in bgf.game_objects
             if game_object.model is not None
         ]
 
         if not models:
             raise ValueError("no models found")
 
-        texture_names = [texture.name for texture in value.textures]
+        texture_names = [texture.name for texture in bgf.textures]
 
         material_names = [texture_name.split(".")[0] for texture_name in texture_names]
 
@@ -57,9 +92,9 @@ class ObjectWavefrontConverter(BaseConverter):
             normals: list[Vertex] = [polygon.normal for polygon in model.polygons]
 
             materials: list[str] = [
-                value.textures[texture_index].name.split(".")[0]
+                bgf.textures[texture_index].name.split(".")[0]
                 for texture_index in texture_indices
-                if texture_index < len(value.textures)
+                if texture_index < len(bgf.textures)
             ]
 
             obj_string += f"o group{i}\n"
@@ -96,52 +131,3 @@ class ObjectWavefrontConverter(BaseConverter):
             mtl_string += f"map_Kd {texture_name}\n"
 
         return name, (obj_string, mtl_string)
-
-    @staticmethod
-    def convert_and_export(value: Bgf, output_path: Path, **kwargs) -> list[Path]:
-        """Convert Bgf to wavefront."""
-
-        if not output_path.exists():
-            output_path.mkdir(parents=True)
-
-        extracted_textures_path = kwargs.get("extracted_textures_path", None)
-
-        if extracted_textures_path is None:
-            raise ValueError("extracted_textures_path is required")
-
-        name, (obj_string, mtl_string) = ObjectWavefrontConverter.convert(
-            value, **kwargs
-        )
-
-        obj_output_path = output_path / Path(name).with_suffix(OBJ_EXTENSION)
-        mtl_output_path = output_path / Path(name).with_suffix(MTL_EXTENSION)
-
-        with open(obj_output_path, "w") as obj_file:
-            obj_file.write(obj_string)
-
-        with open(mtl_output_path, "w") as mtl_file:
-            mtl_file.write(mtl_string)
-
-        def either(c):
-            return "[%s%s]" % (c.lower(), c.upper()) if c.isalpha() else c
-
-        texture_names = [
-            "".join(map(either, texture.name)) for texture in value.textures
-        ]
-
-        texture_files_nested = [
-            list(extracted_textures_path.rglob(texture_name))
-            for texture_name in texture_names
-        ]
-        texture_files = [item for sublist in texture_files_nested for item in sublist]
-
-        if len(texture_files) != len(texture_names):
-            logging.warning(
-                "Amount of texture files found differs "
-                "from amount specified specified in bgf file."
-            )
-
-        for texture_file in texture_files:
-            shutil.copy(texture_file, output_path)
-
-        return [obj_output_path]

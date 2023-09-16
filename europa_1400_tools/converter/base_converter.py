@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeVar, final
 
 from europa_1400_tools.const import SourceFormat, TargetFormat
 from europa_1400_tools.models import CommonOptions
@@ -34,6 +34,7 @@ class BaseConverter(ABC):
     ) -> list[Path]:
         """Convert file and export to output_path."""
 
+    @final
     def convert(
         self,
         file_paths: list[Path],
