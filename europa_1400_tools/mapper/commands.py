@@ -1,5 +1,6 @@
 """Command line interface for europa_1400_tools."""
 
+import logging
 import pickle
 from pathlib import Path
 from typing import Annotated, Optional
@@ -17,7 +18,6 @@ from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.decoder.commands import decode_animations, decode_objects
 from europa_1400_tools.helpers import get_files
-from europa_1400_tools.logger import logger
 from europa_1400_tools.mapper.animations_mapper import AnimationsMapper
 from europa_1400_tools.models import CommonOptions
 
@@ -97,7 +97,7 @@ def map_animations(
 
         if len(mapped_bgfs) == 0:
             missing_count += 1
-            logger.warning(f"Could not find mapping for {stripped_baf_path}.")
+            logging.warning(f"Could not find mapping for {stripped_baf_path}.")
 
             baf_to_bgfs[stripped_baf_path] = []
 
@@ -107,7 +107,7 @@ def map_animations(
             stripped_bgf_path = Path(bgf).relative_to(extracted_objects_path)
             baf_to_bgfs[stripped_baf_path] = [stripped_bgf_path]
 
-    logger.info(f"Found mapping for {len(bafs) - missing_count} animations.")
+    logging.info(f"Found mapping for {len(bafs) - missing_count} animations.")
 
     with open(output_path, "wb") as output_file:
         pickle.dump(baf_to_bgfs, output_file)

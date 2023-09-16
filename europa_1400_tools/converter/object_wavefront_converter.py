@@ -1,3 +1,4 @@
+import logging
 import shutil
 from pathlib import Path
 
@@ -5,7 +6,6 @@ from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION
 from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
 from europa_1400_tools.converter.base_converter import BaseConverter
-from europa_1400_tools.logger import logger
 
 
 class ObjectWavefrontConverter(BaseConverter):
@@ -136,7 +136,7 @@ class ObjectWavefrontConverter(BaseConverter):
         texture_files = [item for sublist in texture_files_nested for item in sublist]
 
         if len(texture_files) != len(texture_names):
-            logger.warning(
+            logging.warning(
                 "Amount of texture files found differs "
                 "from amount specified specified in bgf file."
             )

@@ -1,5 +1,6 @@
 """Command line interface for europa_1400_tools."""
 
+import logging
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -22,7 +23,7 @@ def extract(
 ) -> list[Path]:
     """Extract all files."""
 
-    typer.echo("Extracting all zipped files from the game.")
+    logging.info("Extracting all zipped files from the game.")
 
     common_options: CommonOptions = ctx.obj
     output_paths: list[Path] = []
@@ -49,7 +50,7 @@ def extract_file(file_path: Path, output_path: Path) -> list[Path]:
     if not output_path.exists():
         output_path.mkdir(parents=True)
 
-    typer.echo(f"Extracting {file_path.name} to {output_path}.")
+    logging.info(f"Extracting {file_path.name} to {output_path}.")
 
     file_paths = extract_zipfile(file_path, output_path)
 

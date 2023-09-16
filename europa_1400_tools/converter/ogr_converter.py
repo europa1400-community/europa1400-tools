@@ -21,8 +21,8 @@ from europa_1400_tools.models import (
 class OgrConverter(BaseConverter):
     """Converter for OGR files."""
 
+    @staticmethod
     def convert_file(
-        self,
         file_path: Path,
         output_path: Path,
         base_path: Path,
