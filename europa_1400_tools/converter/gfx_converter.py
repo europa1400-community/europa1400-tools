@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from PIL import Image
@@ -45,6 +46,25 @@ class GfxConverter(BaseConverter):
 
         return output_file_paths
 
+    def convert_shapebank(
+        self,
+        shapebank_definition: ShapebankDefinition,
+    ) -> dict[str, Image.Image]:
+        """Convert Shapebank graphics to images."""
+
+        logging.debug(f"Converting shapebank {shapebank_definition.name}")
+
+        if not shapebank_definition.shapebank:
+            raise ValueError("Shapebank not found.")
+
+        images: dict[str, Image.Image] = {}
+
+        for i, graphic in enumerate(shapebank_definition.shapebank.graphics):
+            graphic_name = f"{shapebank_definition.name}_{i}"
+            images[graphic_name] = self.convert_graphic(graphic)
+
+        return images
+
     def convert_graphic(
         self,
         graphic: Graphic,
@@ -87,20 +107,3 @@ class GfxConverter(BaseConverter):
             return image
 
         raise ValueError("Graphic has no pixel data or graphic rows")
-
-    def convert_shapebank(
-        self,
-        shapebank_definition: ShapebankDefinition,
-    ) -> dict[str, Image.Image]:
-        """Convert Shapebank graphics to images."""
-
-        if not shapebank_definition.shapebank:
-            raise ValueError("Shapebank not found.")
-
-        images: dict[str, Image.Image] = {}
-
-        for i, graphic in enumerate(shapebank_definition.shapebank.graphics):
-            graphic_name = f"{shapebank_definition.name}_{i}"
-            images[graphic_name] = self.convert_graphic(graphic)
-
-        return images
