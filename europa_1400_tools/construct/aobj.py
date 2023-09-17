@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
 import construct as cs
-from construct_typed import DataclassStruct, csfield
+from construct_typed import DataclassMixin, DataclassStruct, csfield
 
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
 
 @dataclass
-class Object(BaseConstruct):
+class Object(DataclassMixin):
     """Structure of object."""
 
     object_type: int = csfield(cs.Byte)

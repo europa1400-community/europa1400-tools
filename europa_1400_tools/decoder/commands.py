@@ -1,5 +1,6 @@
 """Commands for the decoder."""
 
+import logging
 import pickle
 import time
 from pathlib import Path
@@ -52,39 +53,49 @@ def decode_all(ctx: typer.Context) -> None:
 
     decode_ageb(ctx)
     decode_aobj(ctx)
-    decode_animations(ctx)
+    cmd_decode_animations(ctx)
     decode_gfx(ctx)
     decode_groups(ctx)
-    decode_objects(ctx)
+    cmd_decode_objects(ctx)
     decode_scenes(ctx)
     decode_sfx(ctx)
 
 
 @app.command("animations")
-def decode_animations(
+def cmd_decode_animations(
     ctx: typer.Context,
     file_paths: Annotated[
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".baf files to decode."),
     ] = None,
 ) -> list[Path]:
-    """Decode BAF files."""
+    """Command to decode BAF files."""
 
     common_options: CommonOptions = ctx.obj
-    extracted_animations_path = common_options.extracted_path / OUTPUT_ANIMATIONS_DIR
-    decoded_animations_path = common_options.decoded_path / OUTPUT_ANIMATIONS_DIR
-    pickle_output_paths: list[Path] = []
 
     if not file_paths:
-        animations_bin_path = common_options.resources_game_path / ANIMATIONS_BIN
+        animations_bin_path = common_options.game_resources_path / ANIMATIONS_BIN
         file_paths = extract(ctx, [animations_bin_path])
 
     if not file_paths:
         typer.echo("No files to decode.")
         return []
 
+    return decode_animations(common_options, file_paths)
+
+
+def decode_animations(
+    common_options: CommonOptions,
+    file_paths: list[Path],
+) -> list[Path]:
+    """Decode BAF files."""
+
+    extracted_animations_path = common_options.extracted_path / OUTPUT_ANIMATIONS_DIR
+    decoded_animations_path = common_options.decoded_path / OUTPUT_ANIMATIONS_DIR
+    pickle_output_paths: list[Path] = []
+
     for file_path in file_paths:
-        typer.echo(f"Decoding {file_path}...")
+        logging.debug(f"Decoding {file_path}...")
 
         if file_path.suffix == OAM_EXTENSION:
             continue
@@ -122,30 +133,40 @@ def decode_animations(
 
 
 @app.command("objects")
-def decode_objects(
+def cmd_decode_objects(
     ctx: typer.Context,
     file_paths: Annotated[
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".bgf files to decode."),
     ] = None,
 ) -> list[Path]:
-    """Decode BGF files."""
+    """Command to decode BGF files."""
 
     common_options: CommonOptions = ctx.obj
+
+    if not file_paths:
+        objects_bin_path = common_options.game_resources_path / OBJECTS_BIN
+        file_paths = extract(ctx, [objects_bin_path])
+
+    if not file_paths:
+        logging.warning("No files to decode.")
+        return []
+
+    return decode_objects(common_options, file_paths)
+
+
+def decode_objects(
+    common_options: CommonOptions,
+    file_paths: list[Path],
+) -> list[Path]:
+    """Decode BGF files."""
+
     extracted_objects_path = common_options.extracted_path / OUTPUT_OBJECTS_DIR
     decoded_objects_path = common_options.decoded_path / OUTPUT_OBJECTS_DIR
     pickle_output_paths: list[Path] = []
 
-    if not file_paths:
-        objects_bin_path = common_options.resources_game_path / OBJECTS_BIN
-        file_paths = extract(ctx, [objects_bin_path])
-
-    if not file_paths:
-        typer.echo("No files to decode.")
-        return []
-
     for file_path in file_paths:
-        typer.echo(f"Decoding {file_path}...")
+        logging.debug(f"Decoding {file_path}...")
 
         if file_path.suffix.lower() == TXS_EXTENSION:
             continue
@@ -184,7 +205,7 @@ def decode_scenes(
     """Decode ED3 files."""
 
     common_options: CommonOptions = ctx.obj
-    scenes_bin_path = common_options.resources_game_path / SCENES_BIN
+    scenes_bin_path = common_options.game_resources_path / SCENES_BIN
     extracted_scenes_path = common_options.extracted_path / OUTPUT_SCENES_DIR
     decoded_scenes_path = common_options.decoded_path / OUTPUT_SCENES_DIR
     pickle_output_paths: list[Path] = []
@@ -193,11 +214,11 @@ def decode_scenes(
         file_paths = extract(ctx, [scenes_bin_path])
 
     if not file_paths:
-        typer.echo("No files to decode.")
+        logging.warning("No files to decode.")
         return []
 
     for file_path in file_paths:
-        typer.echo(f"Decoding {file_path}...")
+        logging.debug(f"Decoding {file_path}...")
 
         if file_path.suffix == BGF_EXTENSION:
             continue
@@ -236,7 +257,7 @@ def decode_groups(
     """Decode OGR files."""
 
     common_options: CommonOptions = ctx.obj
-    groups_bin_path = common_options.resources_game_path / GROUPS_BIN
+    groups_bin_path = common_options.game_resources_path / GROUPS_BIN
     extracted_groups_path = common_options.extracted_path / OUTPUT_GROUPS_DIR
     decoded_groups_path = common_options.decoded_path / OUTPUT_GROUPS_DIR
     pickle_output_paths: list[Path] = []
@@ -245,10 +266,10 @@ def decode_groups(
         file_paths = extract(ctx, [groups_bin_path])
 
     for file_path in file_paths if file_paths else []:
-        typer.echo(f"Decoding {file_path}...")
+        logging.debug(f"Decoding {file_path}...")
 
         if file_path.suffix == LFS_EXTENSION:
-            typer.echo(f"Skipping LFS file: {file_path}")
+            logging.debug(f"Skipping LFS file: {file_path}")
             continue
 
         if file_path.suffix != OGR_EXTENSION:
@@ -284,9 +305,9 @@ def decode_ageb(
     decoded_ageb_path = common_options.decoded_path / OUTPUT_AGEB_DIR
     pickle_output_paths: list[Path] = []
 
-    typer.echo(f"Decoding {common_options.ageb_game_path}...")
+    logging.debug(f"Decoding {common_options.game_ageb_path}...")
 
-    ageb = AGeb.from_file(common_options.ageb_game_path)
+    ageb = AGeb.from_file(common_options.game_ageb_path)
 
     for building in ageb.buildings:
         pickle_output_path = decoded_ageb_path / Path(building.name).with_suffix(
@@ -317,9 +338,9 @@ def decode_aobj(
     decoded_aobj_path = common_options.decoded_path / OUTPUT_AOBJ_DIR
     pickle_output_paths: list[Path] = []
 
-    typer.echo(f"Decoding {common_options.aobj_game_path}...")
+    logging.debug(f"Decoding {common_options.game_aobj_path}...")
 
-    aobj = AObj.from_file(common_options.aobj_game_path)
+    aobj = AObj.from_file(common_options.game_aobj_path)
 
     for object_data in aobj.objects:
         pickle_output_path = decoded_aobj_path / Path(object_data.name).with_suffix(
@@ -357,14 +378,14 @@ def decode_gfx(
         file_path = common_options.gfx_game_path
 
     decode_time = time.time()
-    typer.echo(f"Decoding {common_options.gfx_game_path}...")
+    logging.debug(f"Decoding {common_options.gfx_game_path}...")
 
     gfx = Gfx.from_file(file_path)
 
-    typer.echo(f"Decoded {file_path} in {time.time() - decode_time:.2f} seconds.")
+    logging.debug(f"Decoded {file_path} in {time.time() - decode_time:.2f} seconds.")
 
     dump_time = time.time()
-    typer.echo("Dumping shapebanks...")
+    logging.debug("Dumping shapebanks...")
 
     for shapebank_definition in gfx.shapebank_definitions:
         if not shapebank_definition.shapebank:
@@ -379,7 +400,7 @@ def decode_gfx(
 
         dump_shapebank_time = time.time()
         if common_options.verbose:
-            typer.echo(f"Dumping {pickle_output_path}...")
+            logging.debug(f"Dumping {pickle_output_path}...")
 
         with open(pickle_output_path, "wb") as pickle_output_file:
             pickle.dump(
@@ -388,14 +409,14 @@ def decode_gfx(
             )
 
         if common_options.verbose:
-            typer.echo(
+            logging.debug(
                 f"Dumped {pickle_output_path} in "
                 + f"{time.time() - dump_shapebank_time:.2f} seconds."
             )
 
         pickle_output_paths.append(pickle_output_path)
 
-    typer.echo(f"Dumped shapebanks in {time.time() - dump_time:.2f} seconds.")
+    logging.debug(f"Dumped shapebanks in {time.time() - dump_time:.2f} seconds.")
 
     return pickle_output_paths
 
@@ -417,7 +438,7 @@ def decode_sfx(
         file_paths = get_files(common_options.sfx_game_path, SBF_EXTENSION)
 
         for file in file_paths if file_paths else []:
-            typer.echo(f"Decoding {file}...")
+            logging.debug(f"Decoding {file}...")
 
             sbf = Sbf.from_file(file)
             pickle_output_path = rebase_path(
@@ -437,7 +458,7 @@ def decode_sfx(
         return pickle_output_paths
 
     for file in file_paths:
-        typer.echo(f"Decoding {file}...")
+        logging.debug(f"Decoding {file}...")
 
         sbf = Sbf.from_file(file)
         pickle_output_path = decoded_sfx_path / Path(file.name).with_suffix(

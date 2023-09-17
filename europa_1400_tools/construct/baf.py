@@ -12,6 +12,7 @@ from europa_1400_tools.const import (
     BAF_INI_FILE_LOOP_OUT,
     BAF_INI_FILE_NUM_KEYS,
     BAF_INI_FILE_SECTION,
+    SourceFormat,
 )
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
@@ -122,9 +123,9 @@ class Footer(DataclassMixin):
 @dataclass
 class BafIni:
     num_keys: int
-    key_times: list[float] | None
-    loop_in: int | None
-    loop_out: int | None
+    key_times: list[float] | None = None
+    loop_in: int | None = None
+    loop_out: int | None = None
 
     @classmethod
     def from_file(cls, file: Path):
@@ -142,6 +143,7 @@ class BafIni:
         baf_ini_file.num_keys = config.getint(
             BAF_INI_FILE_SECTION, BAF_INI_FILE_NUM_KEYS
         )
+        baf_ini_file.key_times = None
         if BAF_INI_FILE_KEYS in config[BAF_INI_FILE_SECTION]:
             baf_ini_file.key_times = [
                 float(key_time_str) / 80
@@ -149,10 +151,12 @@ class BafIni:
                     BAF_INI_FILE_SECTION, BAF_INI_FILE_KEYS
                 ).split(",")
             ]
+        baf_ini_file.loop_in = None
         if BAF_INI_FILE_LOOP_IN in config[BAF_INI_FILE_SECTION]:
             baf_ini_file.loop_in = config.getint(
                 BAF_INI_FILE_SECTION, BAF_INI_FILE_LOOP_IN
             )
+        baf_ini_file.loop_out = None
         if BAF_INI_FILE_LOOP_OUT in config[BAF_INI_FILE_SECTION]:
             baf_ini_file.loop_out = config.getint(
                 BAF_INI_FILE_SECTION, BAF_INI_FILE_LOOP_OUT
@@ -185,3 +189,9 @@ class Baf(BaseConstruct):
             vertices_per_key.append(vertices)
 
         return np.array(vertices_per_key, dtype=np.float32)
+
+    @property
+    def format(self) -> SourceFormat:
+        """Return the format of the construct."""
+
+        return SourceFormat.BAF

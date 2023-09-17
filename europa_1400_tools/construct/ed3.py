@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
+from europa_1400_tools.const import SourceFormat
 from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.base_construct import BaseConstruct
 

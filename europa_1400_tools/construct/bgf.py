@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa_1400_tools.const import OBJECTS_STRING_ENCODING
+from europa_1400_tools.const import OBJECTS_STRING_ENCODING, SourceFormat
 from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
@@ -321,3 +321,9 @@ class Bgf(BaseConstruct):
     )
     mapping_object: BgfMappingObject = csfield(DataclassStruct(BgfMappingObject))
     footer: BgfFooter = csfield(DataclassStruct(BgfFooter))
+
+    @property
+    def format(self) -> SourceFormat:
+        """Return the format of the construct."""
+
+        return SourceFormat.BGF
