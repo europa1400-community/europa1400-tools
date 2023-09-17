@@ -177,10 +177,10 @@ class Baf(BaseConstruct):
         return self.header.num_keys
 
     def get_vertices_per_key(self) -> np.ndarray:
-        vertices_per_key = []
+        vertices_per_key: list = []
 
         for key in self.body.keys:
-            vertices = []
+            vertices: list = []
 
             for model in key.models:
                 for vertex in model.vertices:
