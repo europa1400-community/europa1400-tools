@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from europa_1400_tools.const import TargetFormat
+from europa_1400_tools.const import JSON_EXTENSION, TargetFormat
 from europa_1400_tools.construct.ed3 import Ed3
 from europa_1400_tools.converter.base_converter import BaseConverter
 from europa_1400_tools.helpers import rebase_path
@@ -22,7 +22,9 @@ class Ed3Converter(BaseConverter):
         ed3 = Ed3.from_file(file_path)
         ed3_json = ed3.to_json()
 
-        output_file_path = rebase_path(file_path, base_path, output_path)
+        output_file_path = rebase_path(file_path, base_path, output_path).with_suffix(
+            JSON_EXTENSION
+        )
         output_file_path.parent.mkdir(parents=True, exist_ok=True)
         output_file_path.write_text(ed3_json, encoding="utf-8")
 
