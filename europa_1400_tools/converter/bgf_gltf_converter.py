@@ -49,7 +49,7 @@ class GltfPrimitive:
     """Class representing a primitive in a gLTF file."""
 
     vertices: np.ndarray
-    vertices_per_key: np.ndarray | None
+    baf_to_vertices_per_key: list[np.ndarray]
     normals: np.ndarray
     uvs: np.ndarray
     indices: np.ndarray
@@ -115,7 +115,7 @@ class BgfGltfConverter(BgfConverter):
 
         gltf = GLTF2()
 
-        baf: Baf | None = None
+        bafs: list[Baf] = []
 
         if target_format == TargetFormat.GLTF:
             baf_paths = [
@@ -123,14 +123,15 @@ class BgfGltfConverter(BgfConverter):
                     PICKLE_EXTENSION
                 )
                 for baf_path, bgfs in self.baf_to_bgfs.items()
-                if any(bgf.path.relative_to(base_path) == bgf_path for bgf_path in bgfs)
+                if any(bgf_path.stem.lower() == name.lower() for bgf_path in bgfs)
             ]
 
-            if len(baf_paths) > 1:
-                with open(baf_paths[0], "rb") as input_file:
+            for baf_path in baf_paths:
+                with open(baf_path, "rb") as input_file:
                     baf = pickle.load(input_file)
+                    bafs.append(baf)
 
-        gltf_mesh = self._convert_mesh(bgf, baf, name)
+        gltf_mesh = self._convert_mesh(bgf, bafs, name)
 
         scene = Scene(nodes=[0])
         gltf.scenes.append(scene)
@@ -195,23 +196,28 @@ class BgfGltfConverter(BgfConverter):
                 name=f"uv_coordinates_{i}",
             )
 
-            if gltf_primitive.vertices_per_key is not None:
-                for j, anim_vertices in enumerate(gltf_primitive.vertices_per_key):
-                    relative_anim_vertices = anim_vertices - gltf_primitive.vertices
-                    self._add_gltf_data(
-                        gltf=gltf,
-                        data=relative_anim_vertices,
-                        buffer_type=ARRAY_BUFFER,
-                        data_type=FLOAT,
-                        data_format=VEC3,
-                        name=f"vertices_{i}_{j}",
-                    )
+            total_vertices_per_key: np.ndarray = (
+                np.concatenate(gltf_primitive.baf_to_vertices_per_key)
+                if gltf_primitive.baf_to_vertices_per_key
+                else np.array([])
+            )
 
-                    primitive.targets.append(
-                        Attributes(
-                            POSITION=len(gltf.accessors) - 1,
-                        )
+            for j, anim_vertices in enumerate(total_vertices_per_key):
+                relative_anim_vertices = anim_vertices - gltf_primitive.vertices
+                self._add_gltf_data(
+                    gltf=gltf,
+                    data=relative_anim_vertices,
+                    buffer_type=ARRAY_BUFFER,
+                    data_type=FLOAT,
+                    data_format=VEC3,
+                    name=f"vertices_{i}_{j}",
+                )
+
+                primitive.targets.append(
+                    Attributes(
+                        POSITION=len(gltf.accessors) - 1,
                     )
+                )
 
         texture_names = bgf.footer.texture_names
 
@@ -277,13 +283,15 @@ class BgfGltfConverter(BgfConverter):
                 )
             )
 
-        if baf is not None:
+        target_index = 0
+        total_keyframe_count = len(total_vertices_per_key)
+        for baf in bafs:
             keyframe_count = baf.keyframe_count
 
             weight_values = []
             for i in range(keyframe_count):
-                weight_values.append([0.0] * keyframe_count)
-                weight_values[-1][i] = 1.0
+                weight_values.append([0.0] * total_keyframe_count)
+                weight_values[-1][target_index + i] = 1.0
 
             weight_values_flattened = np.array(
                 weight_values, dtype=np.float32
@@ -316,7 +324,7 @@ class BgfGltfConverter(BgfConverter):
             time_values_id = len(gltf.accessors) - 1
 
             animation = Animation(
-                name="animation",
+                name=baf.path.stem.lower(),
                 samplers=[
                     AnimationSampler(
                         input=time_values_id,
@@ -335,6 +343,8 @@ class BgfGltfConverter(BgfConverter):
                 ],
             )
             gltf.animations.append(animation)
+
+            target_index += keyframe_count
 
         gltf_output_path = output_path / Path(name).with_suffix(GLTF_EXTENSION)
 
@@ -401,7 +411,7 @@ class BgfGltfConverter(BgfConverter):
 
         return data_buffer, data_buffer_view, data_accessor
 
-    def _convert_mesh(self, bgf: Bgf, baf: Baf | None, name: str) -> Mesh:
+    def _convert_mesh(self, bgf: Bgf, bafs: list[Baf], name: str) -> Mesh:
         """Convert Bgf to gltf mesh."""
 
         gltf_primitives = []
@@ -438,25 +448,28 @@ class BgfGltfConverter(BgfConverter):
             dtype=np.float32,
         )
 
-        bgf_vertices_per_key = None
-        if baf is not None:
+        baf_to_bgf_vertices_per_key = []
+        for baf in bafs:
             bgf_vertices_per_key = baf.get_vertices_per_key()
+            baf_to_bgf_vertices_per_key.append(bgf_vertices_per_key)
 
         for texture_index in texture_indices:
             # skip indices of missing textures
             if texture_index >= len(bgf.footer.texture_names):
                 continue
 
-            indices = []
-            vertices = []
-            normals = []
-            uvs = []
+            indices: list = []
+            vertices: list = []
+            normals: list = []
+            uvs: list = []
 
-            vertices_per_key = None
-            if bgf_vertices_per_key is not None:
+            baf_to_vertices_per_key = []
+            for bgf_vertices_per_key in baf_to_bgf_vertices_per_key:
+                vertices_per_key = None
                 # create a new empty array of the same shape as bgf_vertices_per_key,
                 # but the axis=1 will be variable and be appended to
                 vertices_per_key = [[] for _ in range(bgf_vertices_per_key.shape[0])]
+                baf_to_vertices_per_key.append(vertices_per_key)
 
             polygons = [
                 polygon
@@ -498,6 +511,7 @@ class BgfGltfConverter(BgfConverter):
             for face, uvs_per_face in zip(indices_per_polygon, uvs_per_polygon):
                 for vertex_index, uv in zip(face, uvs_per_face):
                     key = (vertex_index, uv[0], uv[1])
+
                     if key not in vertex_dict:
                         vertex_dict[key] = len(vertices)
                         vertex = bgf_vertices[vertex_index]
@@ -505,7 +519,9 @@ class BgfGltfConverter(BgfConverter):
                         normals.append(bgf_normals[vertex_index])
                         uvs.append(uv)
 
-                        if vertices_per_key is not None:
+                        for bgf_vertices_per_key, vertices_per_key in zip(
+                            baf_to_bgf_vertices_per_key, baf_to_vertices_per_key
+                        ):
                             for keyframe in range(bgf_vertices_per_key.shape[0]):
                                 vertex_per_key = bgf_vertices_per_key[keyframe][
                                     vertex_index
@@ -520,19 +536,20 @@ class BgfGltfConverter(BgfConverter):
             normals = np.array(normals, dtype=np.float32)
             uvs = np.array(uvs, dtype=np.float32)
 
-            if vertices_per_key is not None:
+            for vertices_per_key in baf_to_vertices_per_key:
                 vertices_per_key = np.array(vertices_per_key, dtype=np.float32)
 
             if np.isnan(uvs).any():
                 uvs = np.nan_to_num(uvs)
 
-            if vertices_per_key is not None and np.isnan(vertices_per_key).any():
-                raise ValueError("vertices_per_key contains nan")
+            for vertices_per_key in baf_to_vertices_per_key:
+                if np.isnan(vertices_per_key).any():
+                    raise ValueError("vertices_per_key contains nan")
 
             gltf_primitive = GltfPrimitive(
                 indices=indices,
                 vertices=vertices,
-                vertices_per_key=vertices_per_key,
+                baf_to_vertices_per_key=baf_to_vertices_per_key,
                 normals=normals,
                 uvs=uvs,
                 texture_index=texture_index,
