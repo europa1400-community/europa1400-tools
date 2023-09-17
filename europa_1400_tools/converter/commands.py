@@ -9,6 +9,7 @@ import typer
 from europa_1400_tools.const import (
     BIN_EXTENSION,
     CONVERTIBLE_PATHS,
+    ED3_EXCLUDE,
     IGNORED_EXTENSIONS,
     SourceFormat,
     TargetFormat,
@@ -131,6 +132,9 @@ def convert(
                 converter = SbfConverter(common_options)
                 output_path = common_options.converted_sfx_path
             elif source_format == SourceFormat.ED3:
+                if file_path.name in ED3_EXCLUDE:
+                    logging.warning(f"Skipping {file_path}")
+                    continue
                 converter = Ed3Converter(common_options)
                 output_path = common_options.converted_scenes_path
             elif source_format == SourceFormat.BGF:
