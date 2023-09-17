@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa_1400_tools.const import SourceFormat
 from europa_1400_tools.construct.baf import Vertex
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
@@ -271,6 +270,11 @@ class SceneElement(DataclassMixin):
     skip0: Skip0 = csfield(DataclassStruct(Skip0))
 
 
+def is_sub_element(obj: SceneElement, ctx):
+    if obj.skip01.skipped != [1, 1]:
+        raise cs.CancelParsing
+
+
 @dataclass
 class ElementGroup(DataclassMixin):
     """Structure of an element group."""
@@ -278,11 +282,13 @@ class ElementGroup(DataclassMixin):
     skip01: Skip01 = csfield(DataclassStruct(Skip01))
     first_element: SceneElement = csfield(DataclassStruct(SceneElement))
     elements: list[SceneElement] = csfield(
-        cs.RepeatUntil(
-            lambda obj, lst, ctx: cs.Peek(cs.Bytes(2)) != b"\x01\x01",
-            DataclassStruct(SceneElement),
-        )
+        cs.GreedyRange(DataclassStruct(SceneElement) * is_sub_element)
     )
+
+
+def is_element_group(obj: ElementGroup, ctx):
+    if obj.skip01.skipped != [1]:
+        raise cs.CancelParsing
 
 
 @dataclass
@@ -291,6 +297,7 @@ class Ed3(BaseConstruct):
 
     skipped: bytes = csfield(cs.Bytes(4))
     main_camera_element: MainCameraElement = csfield(DataclassStruct(MainCameraElement))
+    scene_camera_element: SceneElement = csfield(DataclassStruct(SceneElement))
     element_groups: list[ElementGroup] = csfield(
-        cs.GreedyRange(DataclassStruct(ElementGroup) * is_01)
+        cs.GreedyRange(DataclassStruct(ElementGroup) * is_element_group)
     )
