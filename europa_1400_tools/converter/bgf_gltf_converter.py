@@ -40,11 +40,7 @@ from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.bgf_converter import BgfConverter
 from europa_1400_tools.decoder.commands import decode_animations, decode_objects
 from europa_1400_tools.extractor.commands import extract_file
-from europa_1400_tools.helpers import (
-    bitmap_to_gltf_uri,
-    bytes_to_gltf_uri,
-    find_texture_path,
-)
+from europa_1400_tools.helpers import bitmap_to_gltf_uri, bytes_to_gltf_uri
 from europa_1400_tools.mapper.commands import map_animations
 
 
@@ -74,7 +70,10 @@ class BgfGltfConverter(BgfConverter):
     def __init__(self, common_options):
         super().__init__(common_options)
 
-        if self.common_options.mapped_animations_path.exists():
+        if (
+            self.common_options.mapped_animations_path.exists()
+            and common_options.use_cache
+        ):
             with open(self.common_options.mapped_animations_path, "rb") as input_file:
                 self.baf_to_bgfs = pickle.load(input_file)
         else:
@@ -96,7 +95,7 @@ class BgfGltfConverter(BgfConverter):
                 common_options, self.extracted_animations_paths
             )
 
-            self.baf_to_bgfs = map_animations(
+            self.baf_to_bgfs, _ = map_animations(
                 self.common_options.extracted_objects_path,
                 self.common_options.extracted_animations_path,
                 self.decoded_objects_paths,
@@ -119,10 +118,6 @@ class BgfGltfConverter(BgfConverter):
         baf: Baf | None = None
 
         if target_format == TargetFormat.GLTF:
-            # find all bafs thats elements include the file_path
-            if file_path.stem == "buerger_MANN":
-                pass
-
             baf_paths = [
                 (self.common_options.decoded_animations_path / baf_path).with_suffix(
                     PICKLE_EXTENSION
@@ -305,7 +300,7 @@ class BgfGltfConverter(BgfConverter):
             weight_values_id = len(gltf.accessors) - 1
 
             time_values: np.ndarray = np.arange(0, keyframe_count, dtype=np.float32)
-            if baf.baf_ini.key_times is not None:
+            if baf.baf_ini is not None and baf.baf_ini.key_times is not None:
                 time_values = np.array(
                     baf.baf_ini.key_times,
                     dtype=np.float32,

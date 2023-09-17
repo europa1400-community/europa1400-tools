@@ -22,7 +22,7 @@ class AnimationsMapper:
         )
 
         for bgf_path, bgf_vertices_np in bgf_to_vertices.items():
-            if len(bgf_vertices_np) != len(baf_vertices_np):
+            if bgf_vertices_np.shape[0] != baf_vertices_np.shape[0]:
                 continue
 
             baf_name = baf.path.stem

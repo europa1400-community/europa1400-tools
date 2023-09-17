@@ -3,7 +3,6 @@
 import logging
 import pickle
 from pathlib import Path
-from typing import Annotated, Optional
 
 import numpy as np
 import typer
@@ -27,8 +26,6 @@ app = typer.Typer()
 @app.command("animations")
 def cmd_map_animations(
     ctx: typer.Context,
-    decoded_animations_path: Annotated[Optional[Path], typer.Option()] = None,
-    decoded_objects_path: Annotated[Optional[Path], typer.Option()] = None,
 ) -> Path:
     """Command to map animation files to object files."""
 
@@ -44,17 +41,21 @@ def cmd_map_animations(
     animations_pickle_paths: list[Path] = []
     objects_pickle_paths: list[Path] = []
 
-    if decoded_animations_path is None:
+    if common_options.decoded_animations_path.exists() and common_options.use_cache:
+        animations_pickle_paths = get_files(
+            common_options.decoded_animations_path, PICKLE_EXTENSION
+        )
+    else:
         animations_pickle_paths = cmd_decode_animations(ctx)
-    else:
-        animations_pickle_paths = get_files(decoded_animations_path, PICKLE_EXTENSION)
 
-    if decoded_objects_path is None:
+    if common_options.decoded_objects_path.exists() and common_options.use_cache:
+        objects_pickle_paths = get_files(
+            common_options.decoded_objects_path, PICKLE_EXTENSION
+        )
+    else:
         objects_pickle_paths = cmd_decode_objects(ctx)
-    else:
-        objects_pickle_paths = get_files(decoded_objects_path, PICKLE_EXTENSION)
 
-    baf_to_bgfs = map_animations(
+    baf_to_bgfs, missing_paths = map_animations(
         extracted_objects_path,
         extracted_animations_path,
         objects_pickle_paths,
@@ -64,6 +65,12 @@ def cmd_map_animations(
     with open(output_path, "wb") as output_file:
         pickle.dump(baf_to_bgfs, output_file)
 
+    # output the missing paths into self.common_options.missing_paths_path text file
+
+    with open(common_options.missing_paths_path, "w") as missing_paths_file:
+        for missing_path in missing_paths:
+            missing_paths_file.write(f"{missing_path}\n")
+
     return output_path
 
 
@@ -72,11 +79,13 @@ def map_animations(
     extracted_animations_path: Path,
     decoded_objects_paths: list[Path],
     decoded_animations_paths: list[Path],
-) -> dict[Path, list[Path]]:
+) -> tuple[dict[Path, list[Path]], list[Path]]:
     """Map animation files to object files."""
 
     bafs: list[Baf] = []
     bgfs: list[Bgf] = []
+
+    logging.info("Loading animations and objects.")
 
     for animation_pickle_path in decoded_animations_paths:
         with open(animation_pickle_path, "rb") as animation_pickle_file:
@@ -89,6 +98,8 @@ def map_animations(
             bgfs.append(bgf)
 
     bgf_to_vertices: dict[Path, np.ndarray] = {}
+
+    logging.info("Extracting vertices for objects.")
 
     for bgf in bgfs:
         bgf_to_vertices[bgf.path] = np.array(
@@ -106,7 +117,9 @@ def map_animations(
     baf_to_bgfs: dict[Path, list[Path]] = {}
 
     missing_count = 0
+    missing_paths: list[Path] = []
     for baf in bafs:
+        logging.debug(f"Mapping {baf.path}.")
         mapped_bgfs = AnimationsMapper.map_animation(baf, bgf_to_vertices)
 
         stripped_baf_path = baf.path.relative_to(extracted_animations_path)
@@ -114,15 +127,18 @@ def map_animations(
         if len(mapped_bgfs) == 0:
             missing_count += 1
             logging.warning(f"Could not find mapping for {stripped_baf_path}.")
+            missing_paths.append(stripped_baf_path)
 
             baf_to_bgfs[stripped_baf_path] = []
 
             continue
 
+        baf_to_bgfs[stripped_baf_path] = []
+
         for bgf in mapped_bgfs:
             stripped_bgf_path = Path(bgf).relative_to(extracted_objects_path)
-            baf_to_bgfs[stripped_baf_path] = [stripped_bgf_path]
+            baf_to_bgfs[stripped_baf_path].append(stripped_bgf_path)
 
     logging.info(f"Found mapping for {len(bafs) - missing_count} animations.")
 
-    return baf_to_bgfs
+    return baf_to_bgfs, missing_paths

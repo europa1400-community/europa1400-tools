@@ -30,6 +30,7 @@ def main(
     output_path: Path = typer.Option(
         DEFAULT_OUTPUT_PATH, "--output-path", "-o", help="Path to the output directory."
     ),
+    use_cache: bool = typer.Option(True, "--use-cache", "-c", help="Use cached files."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output."),
 ) -> None:
     """Main entry point."""
@@ -43,5 +44,8 @@ def main(
         game_path = ask_for_game_path()
 
     ctx.obj = CommonOptions(
-        game_path=game_path, output_path=output_path, verbose=verbose
+        game_path=game_path,
+        output_path=output_path,
+        use_cache=use_cache,
+        verbose=verbose,
     )

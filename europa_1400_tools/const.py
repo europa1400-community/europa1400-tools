@@ -100,6 +100,7 @@ OUTPUT_SCENES_DIR = "scenes"
 OUTPUT_OBJECTS_DIR = "objects"
 OUTPUT_TEXTURES_DIR = "textures"
 MAPPED_ANIMATONS_PICKLE = "mapped_animations.pickle"
+MISSING_PATHS_TXT = "missing_paths.txt"
 
 # File Extensions
 
@@ -186,6 +187,8 @@ class TargetFormat(Format):
         for target_format in TargetFormat:
             if target_format.value[0] == typer_target_format:
                 return target_format
+
+        return None
 
 
 class SourceFormat(Format):

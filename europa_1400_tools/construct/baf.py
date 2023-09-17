@@ -143,6 +143,7 @@ class BafIni:
         baf_ini_file.num_keys = config.getint(
             BAF_INI_FILE_SECTION, BAF_INI_FILE_NUM_KEYS
         )
+        baf_ini_file.key_times = None
         if BAF_INI_FILE_KEYS in config[BAF_INI_FILE_SECTION]:
             baf_ini_file.key_times = [
                 float(key_time_str) / 80
@@ -150,10 +151,12 @@ class BafIni:
                     BAF_INI_FILE_SECTION, BAF_INI_FILE_KEYS
                 ).split(",")
             ]
+        baf_ini_file.loop_in = None
         if BAF_INI_FILE_LOOP_IN in config[BAF_INI_FILE_SECTION]:
             baf_ini_file.loop_in = config.getint(
                 BAF_INI_FILE_SECTION, BAF_INI_FILE_LOOP_IN
             )
+        baf_ini_file.loop_out = None
         if BAF_INI_FILE_LOOP_OUT in config[BAF_INI_FILE_SECTION]:
             baf_ini_file.loop_out = config.getint(
                 BAF_INI_FILE_SECTION, BAF_INI_FILE_LOOP_OUT

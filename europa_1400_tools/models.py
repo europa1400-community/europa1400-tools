@@ -16,6 +16,7 @@ from europa_1400_tools.const import (
     GILDE_ADD_ON_GERMAN_GFX,
     GROUPS_BIN,
     MAPPED_ANIMATONS_PICKLE,
+    MISSING_PATHS_TXT,
     OBJECTS_BIN,
     OUTPUT_ANIMATIONS_DIR,
     OUTPUT_GFX_DIR,
@@ -37,6 +38,7 @@ class CommonOptions:
 
     game_path: Path
     output_path: Path
+    use_cache: bool
     verbose: bool
 
     @property
@@ -128,6 +130,11 @@ class CommonOptions:
     def mapped_animations_path(self) -> Path:
         """Return the path to the mapped animations directory."""
         return self.output_path / MAPPED_ANIMATONS_PICKLE
+
+    @property
+    def missing_paths_path(self) -> Path:
+        """Return the path to the missing paths file."""
+        return self.output_path / MISSING_PATHS_TXT
 
     @property
     def game_gfx_path(self) -> Path:
