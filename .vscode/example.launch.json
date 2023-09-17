@@ -1,0 +1,138 @@
+{
+    "configurations": [
+        {
+            "name": "convert groups",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/Resources/groups.bin"
+            ]
+        },
+        {
+            "name": "convert gfx",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/gfx/Gilde_add_on_german.gfx"
+            ]
+        },
+        {
+            "name": "convert ageb",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/Data/A_Geb.dat"
+            ]
+        },
+        {
+            "name": "convert aobj",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/Data/A_Obj.dat"
+            ]
+        },
+        {
+            "name": "convert sfx",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/sfx"
+            ]
+        },
+        {
+            "name": "convert scenes",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/Resources/scenes.bin"
+            ]
+        },
+        {
+            "name": "convert objects wavefront",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/Resources/objects.bin"
+            ]
+        },
+        {
+            "name": "convert objects gltf static",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "--target-format",
+                "gltf-static",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/Resources/objects.bin"
+            ]
+        },
+        {
+            "name": "convert objects gltf",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "convert",
+                "--target-format",
+                "gltf",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition/Resources/objects.bin"
+            ]
+        },
+        {
+            "name": "map animations",
+            "type": "python",
+            "request": "launch",
+            "module": "europa_1400_tools",
+            "justMyCode": true,
+            "args": [
+                "--game-path",
+                "/mnt/c/Users/lbeer/Games/Die Gilde Gold-Edition",
+                "map",
+                "animations"
+            ]
+        }
+    ]
+}
