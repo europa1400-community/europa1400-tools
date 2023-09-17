@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,16 +34,18 @@ from pygltflib import (
     TextureInfo,
 )
 
-from europa_1400_tools.const import GLTF_EXTENSION, TargetFormat
+from europa_1400_tools.const import GLTF_EXTENSION, PICKLE_EXTENSION, TargetFormat
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
-from europa_1400_tools.converter.base_converter import BaseConverter
 from europa_1400_tools.converter.bgf_converter import BgfConverter
+from europa_1400_tools.decoder.commands import decode_animations, decode_objects
+from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import (
     bitmap_to_gltf_uri,
     bytes_to_gltf_uri,
     find_texture_path,
 )
+from europa_1400_tools.mapper.commands import map_animations
 
 
 @dataclass
@@ -68,6 +71,38 @@ class GltfMesh:
 class BgfGltfConverter(BgfConverter):
     """Class for converting BGF files to gLTF."""
 
+    def __init__(self, common_options):
+        super().__init__(common_options)
+
+        if self.common_options.mapped_animations_path.exists():
+            with open(self.common_options.mapped_animations_path, "rb") as input_file:
+                self.baf_to_bgfs = pickle.load(input_file)
+        else:
+            self.extracted_objects_paths = extract_file(
+                self.common_options.game_objects_path,
+                self.common_options.extracted_objects_path,
+            )
+
+            self.extracted_animations_paths = extract_file(
+                self.common_options.game_animations_path,
+                self.common_options.extracted_animations_path,
+            )
+
+            self.decoded_objects_paths = decode_objects(
+                common_options, self.extracted_objects_paths
+            )
+
+            self.decoded_animations_paths = decode_animations(
+                common_options, self.extracted_animations_paths
+            )
+
+            self.baf_to_bgfs = map_animations(
+                self.common_options.extracted_objects_path,
+                self.common_options.extracted_animations_path,
+                self.decoded_objects_paths,
+                self.decoded_animations_paths,
+            )
+
     def convert_bgf_file(
         self,
         file_path: Path,
@@ -77,40 +112,30 @@ class BgfGltfConverter(BgfConverter):
         create_subdirectories: bool = False,
     ) -> list[Path]:
         bgf = Bgf.from_file(file_path)
-
-    @staticmethod
-    def convert_and_export(
-        value: Bgf,
-        output_path: Path,
-        name: str,
-        extracted_textures_path: Path,
-    ) -> list[Path]:
-        """Convert Bgf to gltf and export it to the given output path."""
-
-        if not output_path.exists():
-            output_path.mkdir(parents=True)
-
-        if extracted_textures_path is None:
-            raise ValueError("extracted_textures_path is required")
-
-        baf: Baf | None = kwargs.get("baf", None)
-        extracted_textures_path: Path | None = kwargs.get(
-            "extracted_textures_path", None
-        )
-
-        if extracted_textures_path is None:
-            raise ValueError("extracted_textures_path is required")
-
-        name: str | None = kwargs.get("name", None)
-
-        if name is None:
-            raise ValueError("name is required")
+        name = bgf.path.stem
 
         gltf = GLTF2()
 
-        gltf_mesh = ObjectGltfConverter._convert_mesh(
-            value, baf, extracted_textures_path, name
-        )
+        baf: Baf | None = None
+
+        if target_format == TargetFormat.GLTF:
+            # find all bafs thats elements include the file_path
+            if file_path.stem == "buerger_MANN":
+                pass
+
+            baf_paths = [
+                (self.common_options.decoded_animations_path / baf_path).with_suffix(
+                    PICKLE_EXTENSION
+                )
+                for baf_path, bgfs in self.baf_to_bgfs.items()
+                if any(bgf.path.relative_to(base_path) == bgf_path for bgf_path in bgfs)
+            ]
+
+            if len(baf_paths) > 1:
+                with open(baf_paths[0], "rb") as input_file:
+                    baf = pickle.load(input_file)
+
+        gltf_mesh = self._convert_mesh(bgf, baf, name)
 
         scene = Scene(nodes=[0])
         gltf.scenes.append(scene)
@@ -138,7 +163,7 @@ class BgfGltfConverter(BgfConverter):
             )
             primitives.append(primitive)
 
-            ObjectGltfConverter._add_gltf_data(
+            self._add_gltf_data(
                 gltf=gltf,
                 data=gltf_primitive.indices,
                 buffer_type=ELEMENT_ARRAY_BUFFER,
@@ -148,7 +173,7 @@ class BgfGltfConverter(BgfConverter):
                 minmax=False,
             )
 
-            ObjectGltfConverter._add_gltf_data(
+            self._add_gltf_data(
                 gltf=gltf,
                 data=gltf_primitive.vertices,
                 buffer_type=ARRAY_BUFFER,
@@ -157,7 +182,7 @@ class BgfGltfConverter(BgfConverter):
                 name=f"vertices_{i}",
             )
 
-            ObjectGltfConverter._add_gltf_data(
+            self._add_gltf_data(
                 gltf=gltf,
                 data=gltf_primitive.normals,
                 buffer_type=ARRAY_BUFFER,
@@ -166,7 +191,7 @@ class BgfGltfConverter(BgfConverter):
                 name=f"vertex_normals_{i}",
             )
 
-            ObjectGltfConverter._add_gltf_data(
+            self._add_gltf_data(
                 gltf=gltf,
                 data=gltf_primitive.uvs,
                 buffer_type=ARRAY_BUFFER,
@@ -178,7 +203,7 @@ class BgfGltfConverter(BgfConverter):
             if gltf_primitive.vertices_per_key is not None:
                 for j, anim_vertices in enumerate(gltf_primitive.vertices_per_key):
                     relative_anim_vertices = anim_vertices - gltf_primitive.vertices
-                    ObjectGltfConverter._add_gltf_data(
+                    self._add_gltf_data(
                         gltf=gltf,
                         data=relative_anim_vertices,
                         buffer_type=ARRAY_BUFFER,
@@ -193,12 +218,19 @@ class BgfGltfConverter(BgfConverter):
                         )
                     )
 
-        texture_names = value.footer.texture_names
+        texture_names = bgf.footer.texture_names
 
         missing_texture_indices: list[int] = []
 
         for i, texture_name in enumerate(texture_names):
-            texture_path = find_texture_path(texture_name, extracted_textures_path)
+            texture_path: Path | None = None
+            for extracted_textures_path in self.extracted_textures_paths:
+                if (
+                    extracted_textures_path.stem.lower()
+                    == Path(texture_name).stem.lower()
+                ):
+                    texture_path = extracted_textures_path
+                    break
 
             if texture_path is None:
                 missing_texture_indices.append(i)
@@ -262,7 +294,7 @@ class BgfGltfConverter(BgfConverter):
                 weight_values, dtype=np.float32
             ).flatten()
 
-            ObjectGltfConverter._add_gltf_data(
+            self._add_gltf_data(
                 gltf=gltf,
                 data=weight_values_flattened,
                 data_type=FLOAT,
@@ -272,11 +304,14 @@ class BgfGltfConverter(BgfConverter):
             )
             weight_values_id = len(gltf.accessors) - 1
 
-            time_values = np.array(
-                baf.baf_ini.key_times,
-                dtype=np.float32,
-            )
-            ObjectGltfConverter._add_gltf_data(
+            time_values: np.ndarray = np.arange(0, keyframe_count, dtype=np.float32)
+            if baf.baf_ini.key_times is not None:
+                time_values = np.array(
+                    baf.baf_ini.key_times,
+                    dtype=np.float32,
+                )
+
+            self._add_gltf_data(
                 gltf=gltf,
                 data=time_values,
                 data_type=FLOAT,
@@ -312,8 +347,8 @@ class BgfGltfConverter(BgfConverter):
 
         return [gltf_output_path]
 
-    @staticmethod
     def _add_gltf_data(
+        self,
         gltf: GLTF2,
         data: np.ndarray,
         data_type: int,
@@ -371,8 +406,7 @@ class BgfGltfConverter(BgfConverter):
 
         return data_buffer, data_buffer_view, data_accessor
 
-    @staticmethod
-    def _convert_mesh(value: Bgf, baf: Baf | None, name: str) -> Mesh:
+    def _convert_mesh(self, bgf: Bgf, baf: Baf | None, name: str) -> Mesh:
         """Convert Bgf to gltf mesh."""
 
         gltf_primitives = []
@@ -382,7 +416,7 @@ class BgfGltfConverter(BgfConverter):
         )
 
         texture_indices = set(
-            polygon.texture_index for polygon in value.mapping_object.polygons
+            polygon.texture_index for polygon in bgf.mapping_object.polygons
         )
 
         bgf_vertices = np.array(
@@ -392,7 +426,7 @@ class BgfGltfConverter(BgfConverter):
                     vertex_mapping.vertex1.y,
                     vertex_mapping.vertex1.z,
                 ]
-                for vertex_mapping in value.mapping_object.vertex_mappings
+                for vertex_mapping in bgf.mapping_object.vertex_mappings
             ],
             dtype=np.float32,
         )
@@ -404,7 +438,7 @@ class BgfGltfConverter(BgfConverter):
                     vertex_mapping.vertex2.y,
                     vertex_mapping.vertex2.z,
                 ]
-                for vertex_mapping in value.mapping_object.vertex_mappings
+                for vertex_mapping in bgf.mapping_object.vertex_mappings
             ],
             dtype=np.float32,
         )
@@ -415,7 +449,7 @@ class BgfGltfConverter(BgfConverter):
 
         for texture_index in texture_indices:
             # skip indices of missing textures
-            if texture_index >= len(value.footer.texture_names):
+            if texture_index >= len(bgf.footer.texture_names):
                 continue
 
             indices = []
@@ -431,7 +465,7 @@ class BgfGltfConverter(BgfConverter):
 
             polygons = [
                 polygon
-                for polygon in value.mapping_object.polygons
+                for polygon in bgf.mapping_object.polygons
                 if polygon.texture_index == texture_index
             ]
             indices_per_polygon = np.array(

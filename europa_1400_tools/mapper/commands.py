@@ -16,7 +16,7 @@ from europa_1400_tools.const import (
 )
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
-from europa_1400_tools.decoder.commands import decode_animations, decode_objects
+from europa_1400_tools.decoder.commands import cmd_decode_animations, cmd_decode_objects
 from europa_1400_tools.helpers import get_files
 from europa_1400_tools.mapper.animations_mapper import AnimationsMapper
 from europa_1400_tools.models import CommonOptions
@@ -25,16 +25,15 @@ app = typer.Typer()
 
 
 @app.command("animations")
-def map_animations(
+def cmd_map_animations(
     ctx: typer.Context,
     decoded_animations_path: Annotated[Optional[Path], typer.Option()] = None,
     decoded_objects_path: Annotated[Optional[Path], typer.Option()] = None,
-    animation_path: Annotated[Optional[Path], typer.Option()] = None,
-    object_path: Annotated[Optional[Path], typer.Option()] = None,
 ) -> Path:
-    """Map animation files to object files."""
+    """Command to map animation files to object files."""
 
     common_options: CommonOptions = ctx.obj
+
     output_path = common_options.output_path / MAPPED_ANIMATONS_PICKLE
 
     extracted_animations_path = common_options.extracted_path / Path(
@@ -46,28 +45,45 @@ def map_animations(
     objects_pickle_paths: list[Path] = []
 
     if decoded_animations_path is None:
-        animations_pickle_paths = decode_animations(ctx)
+        animations_pickle_paths = cmd_decode_animations(ctx)
     else:
         animations_pickle_paths = get_files(decoded_animations_path, PICKLE_EXTENSION)
 
     if decoded_objects_path is None:
-        objects_pickle_paths = decode_objects(ctx)
+        objects_pickle_paths = cmd_decode_objects(ctx)
     else:
         objects_pickle_paths = get_files(decoded_objects_path, PICKLE_EXTENSION)
 
-    objects_pickle_paths = [
-        object_pickle_path for object_pickle_path in objects_pickle_paths
-    ]
+    baf_to_bgfs = map_animations(
+        extracted_objects_path,
+        extracted_animations_path,
+        objects_pickle_paths,
+        animations_pickle_paths,
+    )
+
+    with open(output_path, "wb") as output_file:
+        pickle.dump(baf_to_bgfs, output_file)
+
+    return output_path
+
+
+def map_animations(
+    extracted_objects_path: Path,
+    extracted_animations_path: Path,
+    decoded_objects_paths: list[Path],
+    decoded_animations_paths: list[Path],
+) -> dict[Path, list[Path]]:
+    """Map animation files to object files."""
 
     bafs: list[Baf] = []
     bgfs: list[Bgf] = []
 
-    for animation_pickle_path in animations_pickle_paths:
+    for animation_pickle_path in decoded_animations_paths:
         with open(animation_pickle_path, "rb") as animation_pickle_file:
             baf: Baf = pickle.load(animation_pickle_file)
             bafs.append(baf)
 
-    for object_pickle_path in objects_pickle_paths:
+    for object_pickle_path in decoded_objects_paths:
         with open(object_pickle_path, "rb") as object_pickle_file:
             bgf: Bgf = pickle.load(object_pickle_file)
             bgfs.append(bgf)
@@ -109,7 +125,4 @@ def map_animations(
 
     logging.info(f"Found mapping for {len(bafs) - missing_count} animations.")
 
-    with open(output_path, "wb") as output_file:
-        pickle.dump(baf_to_bgfs, output_file)
-
-    return output_path
+    return baf_to_bgfs

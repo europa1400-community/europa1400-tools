@@ -30,7 +30,7 @@ def extract(
 
     if not file_paths:
         file_paths = [
-            common_options.resources_game_path / bin_file for bin_file in BIN_FILES
+            common_options.game_resources_path / bin_file for bin_file in BIN_FILES
         ]
 
     for file_path in file_paths:

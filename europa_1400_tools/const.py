@@ -174,6 +174,19 @@ class TargetFormat(Format):
     JSON = ("json", JSON_EXTENSION)
     PNG = ("png", PNG_EXTENSION)
 
+    @classmethod
+    def convert_typer(cls):
+        """Return an Enum type with values as the first elements of the tuples."""
+        enum_dict = {format.name: format.value[0] for format in cls}
+        return Enum("TyperTargetFormat", enum_dict)
+
+    @staticmethod
+    def from_typer(typer_target_format: str) -> "TargetFormat":
+        """Return the target format for the given typer target format."""
+        for target_format in TargetFormat:
+            if target_format.value[0] == typer_target_format:
+                return target_format
+
 
 class SourceFormat(Format):
     """Source formats."""

@@ -10,10 +10,6 @@ from europa_1400_tools.const import (
     BIN_EXTENSION,
     CONVERTIBLE_PATHS,
     IGNORED_EXTENSIONS,
-    OUTPUT_GFX_DIR,
-    OUTPUT_GROUPS_DIR,
-    OUTPUT_SCENES_DIR,
-    OUTPUT_SFX_DIR,
     SourceFormat,
     TargetFormat,
 )
@@ -36,9 +32,13 @@ app = typer.Typer()
 @app.callback(invoke_without_command=True)
 def convert(
     ctx: typer.Context,
-    paths: Annotated[List[Path], typer.Argument()] = None,
-    target_format: Annotated[Optional[TargetFormat], typer.Option()] = None,
-    create_subdirectories: Annotated[bool, typer.Option()] = False,
+    typer_target_format: Optional[TargetFormat.convert_typer()] = typer.Option(
+        None, "--target-format", "-t"
+    ),
+    create_subdirectories: bool = typer.Option(False, "--create-subdirectories", "-c"),
+    paths: Annotated[
+        Optional[List[Path]], typer.Argument(help="Paths to files or directories.")
+    ] = None,
 ) -> list[Path]:
     """Convert files"""
 
@@ -102,14 +102,14 @@ def convert(
 
     for source_format, _base_path_to_file_paths in format_to_file_paths.items():
         for base_path, file_paths in _base_path_to_file_paths.items():
-            _target_format = target_format
+            if typer_target_format is None:
+                target_format = source_format.target_formats[0]
+            else:
+                target_format = TargetFormat.from_typer(typer_target_format.value)
 
-            if _target_format is None:
-                _target_format = source_format.target_formats[0]
-
-            if _target_format not in source_format.target_formats:
+            if target_format not in source_format.target_formats:
                 logging.warning(
-                    f"Cannot convert {source_format} files to {_target_format}"
+                    f"Cannot convert {source_format} files to {target_format}"
                 )
                 continue
 
@@ -136,8 +136,8 @@ def convert(
             elif source_format == SourceFormat.BGF:
                 converter = (
                     BgfGltfConverter(common_options)
-                    if _target_format == TargetFormat.GLTF
-                    or _target_format == TargetFormat.GLTF_STATIC
+                    if target_format == TargetFormat.GLTF
+                    or target_format == TargetFormat.GLTF_STATIC
                     else BgfWavefrontConverter(common_options)
                 )
                 output_path = common_options.converted_objects_path
@@ -149,6 +149,6 @@ def convert(
                 output_path,
                 base_path,
                 source_format,
-                _target_format,
+                target_format,
                 create_subdirectories,
             )

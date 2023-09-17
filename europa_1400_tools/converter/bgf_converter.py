@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from europa_1400_tools.const import TargetFormat
-from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.base_converter import BaseConverter
 from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import rebase_path
@@ -20,7 +19,7 @@ class BgfConverter(BaseConverter, ABC):
         super().__init__(common_options)
 
         self.extracted_textures_paths = extract_file(
-            self.common_options.textures_bin_path,
+            self.common_options.game_textures_path,
             self.common_options.extracted_textures_path,
         )
 

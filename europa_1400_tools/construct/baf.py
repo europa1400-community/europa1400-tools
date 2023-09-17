@@ -123,9 +123,9 @@ class Footer(DataclassMixin):
 @dataclass
 class BafIni:
     num_keys: int
-    key_times: list[float] | None
-    loop_in: int | None
-    loop_out: int | None
+    key_times: list[float] | None = None
+    loop_in: int | None = None
+    loop_out: int | None = None
 
     @classmethod
     def from_file(cls, file: Path):
