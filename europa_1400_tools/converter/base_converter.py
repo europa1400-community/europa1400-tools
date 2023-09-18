@@ -53,14 +53,15 @@ class BaseConverter(ABC):
                 f"Converting {file_path} from {source_format} to {target_format}..."
             )
 
-            output_paths.extend(
-                self.convert_file(
-                    file_path,
-                    output_path,
-                    base_path,
-                    target_format,
-                    create_subdirectories,
-                )
+            converted_file_paths = self.convert_file(
+                file_path,
+                output_path,
+                base_path,
+                target_format,
+                create_subdirectories,
             )
+
+            if converted_file_paths is not None:
+                output_paths.extend(converted_file_paths)
 
         return output_paths

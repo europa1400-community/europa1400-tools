@@ -21,6 +21,9 @@ class AnimationsMapper:
             dtype=np.float32,
         )
 
+        if baf.path.stem.lower() == "sitzung1_kutte":
+            pass
+
         for bgf_path, bgf_vertices_np in bgf_to_vertices.items():
             if bgf_vertices_np.shape[0] != baf_vertices_np.shape[0]:
                 continue
@@ -32,12 +35,10 @@ class AnimationsMapper:
             bgf_name_parts = [part.lower() for part in bgf_name.split("_")]
 
             baf_name_parts = [
-                "".join([char for char in part if not char.isdigit()])
-                for part in baf_name_parts
+                "".join([char for char in part]) for part in baf_name_parts
             ]
             bgf_name_parts = [
-                "".join([char for char in part if not char.isdigit()])
-                for part in bgf_name_parts
+                "".join([char for char in part]) for part in bgf_name_parts
             ]
 
             if not any(
