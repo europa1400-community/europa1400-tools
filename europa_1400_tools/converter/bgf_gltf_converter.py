@@ -289,70 +289,72 @@ class BgfGltfConverter(BgfConverter):
             )
 
         target_index = 0
-        total_keyframe_count = len(total_vertices_per_key)
 
-        bafs = bafs[:1]
-        for baf in bafs:
-            keyframe_count = baf.keyframe_count
+        if len(bafs) > 0:
+            total_keyframe_count = len(total_vertices_per_key)
 
-            weight_values = []
-            for i in range(keyframe_count):
-                weight_values.append([0.0] * total_keyframe_count)
-                weight_values[-1][target_index + i] = 1.0
+            bafs = bafs[:1]
+            for baf in bafs:
+                keyframe_count = baf.keyframe_count
 
-            weight_values_flattened = np.array(
-                weight_values, dtype=np.float32
-            ).flatten()
+                weight_values = []
+                for i in range(keyframe_count):
+                    weight_values.append([0.0] * total_keyframe_count)
+                    weight_values[-1][target_index + i] = 1.0
 
-            self._add_gltf_data(
-                gltf=gltf,
-                data=weight_values_flattened,
-                data_type=FLOAT,
-                data_format=SCALAR,
-                name="weight_values",
-                minmax=False,
-            )
-            weight_values_id = len(gltf.accessors) - 1
+                weight_values_flattened = np.array(
+                    weight_values, dtype=np.float32
+                ).flatten()
 
-            time_values: np.ndarray = np.arange(0, keyframe_count, dtype=np.float32)
-            if baf.baf_ini is not None and baf.baf_ini.key_times is not None:
-                time_values = np.array(
-                    baf.baf_ini.key_times,
-                    dtype=np.float32,
+                self._add_gltf_data(
+                    gltf=gltf,
+                    data=weight_values_flattened,
+                    data_type=FLOAT,
+                    data_format=SCALAR,
+                    name="weight_values",
+                    minmax=False,
                 )
+                weight_values_id = len(gltf.accessors) - 1
 
-            self._add_gltf_data(
-                gltf=gltf,
-                data=time_values,
-                data_type=FLOAT,
-                data_format=SCALAR,
-                name="time_values",
-            )
-            time_values_id = len(gltf.accessors) - 1
+                time_values: np.ndarray = np.arange(0, keyframe_count, dtype=np.float32)
+                if baf.baf_ini is not None and baf.baf_ini.key_times is not None:
+                    time_values = np.array(
+                        baf.baf_ini.key_times,
+                        dtype=np.float32,
+                    )
 
-            animation = Animation(
-                name=baf.path.stem.lower(),
-                samplers=[
-                    AnimationSampler(
-                        input=time_values_id,
-                        interpolation=ANIM_LINEAR,
-                        output=weight_values_id,
-                    ),
-                ],
-                channels=[
-                    AnimationChannel(
-                        sampler=0,
-                        target=AnimationChannelTarget(
-                            node=0,
-                            path=WEIGHTS,
+                self._add_gltf_data(
+                    gltf=gltf,
+                    data=time_values,
+                    data_type=FLOAT,
+                    data_format=SCALAR,
+                    name="time_values",
+                )
+                time_values_id = len(gltf.accessors) - 1
+
+                animation = Animation(
+                    name=baf.path.stem.lower(),
+                    samplers=[
+                        AnimationSampler(
+                            input=time_values_id,
+                            interpolation=ANIM_LINEAR,
+                            output=weight_values_id,
                         ),
-                    ),
-                ],
-            )
-            continue
-            gltf.animations.append(animation)
+                    ],
+                    channels=[
+                        AnimationChannel(
+                            sampler=0,
+                            target=AnimationChannelTarget(
+                                node=0,
+                                path=WEIGHTS,
+                            ),
+                        ),
+                    ],
+                )
+                continue
+                gltf.animations.append(animation)
 
-            target_index += keyframe_count
+                target_index += keyframe_count
 
         gltf_output_path = output_path / Path(name).with_suffix(GLTF_EXTENSION)
         glb_output_path = output_path / Path(name).with_suffix(GLB_EXTENSION)
@@ -440,9 +442,9 @@ class BgfGltfConverter(BgfConverter):
         bgf_vertices = np.array(
             [
                 [
-                    vertex_mapping.vertex1.x,
+                    -vertex_mapping.vertex1.x,
                     vertex_mapping.vertex1.y,
-                    vertex_mapping.vertex1.z,
+                    -vertex_mapping.vertex1.z,
                 ]
                 for vertex_mapping in bgf.mapping_object.vertex_mappings
             ],
@@ -452,9 +454,9 @@ class BgfGltfConverter(BgfConverter):
         bgf_normals = np.array(
             [
                 [
-                    vertex_mapping.vertex2.x,
+                    -vertex_mapping.vertex2.x,
                     vertex_mapping.vertex2.y,
-                    vertex_mapping.vertex2.z,
+                    -vertex_mapping.vertex2.z,
                 ]
                 for vertex_mapping in bgf.mapping_object.vertex_mappings
             ],
@@ -466,61 +468,61 @@ class BgfGltfConverter(BgfConverter):
             bgf_vertices_per_key = baf.get_vertices_per_key()
             baf_to_bgf_vertices_per_key.append(bgf_vertices_per_key)
 
+        # iterate over all textures
         for texture_index in texture_indices:
             # skip indices of missing textures
             if texture_index >= len(bgf.footer.texture_names):
                 continue
 
-            indices: list = []
+            # each texture has its own primitive
+            # with its own indices, vertices, normals and uvs
+            primitive_indices: list = []
             vertices: list = []
             normals: list = []
             uvs: list = []
 
-            baf_to_vertices_per_key = []
+            # each texture also has its own animation vertices
+            vertices_per_key_per_anim = []
             for bgf_vertices_per_key in baf_to_bgf_vertices_per_key:
-                vertices_per_key = None
-                # create a new empty array of the same shape as bgf_vertices_per_key,
-                # but the axis=1 will be variable and be appended to
-                vertices_per_key = [[] for _ in range(bgf_vertices_per_key.shape[0])]
-                baf_to_vertices_per_key.append(vertices_per_key)
+                vertices_per_key = np.emptylike(bgf_vertices_per_key, dtype=np.float32)
+                vertices_per_key_per_anim.append(vertices_per_key)
 
-            polygons = [
-                polygon
-                for polygon in bgf.mapping_object.polygons
-                if polygon.texture_index == texture_index
-            ]
+            # select all indices with the current texture index
             indices_per_polygon = np.array(
                 [
                     [
-                        polygon.face.a,
-                        polygon.face.b,
                         polygon.face.c,
+                        polygon.face.b,
+                        polygon.face.a,
                     ]
-                    for polygon in polygons
+                    for polygon in bgf.mapping_object.polygons
+                    if polygon.texture_index == texture_index
                 ]
             )
             uvs_per_polygon = np.array(
                 [
                     [
                         [
-                            polygon.texture_mapping.a.u,
-                            polygon.texture_mapping.a.v,
+                            polygon.texture_mapping.c.u,
+                            polygon.texture_mapping.c.v,
                         ],
                         [
                             polygon.texture_mapping.b.u,
                             polygon.texture_mapping.b.v,
                         ],
                         [
-                            polygon.texture_mapping.c.u,
-                            polygon.texture_mapping.c.v,
+                            polygon.texture_mapping.a.u,
+                            polygon.texture_mapping.a.v,
                         ],
                     ]
-                    for polygon in polygons
+                    for polygon in bgf.mapping_object.polygons
+                    if polygon.texture_index == texture_index
                 ]
             )
 
             vertex_dict = {}
 
+            # iterate
             for face, uvs_per_face in zip(indices_per_polygon, uvs_per_polygon):
                 for vertex_index, uv in zip(face, uvs_per_face):
                     key = (vertex_index, uv[0], uv[1])
@@ -533,36 +535,38 @@ class BgfGltfConverter(BgfConverter):
                         uvs.append(uv)
 
                         for bgf_vertices_per_key, vertices_per_key in zip(
-                            baf_to_bgf_vertices_per_key, baf_to_vertices_per_key
+                            baf_to_bgf_vertices_per_key, vertices_per_key_per_anim
                         ):
                             for keyframe in range(bgf_vertices_per_key.shape[0]):
                                 vertex_per_key = bgf_vertices_per_key[keyframe][
                                     vertex_index
                                 ]
-                                vertices_per_key[keyframe].append(vertex_per_key)
+                                vertices_per_key = np.append(
+                                    vertices_per_key, vertex_per_key
+                                )
 
                     index = vertex_dict[key]
-                    indices.append(index)
+                    primitive_indices.append(index)
 
-            indices = np.array(indices, dtype=np.uint32)
+            primitive_indices = np.array(primitive_indices, dtype=np.uint32)
             vertices = np.array(vertices, dtype=np.float32)
             normals = np.array(normals, dtype=np.float32)
             uvs = np.array(uvs, dtype=np.float32)
 
-            for vertices_per_key in baf_to_vertices_per_key:
+            for vertices_per_key in vertices_per_key_per_anim:
                 vertices_per_key = np.array(vertices_per_key, dtype=np.float32)
 
             if np.isnan(uvs).any():
                 uvs = np.nan_to_num(uvs)
 
-            for vertices_per_key in baf_to_vertices_per_key:
+            for vertices_per_key in vertices_per_key_per_anim:
                 if np.isnan(vertices_per_key).any():
                     raise ValueError("vertices_per_key contains nan")
 
             gltf_primitive = GltfPrimitive(
-                indices=indices,
+                indices=primitive_indices,
                 vertices=vertices,
-                baf_to_vertices_per_key=baf_to_vertices_per_key,
+                baf_to_vertices_per_key=vertices_per_key_per_anim,
                 normals=normals,
                 uvs=uvs,
                 texture_index=texture_index,
