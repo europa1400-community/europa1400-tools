@@ -34,7 +34,12 @@ from pygltflib import (
     TextureInfo,
 )
 
-from europa_1400_tools.const import GLTF_EXTENSION, PICKLE_EXTENSION, TargetFormat
+from europa_1400_tools.const import (
+    GLB_EXTENSION,
+    GLTF_EXTENSION,
+    PICKLE_EXTENSION,
+    TargetFormat,
+)
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.bgf_converter import BgfConverter
@@ -285,6 +290,8 @@ class BgfGltfConverter(BgfConverter):
 
         target_index = 0
         total_keyframe_count = len(total_vertices_per_key)
+
+        bafs = bafs[:1]
         for baf in bafs:
             keyframe_count = baf.keyframe_count
 
@@ -342,15 +349,21 @@ class BgfGltfConverter(BgfConverter):
                     ),
                 ],
             )
+            continue
             gltf.animations.append(animation)
 
             target_index += keyframe_count
 
         gltf_output_path = output_path / Path(name).with_suffix(GLTF_EXTENSION)
+        glb_output_path = output_path / Path(name).with_suffix(GLB_EXTENSION)
+        print(len(bafs))
+        for baf in bafs:
+            print(baf.path.stem)
 
-        gltf.save(gltf_output_path)
+        # gltf.save(gltf_output_path)
+        gltf.save_binary(glb_output_path)
 
-        return [gltf_output_path]
+        return [glb_output_path]
 
     def _add_gltf_data(
         self,
