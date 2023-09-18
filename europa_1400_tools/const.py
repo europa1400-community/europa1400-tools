@@ -322,7 +322,7 @@ MODELS_REDUCED_FOOTER_FILES = [
 
 BGF_EXCLUDE: list[Path] = []
 BAF_EXCLUDE: list[Path] = []
-ED3_EXCLUDE: list[Path] = ["character_test.ed3"]
+ED3_EXCLUDE: list[Path] = ["character_test.ed3", "Network.ed3"]
 
 WAVEFRONT_ENCODING = "utf-8"
 

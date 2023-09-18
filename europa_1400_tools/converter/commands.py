@@ -101,6 +101,7 @@ def convert(
 
             format_to_file_paths[source_format][base_path].append(file_path)
 
+    output_paths: list[Path] = []
     for source_format, _base_path_to_file_paths in format_to_file_paths.items():
         for base_path, file_paths in _base_path_to_file_paths.items():
             if typer_target_format is None:
@@ -132,9 +133,6 @@ def convert(
                 converter = SbfConverter(common_options)
                 output_path = common_options.converted_sfx_path
             elif source_format == SourceFormat.ED3:
-                if file_path.name in ED3_EXCLUDE:
-                    logging.warning(f"Skipping {file_path}")
-                    continue
                 converter = Ed3Converter(common_options)
                 output_path = common_options.converted_scenes_path
             elif source_format == SourceFormat.BGF:
@@ -148,11 +146,13 @@ def convert(
             else:
                 continue
 
-            converter.convert(
-                file_paths,
-                output_path,
-                base_path,
-                source_format,
-                target_format,
-                create_subdirectories,
+            output_paths.extend(
+                converter.convert(
+                    file_paths,
+                    output_path,
+                    base_path,
+                    source_format,
+                    target_format,
+                    create_subdirectories,
+                )
             )
