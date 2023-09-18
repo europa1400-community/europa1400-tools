@@ -26,22 +26,28 @@ class BaseConstruct(ABC, DataclassMixin):
 
         return obj
 
-    def to_dict(self) -> dict:
+    @property
+    def ignored_fields(self) -> list[str]:
+        """Return the list of ignored fields."""
+
+        return []
+
+    def _dict_factory(self, data: list[tuple[str, Any]]) -> dict:
         """Return the dict representation of the construct."""
 
-        obj_dict = asdict(self)
-        obj_dict = self._clean_dict(obj_dict)
+        obj_dict = dict(data)
+
+        for field in self.ignored_fields:
+            obj_dict.pop(field, None)
 
         return obj_dict
 
-    def _clean_dict(self, dict_value: dict) -> dict:
-        for key, value in dict_value.items():
-            if isinstance(value, Path):
-                dict_value[key] = str(value)
-            elif isinstance(value, dict):
-                dict_value[key] = self._clean_dict(value)
+    def to_dict(self) -> dict:
+        """Return the dict representation of the construct."""
 
-        return dict_value
+        obj_dict = asdict(self, dict_factory=self._dict_factory)
+
+        return obj_dict
 
     def to_json(self) -> str:
         """Return the json representation of the construct."""

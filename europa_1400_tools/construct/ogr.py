@@ -167,3 +167,27 @@ class Ogr(BaseConstruct):
     @property
     def format(self) -> SourceFormat:
         return SourceFormat.OGR
+
+    @property
+    def ignored_fields(self) -> list[str]:
+        """Return the list of ignored fields."""
+
+        return [
+            "skipped",
+            "skipped1",
+            "skipped2",
+            "skip01",
+            "skip013",
+            "skip0123456",
+            "padding",
+            "padding1",
+            "padding2",
+            "padding3",
+            "const_1e",
+            "skip0",
+            "type1",
+            "type2",
+            "type3",
+            "zeros",
+            "data_padding",
+        ]

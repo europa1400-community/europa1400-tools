@@ -301,3 +301,19 @@ class Ed3(BaseConstruct):
     element_groups: list[ElementGroup] = csfield(
         cs.GreedyRange(DataclassStruct(ElementGroup) * is_element_group)
     )
+
+    @property
+    def ignored_fields(self) -> list[str]:
+        """Return the list of ignored fields."""
+
+        return [
+            "skipped",
+            "skip01",
+            "padding",
+            "padding1",
+            "padding2",
+            "padding3",
+            "const_1e",
+            "skip0",
+            "type1" "type2" "type3",
+        ]
