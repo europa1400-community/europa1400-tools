@@ -170,7 +170,9 @@ class ObjectElement(DataclassMixin):
 
     padding: bytes = csfield(cs.Bytes(19))
     name: str = csfield(cs.CString("ascii"))
-    transforms: Transform = csfield(cs.Array(11, DataclassStruct(Transform)))
+    transform: Transform = csfield(DataclassStruct(Transform))
+    padding2: bytes = csfield(cs.Bytes(1))
+    transforms: Transform = csfield(cs.Array(10, DataclassStruct(Transform)))
 
 
 @dataclass
