@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION, TargetFormat
-from europa_1400_tools.construct.baf import Vertex
+from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
 from europa_1400_tools.converter.bgf_converter import BgfConverter
 
@@ -87,9 +87,9 @@ class BgfWavefrontConverter(BgfConverter):
                 for polygon in model.polygons
                 if polygon.texture_index is not None
             ]
-            vertices: list[Vertex] = [vertex for vertex in model.vertices]
+            vertices: list[Vector3] = [vertex for vertex in model.vertices]
             faces: list[Face] = [polygon.face for polygon in model.polygons]
-            normals: list[Vertex] = [polygon.normal for polygon in model.polygons]
+            normals: list[Vector3] = [polygon.normal for polygon in model.polygons]
 
             materials: list[str] = [
                 bgf.textures[texture_index].name.split(".")[0]

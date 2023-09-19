@@ -3,8 +3,9 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa_1400_tools.construct.baf import Vertex
+from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.base_construct import BaseConstruct
+from europa_1400_tools.construct.common import Transform
 
 
 def is_01(obj, ctx):
@@ -148,8 +149,7 @@ class DummyElement(DataclassMixin):
     """Structure of a dummy element."""
 
     padding: bytes = csfield(cs.Bytes(4))
-    offset: Vertex = csfield(DataclassStruct(Vertex))
-    rotation: Vertex = csfield(DataclassStruct(Vertex))
+    transform: Transform = csfield(DataclassStruct(Transform))
 
 
 @dataclass
@@ -157,10 +157,9 @@ class CameraElement(DataclassMixin):
     """Structure of a camera element."""
 
     padding: bytes = csfield(cs.Bytes(4))
-    offset: Vertex = csfield(DataclassStruct(Vertex))
-    rotation: Vertex = csfield(DataclassStruct(Vertex))
+    transform: Transform = csfield(DataclassStruct(Transform))
     padding2: bytes = csfield(cs.Bytes(1))
-    data: list[float] = csfield(cs.Array(41, cs.Float32l))
+    transforms: list[Transform] = csfield(cs.Array(11, DataclassStruct(Transform)))
 
 
 @dataclass
@@ -169,27 +168,7 @@ class ObjectElement(DataclassMixin):
 
     padding: bytes = csfield(cs.Bytes(19))
     name: str = csfield(cs.CString("ascii"))
-    offset: Vertex = csfield(DataclassStruct(Vertex))
-    rotation: Vertex = csfield(DataclassStruct(Vertex))
-    additional_transform_flag: int = csfield(cs.Peek(cs.Byte))
-    padding2: int | None = csfield(
-        cs.If(
-            lambda ctx: ctx.additional_transform_flag == 0x01,
-            cs.Byte,
-        )
-    )
-    offset2: Vertex | None = csfield(
-        cs.If(
-            lambda ctx: ctx.additional_transform_flag == 0x01,
-            DataclassStruct(Vertex),
-        )
-    )
-    rotation2: Vertex | None = csfield(
-        cs.If(
-            lambda ctx: ctx.additional_transform_flag == 0x01,
-            DataclassStruct(Vertex),
-        )
-    )
+    transforms: Transform = csfield(cs.Array(11, DataclassStruct(Transform)))
 
 
 @dataclass

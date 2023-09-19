@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from europa_1400_tools.construct.baf import Baf, Vertex
+from europa_1400_tools.construct.baf import Baf, Vector3
 
 
 class AnimationsMapper:
@@ -11,7 +11,7 @@ class AnimationsMapper:
         """Map animation to object."""
 
         mapped_bgfs: list[Path] = []
-        baf_vertices: list[Vertex] = []
+        baf_vertices: list[Vector3] = []
 
         for model in baf.body.keys[0].models:
             baf_vertices.extend(model.vertices)

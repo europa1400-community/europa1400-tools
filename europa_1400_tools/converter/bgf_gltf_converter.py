@@ -356,13 +356,7 @@ class BgfGltfConverter(BgfConverter):
 
                 target_index += keyframe_count
 
-        gltf_output_path = output_path / Path(name).with_suffix(GLTF_EXTENSION)
         glb_output_path = output_path / Path(name).with_suffix(GLB_EXTENSION)
-        print(len(bafs))
-        for baf in bafs:
-            print(baf.path.stem)
-
-        # gltf.save(gltf_output_path)
         gltf.save_binary(glb_output_path)
 
         return [glb_output_path]
