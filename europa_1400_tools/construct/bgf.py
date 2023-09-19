@@ -4,7 +4,7 @@ import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
 from europa_1400_tools.const import OBJECTS_STRING_ENCODING, SourceFormat
-from europa_1400_tools.construct.baf import Vertex
+from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
 
@@ -44,9 +44,9 @@ class TextureCoordinate(DataclassMixin):
 class TextureMapping(DataclassMixin):
     """Structure of texture mapping."""
 
-    vertex_u: Vertex = csfield(DataclassStruct(Vertex))
-    vertex_v: Vertex = csfield(DataclassStruct(Vertex))
-    vertex_w: Vertex = csfield(DataclassStruct(Vertex))
+    vertex_u: Vector3 = csfield(DataclassStruct(Vector3))
+    vertex_v: Vector3 = csfield(DataclassStruct(Vector3))
+    vertex_w: Vector3 = csfield(DataclassStruct(Vector3))
 
     a: TextureCoordinate = csfield(
         cs.Computed(
@@ -79,8 +79,8 @@ class Polygon(DataclassMixin):
     skip_optional_1E: bytes | None = csfield(cs.Optional(cs.Const(b"\x1E")))
     texture_mapping: TextureMapping = csfield(DataclassStruct(TextureMapping))
     skip_optional_1f: bytes | None = csfield(cs.Optional(cs.Const(b"\x1F")))
-    normal: Vertex | None = csfield(
-        cs.If(lambda ctx: ctx.skip_optional_1f is not None, DataclassStruct(Vertex))
+    normal: Vector3 | None = csfield(
+        cs.If(lambda ctx: ctx.skip_optional_1f is not None, DataclassStruct(Vector3))
     )
     skip_optional_20: bytes | None = csfield(cs.Optional(cs.Const(b"\x20")))
     texture_index: int | None = csfield(
@@ -116,8 +116,8 @@ class BgfModel(DataclassMixin):
     polygon_count: int = csfield(cs.Int16ul)
     skip_zero_2_2: bytes = csfield(cs.Const(b"\x00\x00"))
     skip_required_1B: bytes = csfield(cs.Const(b"\x1B"))
-    vertices: list[Vertex] = csfield(
-        cs.Array(lambda ctx: ctx.vertex_count, DataclassStruct(Vertex))
+    vertices: list[Vector3] = csfield(
+        cs.Array(lambda ctx: ctx.vertex_count, DataclassStruct(Vector3))
     )
     skip_required_1C_1D: bytes = csfield(cs.Const(b"\x1C\x1D"))
     polygons: list[Polygon] = csfield(
@@ -178,8 +178,8 @@ class BgfGameObject(DataclassMixin):
 class VertexMapping(DataclassMixin):
     """Construct for VertexMapping."""
 
-    vertex1: Vertex = csfield(DataclassStruct(Vertex))
-    vertex2: Vertex = csfield(DataclassStruct(Vertex))
+    vertex1: Vector3 = csfield(DataclassStruct(Vector3))
+    vertex2: Vector3 = csfield(DataclassStruct(Vector3))
 
 
 @dataclass

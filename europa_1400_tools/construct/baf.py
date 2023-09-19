@@ -15,13 +15,7 @@ from europa_1400_tools.const import (
     SourceFormat,
 )
 from europa_1400_tools.construct.base_construct import BaseConstruct
-
-
-@dataclass
-class Vertex(DataclassMixin):
-    x: float = csfield(cs.Float32l)
-    y: float = csfield(cs.Float32l)
-    z: float = csfield(cs.Float32l)
+from europa_1400_tools.construct.common import Vector3
 
 
 @dataclass
@@ -58,9 +52,9 @@ class AnimHeader(DataclassMixin):
 
 @dataclass
 class SkeletonData(DataclassMixin):
-    point_a: Vertex = csfield(DataclassStruct(Vertex))
+    point_a: Vector3 = csfield(DataclassStruct(Vector3))
     const_3A: bytes = csfield(cs.Const(b"\x3A"))
-    point_b: Vertex = csfield(DataclassStruct(Vertex))
+    point_b: Vector3 = csfield(DataclassStruct(Vector3))
 
 
 @dataclass
@@ -78,8 +72,8 @@ class Skeleton(DataclassMixin):
 
 @dataclass
 class SkeletonContainer(DataclassMixin):
-    point_a: Vertex = csfield(DataclassStruct(Vertex))
-    point_b: Vertex = csfield(DataclassStruct(Vertex))
+    point_a: Vector3 = csfield(DataclassStruct(Vector3))
+    point_b: Vector3 = csfield(DataclassStruct(Vector3))
 
     skeleton_head: Skeleton = csfield(DataclassStruct(Skeleton))
     skeleton_left_hand: Skeleton = csfield(DataclassStruct(Skeleton))
@@ -93,7 +87,7 @@ class PointContainer(DataclassMixin):
     const_19: bytes = csfield(cs.Const(b"\x19"))
     count: int = csfield(cs.Int32ul)
     const_21: bytes = csfield(cs.Const(b"\x21"))
-    vertices: list[Vertex] = csfield(cs.Array(cs.this.count, DataclassStruct(Vertex)))
+    vertices: list[Vector3] = csfield(cs.Array(cs.this.count, DataclassStruct(Vector3)))
     const_28: bytes = csfield(cs.Const(b"\x28"))
     skeleton_container_flag: bytes | None = csfield(cs.Optional(cs.Const(b"\x31")))
     skeleton_container: SkeletonContainer | None = csfield(

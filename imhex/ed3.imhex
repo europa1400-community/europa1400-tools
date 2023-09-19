@@ -19,6 +19,17 @@ struct FloatBlock {
     padding[1];
 };
 
+struct Vector {
+    float x;
+    float y;
+    float z;
+};
+
+struct Transform {
+    Vector position;
+    Vector rotation;
+};
+
 struct CameraElement {
     char name[];
     float nums[179];
@@ -111,18 +122,15 @@ struct SceneElement {
             float data[3];
         } else if (type == 0x3) {
             padding[4];
-            float nums1[6];
+            Transform transform;
             padding[1];
-            float nums2[41];
+            Transform transforms[11];
         } else if (type == 0x4) {
             padding[19];
             char object_name[];
             float nums[6];
 
-            if (std::mem::read_unsigned($, 1) == 0x1) {
-                padding[1];
-                float nums2[6];
-            }
+            Transform transforms[10];
         } else if (type == 0x5) {
             padding[6];
             LightBlock blocks[8];

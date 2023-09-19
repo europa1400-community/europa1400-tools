@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa_1400_tools.const import Format, SourceFormat
-from europa_1400_tools.construct.baf import Vertex
+from europa_1400_tools.const import SourceFormat
+from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.base_construct import BaseConstruct
 
 
@@ -80,8 +80,8 @@ class LightDataBlock(DataclassMixin):
 class ObjectData(DataclassMixin):
     """Structure of a object data block."""
 
-    offset: Vertex = csfield(DataclassStruct(Vertex))
-    data: Vertex = csfield(DataclassStruct(Vertex))
+    offset: Vector3 = csfield(DataclassStruct(Vector3))
+    data: Vector3 = csfield(DataclassStruct(Vector3))
 
 
 @dataclass
