@@ -118,8 +118,9 @@ struct SceneElement {
             float nums[10];
         } else if (type == 0x2) {
             padding[4];
-            float offsets[3];
-            float data[3];
+            Transform transform;
+            padding[1];
+            Transform transforms[10];
         } else if (type == 0x3) {
             padding[4];
             Transform transform;
@@ -128,8 +129,8 @@ struct SceneElement {
         } else if (type == 0x4) {
             padding[19];
             char object_name[];
-            float nums[6];
-
+            Transform transform;
+            padding[1];
             Transform transforms[10];
         } else if (type == 0x5) {
             padding[6];
@@ -157,7 +158,6 @@ struct ElementGroup {
 struct Ed3 {
     padding[4];
     CameraElement camera;
-    SceneElement camera2;
     ElementGroup groups[while(std::mem::read_unsigned($, 1) == 0x1)];
 };
 
