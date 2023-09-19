@@ -150,6 +150,8 @@ class DummyElement(DataclassMixin):
 
     padding: bytes = csfield(cs.Bytes(4))
     transform: Transform = csfield(DataclassStruct(Transform))
+    padding2: bytes = csfield(cs.Bytes(1))
+    transforms: list[Transform] = csfield(cs.Array(10, DataclassStruct(Transform)))
 
 
 @dataclass
@@ -276,7 +278,6 @@ class Ed3(BaseConstruct):
 
     skipped: bytes = csfield(cs.Bytes(4))
     main_camera_element: MainCameraElement = csfield(DataclassStruct(MainCameraElement))
-    scene_camera_element: SceneElement = csfield(DataclassStruct(SceneElement))
     element_groups: list[ElementGroup] = csfield(
         cs.GreedyRange(DataclassStruct(ElementGroup) * is_element_group)
     )
