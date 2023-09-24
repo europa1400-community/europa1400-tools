@@ -1,11 +1,13 @@
 import json
 from abc import ABC
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Type, TypeVar
 
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
+
+from europa_1400_tools.construct.common import asdict
 
 T = TypeVar("T", bound="BaseConstruct")
 
@@ -20,32 +22,16 @@ class BaseConstruct(ABC, DataclassMixin):
     def from_file(cls: Type[T], file_path: Path) -> T:
         """Read the file and return the construct."""
 
-        obj = DataclassStruct(cls).parse_file(
+        obj = cs.Debugger(DataclassStruct(cls)).parse_file(
             file_path,
         )
 
         return obj
 
-    @property
-    def ignored_fields(self) -> list[str]:
-        """Return the list of ignored fields."""
-
-        return []
-
-    def _dict_factory(self, data: list[tuple[str, Any]]) -> dict:
-        """Return the dict representation of the construct."""
-
-        obj_dict = dict(data)
-
-        for field in self.ignored_fields:
-            obj_dict.pop(field, None)
-
-        return obj_dict
-
     def to_dict(self) -> dict:
         """Return the dict representation of the construct."""
 
-        obj_dict = asdict(self, dict_factory=self._dict_factory)
+        obj_dict = asdict(self)
 
         return obj_dict
 
