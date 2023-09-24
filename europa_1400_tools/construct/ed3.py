@@ -3,9 +3,8 @@ from dataclasses import dataclass
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.base_construct import BaseConstruct
-from europa_1400_tools.construct.common import Transform
+from europa_1400_tools.construct.common import Transform, Vector3, ignoredcsfield
 
 
 def is_01(obj, ctx):
@@ -21,16 +20,62 @@ def cancel_on_unacceptable(obj, ctx):
 class Skip0(DataclassMixin):
     """Structure of a skip0 block."""
 
-    acceptable_values: list[int] = csfield(cs.Computed(lambda ctx: [0]))
-    skipped: list[int] = csfield(cs.GreedyRange(cs.Byte * cancel_on_unacceptable))
+    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0]))
+    skipped: list[int] = ignoredcsfield(
+        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
+    )
 
 
 @dataclass
 class Skip01(DataclassMixin):
     """Structure of a skip01 block."""
 
-    acceptable_values: list[int] = csfield(cs.Computed(lambda ctx: [0, 1]))
-    skipped: list[int] = csfield(cs.GreedyRange(cs.Byte * cancel_on_unacceptable))
+    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0, 1]))
+    skipped: list[int] = ignoredcsfield(
+        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
+    )
+
+
+@dataclass
+class Skip1(DataclassMixin):
+    """Structure of a skip01 block."""
+
+    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [1]))
+    skipped: list[int] = ignoredcsfield(
+        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
+    )
+
+
+@dataclass
+class MainCameraElementAf(DataclassMixin):
+    """Structure of a camera element."""
+
+    name: str = csfield(cs.CString("ascii"))
+    values: list[float] = csfield(cs.Array(22, cs.Float32l))
+    num1: int = csfield(cs.Int32ul)
+    skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
+
+
+@dataclass
+class MainCameraNums(DataclassMixin):
+    """Structure of a main camera elements nums."""
+
+    num1: int = csfield(cs.Byte)
+    num2: int = csfield(cs.Byte)
+    num3: int = csfield(cs.Byte)
+    num4: int = csfield(cs.Byte)
+
+
+@dataclass
+class CameraData(DataclassMixin):
+    """Structure of a camera data."""
+
+    values1: list[float] = csfield(cs.Array(17, cs.Float32l))
+    nums1: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
+    values2: list[float] = csfield(cs.Array(2, cs.Float32l))
+    nums2: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
+    values3: list[float] = csfield(cs.Array(2, cs.Float32l))
+    nums3: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
 
 
 @dataclass
@@ -38,129 +83,118 @@ class MainCameraElement(DataclassMixin):
     """Structure of a camera element."""
 
     name: str = csfield(cs.CString("ascii"))
-    nums: float = csfield(cs.Array(179, cs.Float32l))
-    magic: int = csfield(cs.Byte)
-    skipped: bytes = csfield(cs.Bytes(24))
-
-
-@dataclass
-class WaterBlock(DataclassMixin):
-    """Structure of a water block."""
-
-    padding: bytes = csfield(cs.Bytes(3))
-    type: int = csfield(cs.Byte)
-    padding2: bytes = csfield(cs.Bytes(3))
-    data: list[float] = csfield(cs.Array(11, cs.Float32l))
-    num: int = csfield(cs.Int32ul)
-
-
-@dataclass
-class TextureBlock(DataclassMixin):
-    """Structure of a texture block."""
-
-    padding: bytes = csfield(cs.Bytes(8))
-    data: list[int] = csfield(cs.Bytes(lambda ctx: ctx._._.size))
-
-
-@dataclass
-class CityBlock(DataclassMixin):
-    """Structure of a city block."""
-
-    name: str = csfield(cs.CString("ascii"))
-
-    water_flag: int = csfield(cs.Peek(cs.Bytes(4)))
-    texture_flag: int = csfield(cs.Peek(cs.Bytes(5)))
-    water_block: WaterBlock | None = csfield(
-        cs.If(
-            lambda ctx: ctx.water_flag == b"\x00\x00\x00\xDC"
-            or ctx.water_flag == b"\x00\x00\x00\xC8"
-            or ctx.water_flag == b"\x00\x00\x00\xCD"
-            or ctx.water_flag == b"\x00\x00\x00\xE6",
-            DataclassStruct(WaterBlock),
-        )
+    camera_data_count: int = csfield(
+        cs.Computed(lambda ctx: 5 if ctx._.type == 0xB9 else 6)
     )
-    texture_block: TextureBlock | None = csfield(
-        cs.If(
-            lambda ctx: ctx.texture_flag == b"\x80\x00\x00\x00\x80"
-            or ctx.texture_flag == b"\x40\x00\x00\x00\x40",
-            DataclassStruct(TextureBlock),
-        )
+    values1: list[float] = csfield(cs.Array(7, cs.Float32l))
+    num1: int = csfield(cs.Byte)
+    num2: int = csfield(cs.Byte)
+    num3: int = csfield(cs.Byte)
+    num4: int = csfield(cs.Byte)
+    nums1: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
+    values2: list[float] = csfield(cs.Array(8, cs.Float32l))
+    nums2: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
+    values3: list[float] = csfield(cs.Array(2, cs.Float32l))
+    nums3: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
+    values4: list[float] = csfield(cs.Array(2, cs.Float32l))
+    nums4: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
+    camera_datas: list[CameraData] = csfield(
+        cs.Array(lambda ctx: ctx.camera_data_count, DataclassStruct(CameraData))
     )
+    values5: list[float] = csfield(cs.Array(11, cs.Float32l))
+    num5: int = csfield(cs.Byte)
+    skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
 
 
 @dataclass
 class CityFooter(DataclassMixin):
     """Structure of a city footer."""
 
-    names: list[str] = csfield(cs.GreedyRange(cs.CString("ascii")))
-    data: bytes = csfield(cs.GreedyBytes)
+    names: list[str] = csfield(cs.Array(8, cs.CString("ascii")))
+    values: list[float] = csfield(cs.Array(5, cs.Float32l))
+
+
+@dataclass
+class WaterData(DataclassMixin):
+    """Structure of a water data."""
+
+    name: str = csfield(cs.CString("ascii"))
+    zero1: bytes = ignoredcsfield(cs.Bytes(3))
+    num1: int = csfield(cs.Int32ul)
+    values: list[float] = csfield(cs.Array(11, cs.Float32l))
+    num2: int = csfield(cs.Int32ul)
+
+
+@dataclass
+class WaterElement(DataclassMixin):
+    """Structure of a water element."""
+
+    water_data_count: int = csfield(cs.Int32ul)
+    width: int = csfield(cs.Int32ul)
+    height: int = csfield(cs.Int32ul)
+    data: list[int] = csfield(cs.Array(lambda ctx: ctx._.size, cs.Byte))
+    water_datas: list[WaterData] = csfield(
+        cs.Array(lambda ctx: ctx.water_data_count, DataclassStruct(WaterData)),
+    )
+
+
+@dataclass
+class TextureElement(DataclassMixin):
+    """Structure of a texture element."""
+
+    name: str = csfield(cs.CString("ascii"))
+    width: int = csfield(cs.Int32ul)
+    height: int = csfield(cs.Int32ul)
+    values: list[int] = csfield(cs.Array(lambda ctx: ctx._.size, cs.Byte))
 
 
 @dataclass
 class CityElement(DataclassMixin):
     """Structure of a city element."""
 
-    padding1: bytes = csfield(cs.Bytes(3))
-    size: int = csfield(cs.Computed(lambda ctx: ctx._.type1 * ctx._.type2))
-    height_data1: list[int] = csfield(cs.Bytes(lambda ctx: ctx.size))
-    magic: int = csfield(cs.Int32ul)
-    padding2: bytes = csfield(cs.Bytes(1))
-    magic2: int = csfield(cs.Byte)
-    padding3: bytes = csfield(cs.Bytes(2))
-    height_data2: list[int] = csfield(cs.Bytes(lambda ctx: ctx.size * 4))
-    height_data3_flag: int = csfield(cs.Peek(cs.Byte))
-    magic3: int | None = csfield(cs.Optional(cs.Const(b"\x02\x00\x00\x00")))
-    a: int | None = csfield(
-        cs.If(
-            lambda ctx: ctx.height_data3_flag == 0x01,
-            cs.Int32ul,
-        )
+    size: int = csfield(cs.Computed(lambda ctx: ctx._.width * ctx._.height))
+    height_data1: list[int] = csfield(cs.Array(lambda ctx: ctx.size, cs.Byte))
+    num1: int = csfield(cs.Int32ul)
+    zero1: bytes = ignoredcsfield(cs.Bytes(1))
+    num2: int = csfield(cs.Byte)
+    flag1: bool = csfield(cs.Flag)
+    height_data2: list[int] = csfield(cs.Array(lambda ctx: ctx.size * 4, cs.Byte))
+    zero2: bytes = ignoredcsfield(cs.Bytes(1))
+    has_water_element: bool = csfield(cs.Flag)
+    water_element: WaterElement | None = csfield(
+        cs.If(lambda ctx: ctx.has_water_element, DataclassStruct(WaterElement))
     )
-    b: int | None = csfield(
-        cs.If(
-            lambda ctx: ctx.height_data3_flag == 0x01,
-            cs.Int32ul,
-        )
-    )
-    height_data3: list[int] | None = csfield(
-        cs.If(
-            lambda ctx: ctx.height_data3_flag == 0x01,
-            cs.Bytes(lambda ctx: ctx.size),
-        )
-    )
-    skip0: Skip0 = csfield(DataclassStruct(Skip0))
-    const_1e: int | None = csfield(cs.Optional(cs.Const(b"\x1e")))
-    blocks: list[CityBlock] = csfield(
-        cs.GreedyRange(DataclassStruct(CityBlock)),
-    )
+    texture_element: TextureElement = csfield(DataclassStruct(TextureElement))
     footer: CityFooter = csfield(DataclassStruct(CityFooter))
 
 
 @dataclass
-class DummyElement0(DataclassMixin):
+class ContactElement(DataclassMixin):
     """Structure of a dummy0 element."""
 
-    padding: bytes = csfield(cs.Bytes(5))
-    data: list[float] = csfield(cs.Array(10, cs.Float32l))
+    flag1: bool = csfield(cs.Flag)
+    flag2: bool = csfield(cs.Flag)
+    vectors: list[Vector3] = csfield(cs.Array(3, DataclassStruct(Vector3)))
+    value: float = csfield(cs.Float32l)
 
 
 @dataclass
 class DummyElement(DataclassMixin):
     """Structure of a dummy element."""
 
-    padding: bytes = csfield(cs.Bytes(4))
+    flag1: bool = csfield(cs.Flag)
     transform: Transform = csfield(DataclassStruct(Transform))
-    padding2: bytes = csfield(cs.Bytes(1))
-    transforms: list[Transform] = csfield(cs.Array(10, DataclassStruct(Transform)))
+    flag2: bool = csfield(cs.Flag)
+    transforms: list[Transform] = csfield(cs.Array(7, DataclassStruct(Transform)))
 
 
 @dataclass
 class CameraElement(DataclassMixin):
     """Structure of a camera element."""
 
-    padding: bytes = csfield(cs.Bytes(4))
+    flag1: bool = csfield(cs.Flag)
     transform: Transform = csfield(DataclassStruct(Transform))
-    padding2: bytes = csfield(cs.Bytes(1))
+    flag2: bool = csfield(cs.Flag)
     transforms: list[Transform] = csfield(cs.Array(11, DataclassStruct(Transform)))
 
 
@@ -168,93 +202,138 @@ class CameraElement(DataclassMixin):
 class ObjectElement(DataclassMixin):
     """Structure of an object element."""
 
-    padding: bytes = csfield(cs.Bytes(19))
-    name: str = csfield(cs.CString("ascii"))
+    flag1: bool = csfield(cs.Flag)
+    zero1: bytes = ignoredcsfield(cs.Bytes(1))
+    flag2: bool = csfield(cs.Flag)
+    flag3: bool = csfield(cs.Flag)
+    num1: int = csfield(cs.Byte)
+    flag4: bool = csfield(cs.Flag)
+    flag5: bool | None = csfield(
+        cs.If(
+            lambda ctx: ctx._._._.type != 0xAF,
+            cs.Flag,
+        )
+    )
+    flag6: bool | None = csfield(
+        cs.If(
+            lambda ctx: ctx._._._.type != 0xAF,
+            cs.Flag,
+        )
+    )
+    num2: int = csfield(cs.Byte)
+    zero2: bytes = ignoredcsfield(cs.Bytes(1))
+    flag7: bool = csfield(cs.Flag)
+    zero3: bytes = ignoredcsfield(cs.Bytes(1))
+    has_object_name: bool = ignoredcsfield(cs.Flag)
+    zero4: bytes = ignoredcsfield(cs.Bytes(3))
+    name: str | None = csfield(
+        cs.If(lambda ctx: ctx.has_object_name, cs.CString("ascii"))
+    )
     transform: Transform = csfield(DataclassStruct(Transform))
-    padding2: bytes = csfield(cs.Bytes(1))
-    transforms: Transform = csfield(cs.Array(10, DataclassStruct(Transform)))
+    flag8: bool = csfield(cs.Flag)
+    transforms: Transform = csfield(cs.Array(6, DataclassStruct(Transform)))
 
 
 @dataclass
 class LightBlock(DataclassMixin):
     """Structure of a light block."""
 
-    data: list[float] = csfield(cs.Array(13, cs.Float32l))
-    skipped: int = csfield(cs.Bytes(4))
+    values: list[float] = csfield(cs.Array(13, cs.Float32l))
+    num: int = csfield(cs.Int32ul)
 
 
 @dataclass
 class LightElement(DataclassMixin):
     """Structure of a light element."""
 
-    padding: bytes = csfield(cs.Bytes(6))
-    blocks: list[LightBlock] = csfield(
-        cs.Array(8, DataclassStruct(LightBlock)),
+    block_count: int = ignoredcsfield(
+        cs.Computed(
+            lambda ctx: 7 if ctx._._._.type == 0xB9 or ctx._._._.type == 0xAF else 8
+        )
     )
+    flag1: bool = csfield(cs.Flag)
+    flag2: bool = csfield(cs.Flag)
+    is_not_r_light: bool = csfield(cs.Flag)
+    blocks: list[LightBlock] = csfield(
+        cs.Array(lambda ctx: ctx.block_count, DataclassStruct(LightBlock)),
+    )
+
+
+@dataclass
+class Script(DataclassMixin):
+    """Structure of a script."""
+
+    event_name: str = csfield(cs.CString("ascii"))
+    script_path: str = csfield(cs.CString("ascii"))
+
+
+@dataclass
+class ScriptElement(DataclassMixin):
+    """Structure of a script element."""
+
+    script_count: int = ignoredcsfield(cs.Int32ul)
+    scripts: list[Script] = csfield(
+        cs.Array(lambda ctx: ctx.script_count, DataclassStruct(Script))
+    )
+    skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
 
 
 @dataclass
 class SceneElement(DataclassMixin):
     """Structure of a scene element."""
 
-    skip01: Skip01 = csfield(DataclassStruct(Skip01))
+    skip1: Skip1 = ignoredcsfield(DataclassStruct(Skip1))
     name: str = csfield(cs.CString("ascii"))
-    type1: int = csfield(cs.Int32ul)
-    type2: int = csfield(cs.Int32ul)
-    type3: int = csfield(cs.Byte)
+    width: int = csfield(cs.Int32ul)
+    height: int | None = csfield(cs.If(lambda ctx: ctx._._.type != 0xAF, cs.Int32ul))
+    type: int = csfield(cs.Int32ul)
     city_element: CityElement | None = csfield(
         cs.If(
-            lambda ctx: ctx.type1 == 0x80 or ctx.type1 == 0x40,
+            lambda ctx: ctx.width == 0x40 or ctx.width == 0x80 or ctx.width == 0x100,
             DataclassStruct(CityElement),
         )
     )
-    dummy0_element: DummyElement0 | None = csfield(
+    contact_element: ContactElement | None = csfield(
         cs.If(
-            lambda ctx: ctx.type1 != 0x80 and ctx.type1 != 0x40 and ctx.type3 == 0x00,
-            DataclassStruct(DummyElement0),
+            lambda ctx: ctx.type == 0x00,
+            DataclassStruct(ContactElement),
         )
     )
     dummy_element: DummyElement | None = csfield(
         cs.If(
-            lambda ctx: ctx.type1 != 0x80 and ctx.type1 != 0x40 and ctx.type3 == 0x02,
+            lambda ctx: ctx.type == 0x02,
             DataclassStruct(DummyElement),
         )
     )
     camera_element: CameraElement | None = csfield(
         cs.If(
-            lambda ctx: ctx.type1 != 0x80 and ctx.type1 != 0x40 and ctx.type3 == 0x03,
+            lambda ctx: ctx.type == 0x03,
             DataclassStruct(CameraElement),
         )
     )
     object_element: ObjectElement | None = csfield(
         cs.If(
-            lambda ctx: ctx.type1 != 0x80 and ctx.type1 != 0x40 and ctx.type3 == 0x04,
+            lambda ctx: ctx.type == 0x04,
             DataclassStruct(ObjectElement),
         )
     )
-    light_element5: LightElement | None = csfield(
+    light_element: LightElement | None = csfield(
         cs.If(
-            lambda ctx: ctx.type1 != 0x80 and ctx.type1 != 0x40 and ctx.type3 == 0x05,
+            lambda ctx: ctx.type == 0x05
+            or ctx.type == 0x06
+            or ctx.type == 0x07
+            or ctx.type == 0x08,
             DataclassStruct(LightElement),
         )
     )
-    light_element7: LightElement | None = csfield(
-        cs.If(
-            lambda ctx: ctx.type1 != 0x80 and ctx.type1 != 0x40 and ctx.type3 == 0x07,
-            DataclassStruct(LightElement),
-        )
+    skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
+    script_elements: list[ScriptElement] = csfield(
+        cs.GreedyRange(DataclassStruct(ScriptElement))
     )
-    light_element8: LightElement | None = csfield(
-        cs.If(
-            lambda ctx: ctx.type1 != 0x80 and ctx.type1 != 0x40 and ctx.type3 == 0x08,
-            DataclassStruct(LightElement),
-        )
-    )
-    skip0: Skip0 = csfield(DataclassStruct(Skip0))
 
 
 def is_sub_element(obj: SceneElement, ctx):
-    if obj.skip01.skipped != [1, 1]:
+    if obj.skip1.skipped != [1, 1]:
         raise cs.CancelParsing
 
 
@@ -262,15 +341,15 @@ def is_sub_element(obj: SceneElement, ctx):
 class ElementGroup(DataclassMixin):
     """Structure of an element group."""
 
-    skip01: Skip01 = csfield(DataclassStruct(Skip01))
+    skip1: Skip1 = ignoredcsfield(DataclassStruct(Skip1))
     first_element: SceneElement = csfield(DataclassStruct(SceneElement))
     elements: list[SceneElement] = csfield(
         cs.GreedyRange(DataclassStruct(SceneElement) * is_sub_element)
     )
 
 
-def is_element_group(obj: ElementGroup, ctx):
-    if obj.skip01.skipped != [1]:
+def is_element_group(obj, ctx):
+    if obj.skip1.skipped != [1]:
         raise cs.CancelParsing
 
 
@@ -278,24 +357,9 @@ def is_element_group(obj: ElementGroup, ctx):
 class Ed3(BaseConstruct):
     """Structure of an ed3 file."""
 
-    skipped: bytes = csfield(cs.Bytes(4))
+    type: int = csfield(cs.Byte)
+    const: bytes = ignoredcsfield(cs.Const(b"\x00\x6c\x3a"))
     main_camera_element: MainCameraElement = csfield(DataclassStruct(MainCameraElement))
     element_groups: list[ElementGroup] = csfield(
         cs.GreedyRange(DataclassStruct(ElementGroup) * is_element_group)
     )
-
-    @property
-    def ignored_fields(self) -> list[str]:
-        """Return the list of ignored fields."""
-
-        return [
-            "skipped",
-            "skip01",
-            "padding",
-            "padding1",
-            "padding2",
-            "padding3",
-            "const_1e",
-            "skip0",
-            "type1" "type2" "type3",
-        ]

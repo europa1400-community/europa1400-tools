@@ -9,7 +9,6 @@ import typer
 from europa_1400_tools.const import (
     BIN_EXTENSION,
     CONVERTIBLE_PATHS,
-    ED3_EXCLUDE,
     IGNORED_EXTENSIONS,
     SourceFormat,
     TargetFormat,
@@ -67,9 +66,9 @@ def convert(
             )
         else:
             if path not in base_path_to_file_paths.keys():
-                base_path_to_file_paths[path] = []
+                base_path_to_file_paths[path.parent] = []
 
-            base_path_to_file_paths[path].append(path)
+            base_path_to_file_paths[path.parent].append(path)
 
     format_to_file_paths: dict[SourceFormat, dict[Path, list[Path]]] = {}
 

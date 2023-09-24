@@ -3,20 +3,51 @@
 #include <std/core.pat>
 #pragma pattern_limit 999999;
 
+fn is_zero(u32 count) {
+    u32 offset = 0;
+
+    for (u32 i = 0, i < count, i += 1) {
+        u8 read_byte = std::mem::read_unsigned($ + offset, 1);
+
+        if (read_byte != 0) {
+            return false;
+        }
+
+        offset += 1;
+    }
+
+    return true;
+};
+
+struct SkipRequired<auto Value, auto Padding> {
+    char read_value[std::string::length(Value)] [[no_unique_address]];
+
+    if (read_value == Value) {
+        padding[Padding];
+    } else {
+        std::warning("Could not find required value!");
+    }
+} [[sealed, hidden, no_unique_address]];
+
+struct SkipZero<auto Count> {
+    if (is_zero(Count)) {
+        padding[Count];
+    } else {
+        std::print("Value was not zero! {:#16x}", $);
+        padding[Count];
+    }
+} [[sealed, hidden, no_unique_address]];
+
 struct Skip0 {
     padding[while(!std::mem::eof() && std::mem::read_unsigned($, 1) == 0x0)];
 };
 
-struct Skip01 {
-    padding[while(std::mem::read_unsigned($, 1) == 0x0 || std::mem::read_unsigned($, 1) == 0x1)];
+struct Skip1 {
+    padding[while(!std::mem::eof() && std::mem::read_unsigned($, 1) == 0x1)];
 };
 
-
-struct FloatBlock {
-    float data[while(
-        std::mem::read_unsigned($, 1) != 0x1 &&
-        std::mem::read_unsigned($, 1) != 0xE)];
-    padding[1];
+struct Skip01 {
+    padding[while(std::mem::read_unsigned($, 1) == 0x0 || std::mem::read_unsigned($, 1) == 0x1)];
 };
 
 struct Vector {
@@ -30,42 +61,55 @@ struct Transform {
     Vector rotation;
 };
 
-struct CameraElement {
-    char name[];
-    float nums[179];
-    u8 const_0E;
-    padding[24];
+struct MainCameraNums {
+    u8 num1;
+    u8 num2;
+    u8 num3;
+    u8 num4;
+};
 
+struct CameraData {
+    float values1[17];
+    MainCameraNums nums1;
+    float values2[2];
+    MainCameraNums nums2;
+    float values3[2];
+    MainCameraNums nums3;
+};
+
+struct MainCameraElement {
+    char name[];
+    if (parent.num == 0xAF) {
+        float values[22];
+        u32 num1;
+        Skip0;
+    } else {
+        u32 camera_datas_count = 6;
+        if (parent.num == 0xB9) {
+            camera_datas_count = 5;
+        }
+        float values1[7];
+        u8 num1;
+        u8 num2;
+        u8 num3;
+        u8 num4;
+        MainCameraNums nums1;
+        float values2[8];
+        MainCameraNums nums2;
+        float values3[2];
+        MainCameraNums nums3;
+        float values4[2];
+        MainCameraNums nums4;
+        CameraData camera_datas[camera_datas_count];
+        float values5[11];
+        u8 num5;
+        Skip0;
+    }
 };
 
 struct LightBlock {
-    float nums[13];
-    u32 skipped;
-};
-
-struct CityBlock {
-    char name[];
-
-    if (std::mem::read_unsigned($ + 3, 1) == 0xDC ||
-        std::mem::read_unsigned($ + 3, 1) == 0xC8 ||
-        std::mem::read_unsigned($ + 3, 1) == 0xCD ||
-        std::mem::read_unsigned($ + 3, 1) == 0xE6) {
-        // Water
-        padding[3];
-        u8 type;
-        padding[3];
-        float data[11];
-        u32 num;
-    } else if (
-        std::mem::read_unsigned($, 1) == 0x40 &&
-        std::mem::read_unsigned($ + 4, 1) == 0x40 ||
-        std::mem::read_unsigned($, 1) == 0x80 &&
-        std::mem::read_unsigned($ + 4, 1) == 0x80) {
-        padding[8];
-        u8 data[parent.size];
-    } else {
-        break;
-    }
+    float values[13];
+    u32 num;
 };
 
 struct Name {
@@ -73,105 +117,168 @@ struct Name {
 };
 
 struct CityFooter {
-    Name names[while(std::mem::read_unsigned($, 2) != 0x0)];
-    padding[1];
-    u8 nums[while(!std::mem::eof())];
+    Name names[8];
+    float values[5];
+};
+
+struct TextureElement {
+    char name[];
+    u32 width;
+    u32 height;
+    u32 size = width * height;
+    u8 texture_data[size];
+};
+
+struct Script {
+    char event_name[];
+    char script_path[];
+};
+
+struct ScriptElement {
+    u32 script_count;
+    Script scripts[script_count];
+    Skip0;
+};
+
+struct WaterData {
+    char name[];
+    SkipZero<3>;
+    u32 num1;
+    float values[11];
+    u32 num2;
+};
+
+struct WaterElement {
+    u32 water_element_count;
+    u32 height_width;
+    u32 height_height;
+    u8 data[parent.size];
+    WaterData water_datas[water_element_count];
+};
+
+struct CityElement {
+    u32 size = parent.map_width * parent.map_height;
+    u8 height_data1[size];
+    if (parent.parent.parent.num != 0xBA) {
+        u32 num1;
+        SkipZero<1>;
+        u8 num2;
+        u8 flag1;
+        u8 height_data2[size * 4];
+        SkipZero<1>;
+    }
+    u8 has_water_element;
+    if (has_water_element == 0x1) {
+        WaterElement water_element;
+    }
+    TextureElement texture_element;
+    CityFooter footer;
+};
+
+struct ContactElement {
+    u8 flag1;
+    u8 flag2;
+    Vector vectors[3];
+    float value;
+};
+
+struct DummyElement {
+    u8 flag1;
+    Transform transform;
+    u8 flag2;
+    Transform transforms[7];
+};
+
+struct CameraElement {
+    u8 flag1;
+    Transform transform;
+    u8 flag2;
+    Transform transforms[11];
+};
+
+struct ObjectElement {
+    u8 flag1;
+    SkipZero<1>;
+    u8 flag2;
+    u8 flag3;
+    u8 num1;
+    u8 flag4;
+    if (parent.parent.parent.num != 0xAF) {
+        u8 flag5;
+        u8 flag6;
+    }
+    u8 num2;
+    SkipZero<1>;
+    u8 flag7;
+    SkipZero<1>;
+    bool has_object_name;
+    SkipZero<3>;
+    if (has_object_name) {
+        char object_name[];
+    }
+    Transform transform;
+    u8 flag8;
+    Transform transforms[6];
+};
+
+struct LightElement {
+    u32 block_count = 8;
+    if (parent.parent.parent.num == 0xB9 || parent.parent.parent.num == 0xAF) {
+        block_count = 7;
+    }
+    u8 flag1;
+    u8 flag2;
+    bool is_not_r_light;
+    LightBlock blocks[block_count];
 };
 
 struct SceneElement {
+    if (std::mem::read_unsigned($ + 1, 1) != 0x1) {
+        $ -= 1;
+    }
+    bool continue_group;
+    SkipRequired<"\x01", 1>;
     Skip01;
     char name[];
-
-    u32 type1;
-    u32 type2;
-    u8 type;
-
-    if (type1 == 0x80 || type1 == 0x40) {
-        u32 size = type1 * type2;
-        padding[3];
-        u8 height_data1[size];
-        u32 magic;
-        padding[1];
-        u8 magic2;
-        padding[2];
-        u8 height_data2[size * 4];
-
-        if (std::mem::read_unsigned($, 1) == 0x1) {
-            Skip01;
-            if (std::mem::read_unsigned($, 1) == 0x2) {
-                u32 z;
-            }
-            u32 a;
-            u32 b;
-            u8 height_data3[size];
-        }
-        Skip0;
-        if (std::mem::read_unsigned($, 1) == 0x1E) {
-            u8 skip1E;
-        }
-        CityBlock city_blocks[while(true)];
-        CityFooter footer;
-    } else {
-
-        if (type == 0x0) {
-            padding[5];
-            float nums[10];
-        } else if (type == 0x2) {
-            padding[4];
-            Transform transform;
-            padding[1];
-            Transform transforms[10];
-        } else if (type == 0x3) {
-            padding[4];
-            Transform transform;
-            padding[1];
-            Transform transforms[11];
-        } else if (type == 0x4) {
-            padding[19];
-            char object_name[];
-            Transform transform;
-            padding[1];
-            Transform transforms[10];
-        } else if (type == 0x5) {
-            padding[6];
-            LightBlock blocks[8];
-        } else if (type == 0x7) {
-            padding[6];
-            LightBlock blocks[8];
-        } else if (type == 0x8) {
-            padding[6];
-            LightBlock blocks[8];
-        }
-
-        Skip0;
+    u32 map_width;
+    if (parent.parent.num != 0xAF) {
+        u32 map_height;
     }
+    u32 type;
+    if (type == 0x40 || type == 0x80 || type == 0x100) {
+        CityElement city_element;
+    } else if (type == 0x0) {
+        ContactElement contact_element;
+    } else if (type == 0x2) {
+        DummyElement dummy_element;
+    } else if (type == 0x3) {
+        CameraElement camera_element;
+    } else if (type == 0x4) {
+        ObjectElement object_element;
+    } else if (type == 0x5 || type == 0x6 || type == 0x7 || type == 0x8) {
+        LightElement light_element;
+    }
+    Skip0;
+    ScriptElement script_elements[while(
+        std::mem::read_unsigned($, 1) != 0x0 &&
+        std::mem::read_unsigned($ + 1, 1) == 0x0
+    )];
 };
 
-
 struct ElementGroup {
-    Skip01;
     SceneElement first_element;
     SceneElement elements[while(std::mem::read_unsigned($, 2) == 0x101)];
 };
 
-
 struct Ed3 {
-    padding[4];
-    CameraElement camera;
-    ElementGroup groups[while(std::mem::read_unsigned($, 1) == 0x1)];
+    u8 num;
+    if (num != 0xBB && num != 0xBA && num != 0xB9 && num != 0xAF) {
+        std::warning("Unknown scene type");
+    }
+    SkipRequired<"\x00\x6C\x3A", 3>;
+    MainCameraElement camera;
+    ElementGroup groups[while(!std::mem::eof() && std::mem::read_unsigned($, 1) == 0x1)];
 };
 
 
 Ed3 ed3 @ $;
-
-//ElementGroup city_group_tutorial1 @ 0x17A29;
-//ElementGroup city_group_tutorial @ 0x14A18;
-//ElementGroup city_group_hannover @ 0x6E464;
-//ElementGroup city_group_nuernberg @ 0xD4720;
-//ElementGroup city_group_koeln @ 0x6E951;
-//ElementGroup city_group_augsburg @ 0x77186;
-//ElementGroup city_group_berlin @ 0x61FFD;
-//ElementGroup city_group_dresden @ 0x7BBCE;
-//ElementGroup city_group_master @ 0x155A0;
-//ElementGroup city_group_master_64 @ 0x1600A;
-//ElementGroup city_group_tutorial_map_einstellung @ 0x14A18;

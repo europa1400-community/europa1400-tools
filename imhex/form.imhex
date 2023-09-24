@@ -1,0 +1,33 @@
+#include <std/mem.pat>
+#include <std/string.pat>
+#include <std/core.pat>
+
+struct Skip0 {
+    padding[while(!std::mem::eof() && std::mem::read_unsigned($, 1) == 0x0)];
+};
+
+struct SubForm {
+    char font_name[];
+    u16 font_data[90];
+
+    char texture_name[];
+    float texture_data[45];
+
+    Skip0;
+};
+
+
+struct Form {
+    char const_frm2[4];
+    u32 count;
+    u16 a;
+    u16 b;
+    u16 c;
+    u16 d;
+
+    u16 data[1860];
+
+    SubForm subforms[count];
+};
+
+Form form @ $;
