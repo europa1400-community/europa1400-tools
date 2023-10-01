@@ -52,7 +52,7 @@ class MainCameraElementAf(DataclassMixin):
 
     name: str = csfield(cs.CString("ascii"))
     values: list[float] = csfield(cs.Array(22, cs.Float32l))
-    num1: int = csfield(cs.Int32ul)
+    maincameraaf_num1: int = csfield(cs.Int32ul)
     skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
 
 
@@ -60,10 +60,10 @@ class MainCameraElementAf(DataclassMixin):
 class MainCameraNums(DataclassMixin):
     """Structure of a main camera elements nums."""
 
-    num1: int = csfield(cs.Byte)
-    num2: int = csfield(cs.Byte)
-    num3: int = csfield(cs.Byte)
-    num4: int = csfield(cs.Byte)
+    maincameranums_num1: int = csfield(cs.Byte)
+    maincameranums_num2: int = csfield(cs.Byte)
+    maincameranums_num3: int = csfield(cs.Byte)
+    maincameranums_num4: int = csfield(cs.Byte)
 
 
 @dataclass
@@ -87,10 +87,10 @@ class MainCameraElement(DataclassMixin):
         cs.Computed(lambda ctx: 5 if ctx._.type == 0xB9 else 6)
     )
     values1: list[float] = csfield(cs.Array(7, cs.Float32l))
-    num1: int = csfield(cs.Byte)
-    num2: int = csfield(cs.Byte)
-    num3: int = csfield(cs.Byte)
-    num4: int = csfield(cs.Byte)
+    maincameraelement_num1: int = csfield(cs.Byte)
+    maincameraelement_num2: int = csfield(cs.Byte)
+    maincameraelement_num3: int = csfield(cs.Byte)
+    maincameraelement_num4: int = csfield(cs.Byte)
     nums1: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
     values2: list[float] = csfield(cs.Array(8, cs.Float32l))
     nums2: MainCameraNums = csfield(DataclassStruct(MainCameraNums))
@@ -120,9 +120,9 @@ class WaterData(DataclassMixin):
 
     name: str = csfield(cs.CString("ascii"))
     zero1: bytes = ignoredcsfield(cs.Bytes(3))
-    num1: int = csfield(cs.Int32ul)
+    waterdata_num1: int = csfield(cs.Int32ul)
     values: list[float] = csfield(cs.Array(11, cs.Float32l))
-    num2: int = csfield(cs.Int32ul)
+    waterdata_num2: int = csfield(cs.Int32ul)
 
 
 @dataclass
@@ -154,9 +154,9 @@ class CityElement(DataclassMixin):
 
     size: int = csfield(cs.Computed(lambda ctx: ctx._.width * ctx._.height))
     height_data1: list[int] = csfield(cs.Array(lambda ctx: ctx.size, cs.Byte))
-    num1: int = csfield(cs.Int32ul)
+    cityelement_num1: int = csfield(cs.Int32ul)
     zero1: bytes = ignoredcsfield(cs.Bytes(1))
-    num2: int = csfield(cs.Byte)
+    cityelement_num2: int = csfield(cs.Byte)
     flag1: bool = csfield(cs.Flag)
     height_data2: list[int] = csfield(cs.Array(lambda ctx: ctx.size * 4, cs.Byte))
     zero2: bytes = ignoredcsfield(cs.Bytes(1))
@@ -206,7 +206,7 @@ class ObjectElement(DataclassMixin):
     zero1: bytes = ignoredcsfield(cs.Bytes(1))
     flag2: bool = csfield(cs.Flag)
     flag3: bool = csfield(cs.Flag)
-    num1: int = csfield(cs.Byte)
+    objectelement_num1: int = csfield(cs.Byte)
     flag4: bool = csfield(cs.Flag)
     flag5: bool | None = csfield(
         cs.If(
@@ -220,7 +220,7 @@ class ObjectElement(DataclassMixin):
             cs.Flag,
         )
     )
-    num2: int = csfield(cs.Byte)
+    objectelement_num2: int = csfield(cs.Byte)
     zero2: bytes = ignoredcsfield(cs.Bytes(1))
     flag7: bool = csfield(cs.Flag)
     zero3: bytes = ignoredcsfield(cs.Bytes(1))
