@@ -75,37 +75,40 @@ class BgfGltfConverter(BgfConverter):
     def __init__(self, common_options):
         super().__init__(common_options)
 
-        if (
-            self.common_options.mapped_animations_path.exists()
-            and common_options.use_cache
-        ):
-            with open(self.common_options.mapped_animations_path, "rb") as input_file:
-                self.baf_to_bgfs = pickle.load(input_file)
-        else:
-            self.extracted_objects_paths = extract_file(
-                self.common_options.game_objects_path,
-                self.common_options.extracted_objects_path,
-            )
+        if common_options.target_format != TargetFormat.GLTF_STATIC:
+            if (
+                self.common_options.mapped_animations_path.exists()
+                and common_options.use_cache
+            ):
+                with open(
+                    self.common_options.mapped_animations_path, "rb"
+                ) as input_file:
+                    self.baf_to_bgfs = pickle.load(input_file)
+            else:
+                self.extracted_objects_paths = extract_file(
+                    self.common_options.game_objects_path,
+                    self.common_options.extracted_objects_path,
+                )
 
-            self.extracted_animations_paths = extract_file(
-                self.common_options.game_animations_path,
-                self.common_options.extracted_animations_path,
-            )
+                self.extracted_animations_paths = extract_file(
+                    self.common_options.game_animations_path,
+                    self.common_options.extracted_animations_path,
+                )
 
-            self.decoded_objects_paths = decode_objects(
-                common_options, self.extracted_objects_paths
-            )
+                self.decoded_objects_paths = decode_objects(
+                    common_options, self.extracted_objects_paths
+                )
 
-            self.decoded_animations_paths = decode_animations(
-                common_options, self.extracted_animations_paths
-            )
+                self.decoded_animations_paths = decode_animations(
+                    common_options, self.extracted_animations_paths
+                )
 
-            self.baf_to_bgfs, _ = map_animations(
-                self.common_options.extracted_objects_path,
-                self.common_options.extracted_animations_path,
-                self.decoded_objects_paths,
-                self.decoded_animations_paths,
-            )
+                self.baf_to_bgfs, _ = map_animations(
+                    self.common_options.extracted_objects_path,
+                    self.common_options.extracted_animations_path,
+                    self.decoded_objects_paths,
+                    self.decoded_animations_paths,
+                )
 
     def convert_bgf_file(
         self,
@@ -436,7 +439,7 @@ class BgfGltfConverter(BgfConverter):
         bgf_vertices = np.array(
             [
                 [
-                    -vertex_mapping.vertex1.x,
+                    vertex_mapping.vertex1.x,
                     vertex_mapping.vertex1.y,
                     -vertex_mapping.vertex1.z,
                 ]
@@ -448,7 +451,7 @@ class BgfGltfConverter(BgfConverter):
         bgf_normals = np.array(
             [
                 [
-                    -vertex_mapping.vertex2.x,
+                    vertex_mapping.vertex2.x,
                     vertex_mapping.vertex2.y,
                     -vertex_mapping.vertex2.z,
                 ]
@@ -485,9 +488,9 @@ class BgfGltfConverter(BgfConverter):
             indices_per_polygon = np.array(
                 [
                     [
+                        polygon.face.a,
                         polygon.face.c,
                         polygon.face.b,
-                        polygon.face.a,
                     ]
                     for polygon in bgf.mapping_object.polygons
                     if polygon.texture_index == texture_index
@@ -497,16 +500,16 @@ class BgfGltfConverter(BgfConverter):
                 [
                     [
                         [
+                            polygon.texture_mapping.a.u,
+                            polygon.texture_mapping.a.v,
+                        ],
+                        [
                             polygon.texture_mapping.c.u,
                             polygon.texture_mapping.c.v,
                         ],
                         [
                             polygon.texture_mapping.b.u,
                             polygon.texture_mapping.b.v,
-                        ],
-                        [
-                            polygon.texture_mapping.a.u,
-                            polygon.texture_mapping.a.v,
                         ],
                     ]
                     for polygon in bgf.mapping_object.polygons
