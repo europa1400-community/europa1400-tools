@@ -114,6 +114,8 @@ def convert(
                 )
                 continue
 
+            common_options.target_format = target_format
+
             converter: BaseConverter
 
             if source_format == SourceFormat.AOBJ:

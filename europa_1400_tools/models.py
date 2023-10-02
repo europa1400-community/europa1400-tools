@@ -29,6 +29,7 @@ from europa_1400_tools.const import (
     SCENES_BIN,
     SFX_DIR,
     TEXTURES_BIN,
+    TargetFormat,
 )
 
 
@@ -40,6 +41,7 @@ class CommonOptions:
     output_path: Path
     use_cache: bool
     verbose: bool
+    target_format: TargetFormat | None = None
 
     @property
     def game_resources_path(self) -> Path:
