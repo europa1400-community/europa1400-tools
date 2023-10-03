@@ -133,15 +133,3 @@ jobs:
           asset_path: dist/${{ github.event.repository.name }}-${{ needs.version.outputs.version }}-py3-none-any.whl
           asset_name: ${{ github.event.repository.name }}-${{ needs.version.outputs.version }}-py3-none-any.whl
           asset_content_type: application/zip
-
-      # - name: Build executable with pyinstaller
-      #   run: |
-      #     # Add commands to build executables for Windows, Linux, and macOS here
-      #     # For example:
-      #     # if [[ "$RUNNER_OS" == "Windows" ]]; then
-      #     #   pyinstaller --platform=win32 your_script.py
-      #     # elif [[ "$RUNNER_OS" == "Linux" ]]; then
-      #     #   pyinstaller --platform=linux your_script.py
-      #     # elif [[ "$RUNNER_OS" == "macOS" ]]; then
-      #     #   pyinstaller --platform=macos your_script.py
-      #     # fi
