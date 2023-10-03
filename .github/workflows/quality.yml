@@ -12,7 +12,7 @@ env:
   SONAR_PROJECT_ORGANIZATION: europa-1400-community
 
 jobs:
-  quality:
+  cache:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
