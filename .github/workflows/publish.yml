@@ -95,10 +95,6 @@ jobs:
       - name: Install package
         run: poetry install --no-interaction
 
-      - name: Build package with poetry
-        run: |
-          poetry build
-
       - name: Set package version
         run: |
           poetry version ${{ needs.version.outputs.version }}
@@ -112,7 +108,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          poetry run twine upload dist/${{ github.event.repository.name }}-${{ needs.version.outputs.version }}.tar.gz dist/${{ github.event.repository.name }}-${{ needs.version.outputs.version }}-py3-none-any.whl
+          poetry run twine upload dist/*
 
       - name: Upload package to release
         uses: actions/upload-release-asset@v1
