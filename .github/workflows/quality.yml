@@ -49,7 +49,7 @@ jobs:
           poetry install
 
   black:
-    needs: quality
+    needs: cache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -81,7 +81,7 @@ jobs:
           poetry run black --check europa_1400_tools tests --diff
 
   isort:
-    needs: quality
+    needs: cache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -113,7 +113,7 @@ jobs:
           poetry run isort --check-only --diff europa_1400_tools tests
 
   mypy:
-    needs: quality
+    needs: cache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -145,7 +145,7 @@ jobs:
           poetry run mypy europa_1400_tools tests
 
   bandit:
-    needs: quality
+    needs: cache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -177,7 +177,7 @@ jobs:
           poetry run bandit -r europa_1400_tools -c pyproject.toml
 
   flake8:
-    needs: quality
+    needs: cache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -209,7 +209,7 @@ jobs:
           poetry run flake8 europa_1400_tools tests
 
   pytest:
-    needs: quality
+    needs: cache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -241,7 +241,7 @@ jobs:
           poetry run pytest --cov=europa_1400_tools --cov-report=xml
 
   sonarcloud:
-    needs: quality
+    needs: cache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
