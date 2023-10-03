@@ -7,6 +7,10 @@ on:
       - synchronize
       - reopened
 
+env:
+  SONAR_PROJECT_KEY: europa-1400-community_europa-1400-tools
+  SONAR_PROJECT_ORGANIZATION: europa-1400-community
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -63,3 +67,17 @@ jobs:
       - name: Run pytest
         run: |
           poetry run pytest --cov=europa_1400_tools --cov-report=xml
+
+      - name: Run SonarCloud analysis
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ env.SONAR_PROJECT_ORGANIZATION }}
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.sources=europa_1400_tools
+            -Dsonar.tests=tests/
+            -Dsonar.python.version=3.11
