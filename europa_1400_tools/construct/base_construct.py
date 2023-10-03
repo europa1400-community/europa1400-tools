@@ -22,7 +22,7 @@ class BaseConstruct(ABC, DataclassMixin):
     def from_file(cls: Type[T], file_path: Path) -> T:
         """Read the file and return the construct."""
 
-        obj = cs.Debugger(DataclassStruct(cls)).parse_file(
+        obj: T = DataclassStruct(cls).parse_file(
             file_path,
         )
 

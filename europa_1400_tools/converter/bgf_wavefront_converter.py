@@ -89,7 +89,7 @@ class BgfWavefrontConverter(BgfConverter):
             ]
             vertices: list[Vector3] = [vertex for vertex in model.vertices]
             faces: list[Face] = [polygon.face for polygon in model.polygons]
-            normals: list[Vector3] = [polygon.normal for polygon in model.polygons]
+            normals: list[Vector3] = [polygon.normal for polygon in model.polygons if polygon.normal is not None]
 
             materials: list[str] = [
                 bgf.textures[texture_index].name.split(".")[0]

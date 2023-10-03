@@ -102,7 +102,10 @@ class GfxConverter(BaseConverter):
 
             length_check = graphic.width * graphic.height
             length_actual = len(image_data)
-            assert length_check == length_actual
+            if length_check != length_actual:
+                logging.warning(
+                    f"Graphic has incorrect length: {length_actual} instead of {length_check}"
+                )
             image.putdata(image_data)
             return image
 

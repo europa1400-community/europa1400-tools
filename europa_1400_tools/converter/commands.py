@@ -12,6 +12,7 @@ from europa_1400_tools.const import (
     IGNORED_EXTENSIONS,
     SourceFormat,
     TargetFormat,
+    TyperTargetFormat,
 )
 from europa_1400_tools.converter.ageb_converter import AGebConverter
 from europa_1400_tools.converter.aobj_converter import AObjConverter
@@ -32,14 +33,14 @@ app = typer.Typer()
 @app.callback(invoke_without_command=True)
 def convert(
     ctx: typer.Context,
-    typer_target_format: Optional[TargetFormat.convert_typer()] = typer.Option(
+    typer_target_format: Optional[TyperTargetFormat] = typer.Option(
         None, "--target-format", "-t"
     ),
     create_subdirectories: bool = typer.Option(False, "--create-subdirectories", "-c"),
     paths: Annotated[
         Optional[List[Path]], typer.Argument(help="Paths to files or directories.")
     ] = None,
-) -> list[Path]:
+) -> None:
     """Convert files"""
 
     common_options: CommonOptions = ctx.obj
@@ -106,7 +107,14 @@ def convert(
             if typer_target_format is None:
                 target_format = source_format.target_formats[0]
             else:
-                target_format = TargetFormat.from_typer(typer_target_format.value)
+                converted_target_format = TargetFormat.from_typer(
+                    typer_target_format.value
+                )
+                if converted_target_format is None:
+                    raise typer.BadParameter(
+                        f"Invalid target format: {typer_target_format.value}"
+                    )
+                target_format = converted_target_format
 
             if target_format not in source_format.target_formats:
                 logging.warning(

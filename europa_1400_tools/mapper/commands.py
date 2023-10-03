@@ -114,31 +114,31 @@ def map_animations(
             dtype=np.float32,
         )
 
-    baf_to_bgfs: dict[Path, list[Path]] = {}
+    baf_path_to_bgf_paths: dict[Path, list[Path]] = {}
 
     missing_count = 0
     missing_paths: list[Path] = []
     for baf in bafs:
         logging.debug(f"Mapping {baf.path}.")
-        mapped_bgfs = AnimationsMapper.map_animation(baf, bgf_to_vertices)
+        mapped_bgf_paths = AnimationsMapper.map_animation(baf, bgf_to_vertices)
 
         stripped_baf_path = baf.path.relative_to(extracted_animations_path)
 
-        if len(mapped_bgfs) == 0:
+        if len(mapped_bgf_paths) == 0:
             missing_count += 1
             logging.warning(f"Could not find mapping for {stripped_baf_path}.")
             missing_paths.append(stripped_baf_path)
 
-            baf_to_bgfs[stripped_baf_path] = []
+            baf_path_to_bgf_paths[stripped_baf_path] = []
 
             continue
 
-        baf_to_bgfs[stripped_baf_path] = []
+        baf_path_to_bgf_paths[stripped_baf_path] = []
 
-        for bgf in mapped_bgfs:
-            stripped_bgf_path = Path(bgf).relative_to(extracted_objects_path)
-            baf_to_bgfs[stripped_baf_path].append(stripped_bgf_path)
+        for bgf_path in mapped_bgf_paths:
+            stripped_bgf_path = bgf_path.relative_to(extracted_objects_path)
+            baf_path_to_bgf_paths[stripped_baf_path].append(stripped_bgf_path)
 
     logging.info(f"Found mapping for {len(bafs) - missing_count} animations.")
 
-    return baf_to_bgfs, missing_paths
+    return baf_path_to_bgf_paths, missing_paths

@@ -51,23 +51,23 @@ jobs:
 
       - name: Run black
         run: |
-          poetry run black --check europa-1400-tools tests --diff
+          poetry run black --check europa_1400_tools tests --diff
 
       - name: Run isort
         run: |
-          poetry run isort --check-only --diff europa-1400-tools tests
+          poetry run isort --check-only --diff europa_1400_tools tests
 
       - name: Run mypy
         run: |
-          poetry run mypy europa-1400-tools tests
+          poetry run mypy europa_1400_tools tests
 
       - name: Run bandit
         run: |
-          poetry run bandit -r europa-1400-tools
+          poetry run bandit -r europa_1400_tools -c pyproject.toml
 
       - name: Run pytest
         run: |
-          poetry run pytest --cov=europa-1400-tools --cov-report=xml
+          poetry run pytest --cov=europa_1400_tools --cov-report=xml
 
       - name: Run SonarCloud analysis
         uses: sonarsource/sonarcloud-github-action@master
@@ -79,6 +79,6 @@ jobs:
             -Dsonar.organization=${{ env.SONAR_PROJECT_ORGANIZATION }}
             -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
             -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.sources=europa-1400-tools
+            -Dsonar.sources=europa_1400_tools
             -Dsonar.tests=tests/
             -Dsonar.python.version=3.11

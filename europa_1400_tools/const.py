@@ -164,6 +164,18 @@ class Format(Enum):
         return self.value[1]
 
 
+class TyperTargetFormat(Enum):
+    """Typer target formats."""
+
+    WAV = "wav"
+    MP3 = "mp3"
+    WAVEFRONT = "wavefront"
+    GLTF = "gltf"
+    GLTF_STATIC = "gltf-static"
+    JSON = "json"
+    PNG = "png"
+
+
 class TargetFormat(Format):
     """Target formats."""
 
@@ -182,7 +194,7 @@ class TargetFormat(Format):
         return Enum("TyperTargetFormat", enum_dict)
 
     @staticmethod
-    def from_typer(typer_target_format: str) -> "TargetFormat":
+    def from_typer(typer_target_format: str) -> Optional["TargetFormat"]:
         """Return the target format for the given typer target format."""
         for target_format in TargetFormat:
             if target_format.value[0] == typer_target_format:
@@ -194,14 +206,14 @@ class TargetFormat(Format):
 class SourceFormat(Format):
     """Source formats."""
 
-    BAF = (
+    BAF: tuple[str, str, list[TargetFormat], str, Path] = (
         "baf",
         BAF_EXTENSION,
         [],
         "animations",
         ANIMATIONS_PATH,
     )
-    BGF = (
+    BGF: tuple[str, str, list[TargetFormat], str, Path] = (
         "bgf",
         BGF_EXTENSION,
         [
@@ -212,7 +224,7 @@ class SourceFormat(Format):
         "objects",
         OBJECTS_PATH,
     )
-    GFX = (
+    GFX: tuple[str, str, list[TargetFormat], str, Path] = (
         "gfx",
         GFX_EXTENSION,
         [
@@ -221,7 +233,7 @@ class SourceFormat(Format):
         "graphics",
         GFX_PATH,
     )
-    SBF = (
+    SBF: tuple[str, str, list[TargetFormat], str, Path] = (
         "sbf",
         SBF_EXTENSION,
         [
@@ -229,10 +241,9 @@ class SourceFormat(Format):
             TargetFormat.MP3,
         ],
         "sounds",
-        RESOURCES_PATH,
         SFX_PATH,
     )
-    OGR = (
+    OGR: tuple[str, str, list[TargetFormat], str, Path] = (
         "ogr",
         OGR_EXTENSION,
         [
@@ -241,7 +252,7 @@ class SourceFormat(Format):
         "groups",
         GROUPS_PATH,
     )
-    ED3 = (
+    ED3: tuple[str, str, list[TargetFormat], str, Path] = (
         "ed3",
         ED3_EXTENSION,
         [
@@ -250,7 +261,7 @@ class SourceFormat(Format):
         "scenes",
         SCENES_PATH,
     )
-    AOBJ = (
+    AOBJ: tuple[str, str, list[TargetFormat], str, Path] = (
         "aobj",
         DAT_EXTENSION,
         [
@@ -259,7 +270,7 @@ class SourceFormat(Format):
         "object_data",
         AOBJ_PATH,
     )
-    AGEB = (
+    AGEB: tuple[str, str, list[TargetFormat], str, Path] = (
         "ageb",
         DAT_EXTENSION,
         [

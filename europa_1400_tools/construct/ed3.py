@@ -231,7 +231,7 @@ class ObjectElement(DataclassMixin):
     )
     transform: Transform = csfield(DataclassStruct(Transform))
     flag8: bool = csfield(cs.Flag)
-    transforms: Transform = csfield(cs.Array(6, DataclassStruct(Transform)))
+    transforms: list[Transform] = csfield(cs.Array(6, DataclassStruct(Transform)))
 
 
 @dataclass

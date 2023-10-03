@@ -375,10 +375,10 @@ def decode_gfx(
     pickle_output_paths: list[Path] = []
 
     if not file_path:
-        file_path = common_options.gfx_game_path
+        file_path = common_options.game_gfx_path
 
     decode_time = time.time()
-    logging.debug(f"Decoding {common_options.gfx_game_path}...")
+    logging.debug(f"Decoding {common_options.game_gfx_path}...")
 
     gfx = Gfx.from_file(file_path)
 
@@ -435,14 +435,14 @@ def decode_sfx(
     pickle_output_paths: list[Path] = []
 
     if not file_paths:
-        file_paths = get_files(common_options.sfx_game_path, SBF_EXTENSION)
+        file_paths = get_files(common_options.game_sfx_path, SBF_EXTENSION)
 
         for file in file_paths if file_paths else []:
             logging.debug(f"Decoding {file}...")
 
             sbf = Sbf.from_file(file)
             pickle_output_path = rebase_path(
-                file, common_options.sfx_game_path, decoded_sfx_path
+                file, common_options.game_sfx_path, decoded_sfx_path
             ).with_suffix(PICKLE_EXTENSION)
             pickle_output_paths.append(pickle_output_path)
 

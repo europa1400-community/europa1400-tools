@@ -166,7 +166,8 @@ def skip_required(file: BinaryIO, value: bytes, padding: int) -> None:
     read_value = file.read(len(value))
     file.seek(-len(value), os.SEEK_CUR)
 
-    assert read_value == value, f"Expected {str(value)}, got {str(read_value)}"
+    if read_value != value:
+        raise ValueError(f"Expected {str(value)}, got {str(read_value)}")
 
     file.seek(padding, os.SEEK_CUR)
 

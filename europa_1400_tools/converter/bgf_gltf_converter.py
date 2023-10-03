@@ -34,12 +34,7 @@ from pygltflib import (
     TextureInfo,
 )
 
-from europa_1400_tools.const import (
-    GLB_EXTENSION,
-    GLTF_EXTENSION,
-    PICKLE_EXTENSION,
-    TargetFormat,
-)
+from europa_1400_tools.const import GLB_EXTENSION, PICKLE_EXTENSION, TargetFormat
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.bgf_converter import BgfConverter
@@ -426,7 +421,7 @@ class BgfGltfConverter(BgfConverter):
     def _convert_mesh(self, bgf: Bgf, bafs: list[Baf], name: str) -> Mesh:
         """Convert Bgf to gltf mesh."""
 
-        gltf_primitives = []
+        gltf_primitives: list[GltfPrimitive] = []
         gltf_mesh = GltfMesh(
             name=name,
             primitives=gltf_primitives,
@@ -481,7 +476,7 @@ class BgfGltfConverter(BgfConverter):
             # each texture also has its own animation vertices
             vertices_per_key_per_anim = []
             for bgf_vertices_per_key in baf_to_bgf_vertices_per_key:
-                vertices_per_key = np.emptylike(bgf_vertices_per_key, dtype=np.float32)
+                vertices_per_key = np.empty_like(bgf_vertices_per_key, dtype=np.float32)
                 vertices_per_key_per_anim.append(vertices_per_key)
 
             # select all indices with the current texture index
@@ -545,27 +540,27 @@ class BgfGltfConverter(BgfConverter):
                     index = vertex_dict[key]
                     primitive_indices.append(index)
 
-            primitive_indices = np.array(primitive_indices, dtype=np.uint32)
-            vertices = np.array(vertices, dtype=np.float32)
-            normals = np.array(normals, dtype=np.float32)
-            uvs = np.array(uvs, dtype=np.float32)
+            primitive_indices_np = np.array(primitive_indices, dtype=np.uint32)
+            vertices_np = np.array(vertices, dtype=np.float32)
+            normals_np = np.array(normals, dtype=np.float32)
+            uvs_np = np.array(uvs, dtype=np.float32)
 
             for vertices_per_key in vertices_per_key_per_anim:
                 vertices_per_key = np.array(vertices_per_key, dtype=np.float32)
 
-            if np.isnan(uvs).any():
-                uvs = np.nan_to_num(uvs)
+            if np.isnan(uvs_np).any():
+                uvs_np = np.nan_to_num(uvs_np)
 
             for vertices_per_key in vertices_per_key_per_anim:
                 if np.isnan(vertices_per_key).any():
                     raise ValueError("vertices_per_key contains nan")
 
             gltf_primitive = GltfPrimitive(
-                indices=primitive_indices,
-                vertices=vertices,
+                indices=primitive_indices_np,
+                vertices=vertices_np,
                 baf_to_vertices_per_key=vertices_per_key_per_anim,
-                normals=normals,
-                uvs=uvs,
+                normals=normals_np,
+                uvs=uvs_np,
                 texture_index=texture_index,
             )
             gltf_primitives.append(gltf_primitive)
