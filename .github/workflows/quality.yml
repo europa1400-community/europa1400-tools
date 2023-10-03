@@ -45,7 +45,6 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install dependencies
-        if: steps.cached-poetry-venv.outputs.cache-hit != 'true'
         run: |
           poetry install
 
@@ -72,6 +71,10 @@ jobs:
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
 
       - name: Run black
         run: |
@@ -101,6 +104,10 @@ jobs:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
+      - name: Install dependencies
+        run: |
+          poetry install
+
       - name: Run isort
         run: |
           poetry run isort --check-only --diff europa_1400_tools tests
@@ -128,6 +135,10 @@ jobs:
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
 
       - name: Run mypy
         run: |
@@ -157,6 +168,10 @@ jobs:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
+      - name: Install dependencies
+        run: |
+          poetry install
+
       - name: Run bandit
         run: |
           poetry run bandit -r europa_1400_tools -c pyproject.toml
@@ -184,6 +199,10 @@ jobs:
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
 
       - name: Run flake8
         run: |
@@ -213,6 +232,10 @@ jobs:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
+      - name: Install dependencies
+        run: |
+          poetry install
+
       - name: Run pytest
         run: |
           poetry run pytest --cov=europa_1400_tools --cov-report=xml
@@ -240,6 +263,10 @@ jobs:
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
 
       - name: Run SonarCloud analysis
         uses: sonarsource/sonarcloud-github-action@master
