@@ -11,7 +11,12 @@
         "--profile",
         "black"
     ],
-    "files.exclude": {},
+    "files.exclude": {
+        "**/.venv": true,
+        "**/.mypy_cache": true,
+        "**/.pytest_cache": true,
+        "**/__pycache__": true,
+    },
     "python.testing.pytestArgs": [
         "tests"
     ],

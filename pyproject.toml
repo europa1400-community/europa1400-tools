@@ -12,7 +12,7 @@ main = "europa_1400_tools.main:main"
 models = "europa_1400_tools.models_decoder:main"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.11,<3.12"
 typed-argument-parser = "^1.8.0"
 construct = "^2.10.68"
 matplotlib = "^3.7.1"
@@ -32,6 +32,11 @@ flake8-pyproject = "^1.2.3"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
+
+
+[tool.poetry.group.build.dependencies]
+pyinstaller = "^6.0.0"
+twine = "^4.0.2"
 
 [build-system]
 requires = ["poetry-core"]
