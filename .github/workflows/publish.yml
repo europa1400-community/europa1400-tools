@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.set_output.outputs.version }}
+      upload_url: ${{ steps.set_output.outputs.upload_url }}
     env:
       VERSION: ""
       UPLOAD_URL: ""
