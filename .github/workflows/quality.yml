@@ -6,6 +6,9 @@ on:
       - opened
       - synchronize
       - reopened
+  push:
+    branches:
+      - master
 
 env:
   SONAR_PROJECT_KEY: europa-1400-community_europa-1400-tools
