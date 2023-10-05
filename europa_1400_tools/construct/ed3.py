@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
 
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
@@ -17,7 +17,7 @@ def cancel_on_unacceptable(obj, ctx):
         raise cs.CancelParsing
 
 
-class Hierarchy(Enum):
+class Hierarchy(IntEnum):
     DOWN = 0
     SAME = 1
     UP = 2
@@ -401,6 +401,13 @@ class SceneElement(DataclassMixin):
             else Hierarchy.UP
         )
     )
+    # print2: None = csfield(
+    #     cs.Computed(
+    #         lambda ctx: print(
+    #             f"skip_length: {ctx.skip_length}\thierarchy: {ctx.hierarchy}"
+    #         )
+    #     )
+    # )
     script_elements: list[ScriptElement] = csfield(
         cs.GreedyRange(DataclassStruct(ScriptElement))
     )
