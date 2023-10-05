@@ -241,7 +241,9 @@ class DummyElement(DataclassMixin):
     flag1: bool = csfield(cs.Flag)
     transform: Transform = csfield(DataclassStruct(Transform))
     flag2: bool = csfield(cs.Flag)
-    transforms: list[Transform] = csfield(cs.Array(10, DataclassStruct(Transform)))
+    transforms: list[Transform] = csfield(
+        cs.Array(lambda ctx: 11 if ctx.flag2 else 10, DataclassStruct(Transform))
+    )
 
 
 @dataclass
@@ -344,6 +346,7 @@ class SceneElement(DataclassMixin):
     #     cs.Computed(lambda ctx: print(f"element start: {ctx._io.tell():16x}"))
     # )
     skip1: Skip1 = ignoredcsfield(DataclassStruct(Skip1))
+    ones_count: int = csfield(cs.Computed(lambda ctx: len(ctx.skip1.skipped)))
     name: str = csfield(cs.CString("ascii"))
     width: int = csfield(cs.Int32ul)
     height: int | None = csfield(cs.If(lambda ctx: ctx._.type != b"\xAF", cs.Int32ul))
@@ -388,7 +391,7 @@ class SceneElement(DataclassMixin):
         )
     )
     # print1: None = csfield(
-    #     cs.Computed(lambda ctx: print(f"transform end: {ctx._io.tell():16x}"))
+    #     cs.Computed(lambda ctx: print(f"element end: {ctx._io.tell():16x}"))
     # )
     skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
     skip_length: int = ignoredcsfield(cs.Computed(lambda ctx: len(ctx.skip0.skipped)))
@@ -411,6 +414,9 @@ class SceneElement(DataclassMixin):
     script_elements: list[ScriptElement] = csfield(
         cs.GreedyRange(DataclassStruct(ScriptElement))
     )
+    # print3: None = csfield(
+    #     cs.Computed(lambda ctx: print(f"element end: {ctx._io.tell():16x}\n"))
+    # )
 
 
 def is_sub_element(obj: SceneElement, ctx):
@@ -443,7 +449,7 @@ class Ed3(BaseConstruct):
     main_camera_element: MainCameraElement = csfield(DataclassStruct(MainCameraElement))
     scene_elements: list[SceneElement] = csfield(
         cs.RepeatUntil(
-            lambda obj, lst, ctx: ctx._io.read(1) == b"", DataclassStruct(SceneElement)
+            lambda obj, lst, ctx: ctx._io.peek(1) == b"", DataclassStruct(SceneElement)
         )
     )
     # element: list[SceneElement] = csfield(cs.Array(30, DataclassStruct(SceneElement)))
