@@ -394,7 +394,7 @@ class SceneElement(DataclassMixin):
     #     cs.Computed(lambda ctx: print(f"element end: {ctx._io.tell():16x}"))
     # )
     skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
-    skip_length: int = ignoredcsfield(cs.Computed(lambda ctx: len(ctx.skip0.skipped)))
+    skip_length: int = csfield(cs.Computed(lambda ctx: len(ctx.skip0.skipped)))
     hierarchy: Hierarchy = csfield(
         cs.Computed(
             lambda ctx: Hierarchy.DOWN
