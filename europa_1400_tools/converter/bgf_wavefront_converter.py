@@ -2,10 +2,16 @@ import logging
 import shutil
 from pathlib import Path
 
-from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION, TargetFormat
+from europa_1400_tools.const import (
+    MTL_EXTENSION,
+    OBJ_EXTENSION,
+    PNG_EXTENSION,
+    TargetFormat,
+)
 from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
 from europa_1400_tools.converter.bgf_converter import BgfConverter
+from europa_1400_tools.helpers import convert_bmp_to_png_with_transparency
 
 
 class BgfWavefrontConverter(BgfConverter):
@@ -47,7 +53,15 @@ class BgfWavefrontConverter(BgfConverter):
             )
 
         for texture_path in texture_paths:
-            shutil.copy(texture_path, output_path)
+            bgf_texture = bgf.textures[texture_names.index(texture_path.stem.lower())]
+            if bgf_texture.num0B == 3:
+                texture_png = convert_bmp_to_png_with_transparency(texture_path)
+                png_output_path = output_path / Path(texture_path.stem).with_suffix(
+                    PNG_EXTENSION
+                )
+                texture_png.save(png_output_path, format="png")
+            else:
+                shutil.copy(texture_path, output_path)
 
         return [obj_output_path]
 
@@ -128,10 +142,14 @@ class BgfWavefrontConverter(BgfConverter):
             tex_offset += len(texture_mappings * 3)
 
         for texture_name, material_name in zip(texture_names, material_names):
+            bgf_texture = bgf.textures[texture_names.index(texture_name)]
+            if bgf_texture.num0B == 3:
+                texture_name = Path(texture_name).with_suffix(PNG_EXTENSION).name
+
             mtl_string += f"newmtl {material_name}\n"
             mtl_string += "Ka 1.0 1.0 1.0\n"
             mtl_string += "Kd 1.0 1.0 1.0\n"
             mtl_string += "Ks 0.0 0.0 0.0\n"
-            mtl_string += f"map_Kd {texture_name}\n"
+            mtl_string += f"map_Kd {texture_name }\n"
 
         return name, (obj_string, mtl_string)

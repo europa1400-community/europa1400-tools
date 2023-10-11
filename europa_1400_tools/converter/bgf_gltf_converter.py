@@ -6,6 +6,7 @@ import numpy as np
 from pygltflib import (
     ANIM_LINEAR,
     ARRAY_BUFFER,
+    BLEND,
     ELEMENT_ARRAY_BUFFER,
     FLOAT,
     GLTF2,
@@ -34,13 +35,23 @@ from pygltflib import (
     TextureInfo,
 )
 
-from europa_1400_tools.const import GLB_EXTENSION, PICKLE_EXTENSION, TargetFormat
+from europa_1400_tools.const import (
+    GLB_EXTENSION,
+    PICKLE_EXTENSION,
+    PNG_EXTENSION,
+    TargetFormat,
+)
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.bgf_converter import BgfConverter
 from europa_1400_tools.decoder.commands import decode_animations, decode_objects
 from europa_1400_tools.extractor.commands import extract_file
-from europa_1400_tools.helpers import bitmap_to_gltf_uri, bytes_to_gltf_uri
+from europa_1400_tools.helpers import (
+    bitmap_to_gltf_uri,
+    bytes_to_gltf_uri,
+    convert_bmp_to_png_with_transparency,
+    png_to_gltf_uri,
+)
 from europa_1400_tools.mapper.commands import map_animations
 
 
@@ -240,7 +251,14 @@ class BgfGltfConverter(BgfConverter):
                 missing_texture_indices.append(i)
                 continue
 
-            texture_uri = bitmap_to_gltf_uri(texture_path)
+            bgf_texture = bgf.textures[i]
+            if bgf_texture.num0B != 0:
+                png_texture = convert_bmp_to_png_with_transparency(texture_path)
+                png_texture_path = texture_path.with_suffix(PNG_EXTENSION)
+                png_texture.save(png_texture_path, format="png")
+                texture_uri = png_to_gltf_uri(png_texture_path)
+            else:
+                texture_uri = bitmap_to_gltf_uri(texture_path)
 
             gltf.images.append(
                 Image(
@@ -262,7 +280,7 @@ class BgfGltfConverter(BgfConverter):
                         roughnessFactor=1.0,
                     ),
                     doubleSided=True,
-                    alphaMode=MASK,
+                    alphaMode=BLEND,
                 )
             )
 

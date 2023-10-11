@@ -55,6 +55,18 @@ def bitmap_to_gltf_uri(bmp_path: Path) -> str:
     return uri
 
 
+def png_to_gltf_uri(png_path: Path) -> str:
+    png_image = Image.open(png_path)
+    image_bytes_buffer = io.BytesIO()
+
+    png_image.save(image_bytes_buffer, format="PNG")
+    image_bytes = image_bytes_buffer.getvalue()
+    encoded_data = base64.b64encode(image_bytes).decode("utf-8")
+    uri = f"data:image/png;base64,{encoded_data}"
+
+    return uri
+
+
 def convert_bmp_to_png_with_transparency(bmp_path: Path) -> Image.Image:
     # Open the BMP image file
     bmp_image = Image.open(bmp_path)
@@ -271,3 +283,30 @@ def get_files(
             file_paths.append(file_path)
 
     return file_paths
+
+
+def load_image_with_transparency(filepath):
+    # Load the image using Pillow
+    img = Image.open(filepath)
+
+    # Convert the image to RGBA mode (4 channels: Red, Green, Blue, Alpha)
+    img = img.convert("RGBA")
+
+    # Get the pixel data as a list of tuples (r, g, b, a)
+    pixel_data = list(img.getdata())
+
+    # Create a new pixel data list with transparency applied
+    new_pixel_data = []
+    for pixel in pixel_data:
+        # Check if the pixel is completely black (RGB: 0, 0, 0)
+        if pixel[:3] == (0, 0, 0):
+            # Make the pixel fully transparent (alpha: 0)
+            new_pixel_data.append((0, 0, 0, 0))
+        else:
+            # Keep the pixel as is
+            new_pixel_data.append(pixel)
+
+    # Update the image data with the new pixel data
+    img.putdata(new_pixel_data)
+
+    return img
