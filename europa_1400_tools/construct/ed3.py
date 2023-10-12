@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum
+from io import SEEK_CUR
 
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
@@ -342,9 +343,6 @@ class ScriptElement(DataclassMixin):
 class SceneElement(DataclassMixin):
     """Structure of a scene element."""
 
-    # print0: None = csfield(
-    #     cs.Computed(lambda ctx: print(f"element start: {ctx._io.tell():16x}"))
-    # )
     skip1: Skip1 = ignoredcsfield(DataclassStruct(Skip1))
     ones_count: int = csfield(cs.Computed(lambda ctx: len(ctx.skip1.skipped)))
     name: str = csfield(cs.CString("ascii"))
@@ -390,9 +388,6 @@ class SceneElement(DataclassMixin):
             DataclassStruct(LightElement),
         )
     )
-    # print1: None = csfield(
-    #     cs.Computed(lambda ctx: print(f"element end: {ctx._io.tell():16x}"))
-    # )
     skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
     skip_length: int = csfield(cs.Computed(lambda ctx: len(ctx.skip0.skipped)))
     hierarchy: Hierarchy = csfield(
@@ -404,40 +399,14 @@ class SceneElement(DataclassMixin):
             else Hierarchy.UP
         )
     )
-    # print2: None = csfield(
-    #     cs.Computed(
-    #         lambda ctx: print(
-    #             f"skip_length: {ctx.skip_length}\thierarchy: {ctx.hierarchy}"
-    #         )
-    #     )
-    # )
     script_elements: list[ScriptElement] = csfield(
         cs.GreedyRange(DataclassStruct(ScriptElement))
     )
-    # print3: None = csfield(
-    #     cs.Computed(lambda ctx: print(f"element end: {ctx._io.tell():16x}\n"))
-    # )
 
 
 def is_sub_element(obj: SceneElement, ctx):
     if obj.skip1.skipped != [1, 1]:
         raise cs.CancelParsing
-
-
-@dataclass
-class ElementGroup(DataclassMixin):
-    """Structure of an element group."""
-
-    skip1: Skip1 = ignoredcsfield(DataclassStruct(Skip1))
-    first_element: SceneElement = csfield(DataclassStruct(SceneElement))
-    elements: list[SceneElement] = csfield(
-        cs.GreedyRange(DataclassStruct(SceneElement) * is_sub_element)
-    )
-
-
-# def is_element_group(obj, ctx):
-#     if obj.skip1.skipped != [1]:
-#         raise cs.CancelParsing
 
 
 @dataclass
@@ -449,7 +418,8 @@ class Ed3(BaseConstruct):
     main_camera_element: MainCameraElement = csfield(DataclassStruct(MainCameraElement))
     scene_elements: list[SceneElement] = csfield(
         cs.RepeatUntil(
-            lambda obj, lst, ctx: ctx._io.peek(1) == b"", DataclassStruct(SceneElement)
+            lambda obj, lst, ctx: ctx._io.read(1) == b""
+            and bool(ctx._io.seek(-1, SEEK_CUR)),
+            DataclassStruct(SceneElement),
         )
     )
-    # element: list[SceneElement] = csfield(cs.Array(30, DataclassStruct(SceneElement)))
