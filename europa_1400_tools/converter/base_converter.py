@@ -3,6 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
+from timeit import default_timer as timer
 from typing import TypeVar, final
 
 from europa_1400_tools.const import SourceFormat, TargetFormat
@@ -53,12 +54,21 @@ class BaseConverter(ABC):
                 f"Converting {file_path} from {source_format} to {target_format}..."
             )
 
+            time_start = timer()
+
             converted_file_paths = self.convert_file(
                 file_path,
                 output_path,
                 base_path,
                 target_format,
                 create_subdirectories,
+            )
+
+            time_end = timer()
+
+            logging.debug(
+                f"Converted {file_path} from {source_format} to {target_format}"
+                + f" in {time_end - time_start:.2f} seconds."
             )
 
             if converted_file_paths is not None:

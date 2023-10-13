@@ -122,3 +122,11 @@ class Transform(DataclassMixin):
 
     position: Vector3 = csfield(DataclassStruct(Vector3))
     rotation: Vector3 = csfield(DataclassStruct(Vector3))
+
+
+@dataclass
+class Latin1String(DataclassMixin):
+    """Structure of a string in latin-1 encoding."""
+
+    _value_bytes: bytes = ignoredcsfield(cs.NullTerminated(cs.GreedyBytes))
+    value: str = csfield(cs.Computed(lambda ctx: ctx._value_bytes.decode("latin-1")))

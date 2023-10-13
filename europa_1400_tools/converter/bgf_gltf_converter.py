@@ -1,6 +1,8 @@
+import logging
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
+from timeit import default_timer as timer
 
 import numpy as np
 from pygltflib import (
@@ -124,7 +126,15 @@ class BgfGltfConverter(BgfConverter):
         target_format: TargetFormat,
         create_subdirectories: bool = False,
     ) -> list[Path]:
+        time_start = timer()
+
         bgf = Bgf.from_file(file_path)
+
+        time_end = timer()
+        time_decode = time_end - time_start
+
+        logging.debug(f"Decoded {file_path} in {time_decode:.2f}s")
+
         name = bgf.path.stem
 
         gltf = GLTF2()
@@ -132,6 +142,8 @@ class BgfGltfConverter(BgfConverter):
         bafs: list[Baf] = []
 
         if target_format == TargetFormat.GLTF:
+            time_start = timer()
+
             baf_paths = [
                 (self.common_options.decoded_animations_path / baf_path).with_suffix(
                     PICKLE_EXTENSION
@@ -144,6 +156,13 @@ class BgfGltfConverter(BgfConverter):
                 with open(baf_path, "rb") as input_file:
                     baf = pickle.load(input_file)
                     bafs.append(baf)
+
+            time_end = timer()
+            time_anim_load = time_end - time_start
+
+            logging.debug(f"Loaded {len(bafs)} animations in {time_anim_load:.2f}s")
+
+        time_start = timer()
 
         gltf_mesh = self._convert_mesh(bgf, bafs, name)
 
@@ -372,8 +391,20 @@ class BgfGltfConverter(BgfConverter):
 
                 target_index += keyframe_count
 
+        time_end = timer()
+        time_encode = time_end - time_start
+
+        logging.debug(f"Encoded {file_path} in {time_encode:.2f}s")
+
+        time_start = timer()
+
         glb_output_path = output_path / Path(name).with_suffix(GLB_EXTENSION)
         gltf.save_binary(glb_output_path)
+
+        time_end = timer()
+        time_write = time_end - time_start
+
+        logging.debug(f"Wrote {glb_output_path} in {time_write:.2f}s")
 
         return [glb_output_path]
 

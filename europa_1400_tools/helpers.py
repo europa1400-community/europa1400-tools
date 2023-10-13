@@ -15,6 +15,20 @@ from PIL import Image
 from europa_1400_tools.const import OBJECTS_STRING_ENCODING
 
 
+def create_transparent_texture(
+    output_path: Path, width: int = 1, height: int = 1
+) -> None:
+    """Create a transparent texture with the specified dimensions."""
+
+    texture = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    texture.save(output_path)
+
+
+def strip_non_ascii(input_string):
+    stripped_string = re.sub(r"[^\x00-\x7F]+", "", input_string)
+    return stripped_string
+
+
 def ask_for_game_path() -> Path:
     """Ask the user for the game path using a file dialog."""
 
@@ -67,29 +81,23 @@ def png_to_gltf_uri(png_path: Path) -> str:
     return uri
 
 
-def convert_bmp_to_png_with_transparency(bmp_path: Path) -> Image.Image:
-    # Open the BMP image file
+def convert_bmp_to_png_with_transparency(bmp_path: Path, output_path: Path) -> None:
+    """Converts a BMP image to a PNG image with zero pixels being transparency."""
+
     bmp_image = Image.open(bmp_path)
     bmp_image = bmp_image.convert("RGB")
-
-    # Create a new image with transparency (RGBA mode)
     png_image = Image.new("RGBA", bmp_image.size)
 
-    # Iterate over each pixel in the BMP image
     for x in range(bmp_image.width):
         for y in range(bmp_image.height):
-            # Get the pixel value (single integer)
             r, g, b = bmp_image.getpixel((x, y))
 
-            # Check if the pixel is completely black
             if r == 0 and g == 0 and b == 0:
-                # Set the pixel as transparent (alpha = 0)
                 png_image.putpixel((x, y), (0, 0, 0, 0))
             else:
-                # Copy the pixel to the PNG image
                 png_image.putpixel((x, y), (r, g, b, 255))
 
-    return png_image
+    png_image.save(output_path, format="png")
 
 
 def bytes_to_gltf_uri(data: bytes) -> str:

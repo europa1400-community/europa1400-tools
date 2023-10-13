@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
@@ -6,6 +7,8 @@ from construct_typed import DataclassMixin, DataclassStruct, csfield
 from europa_1400_tools.const import OBJECTS_STRING_ENCODING, SourceFormat
 from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.base_construct import BaseConstruct
+from europa_1400_tools.construct.common import ignoredcsfield
+from europa_1400_tools.helpers import strip_non_ascii
 
 
 def skip_until(obj, ctx):
@@ -226,7 +229,9 @@ class BgfTexture(DataclassMixin):
     skip_optional_07: bytes | None = csfield(cs.Optional(cs.Const(b"\x07")))
     skip_optional_08: bytes | None = csfield(cs.Optional(cs.Const(b"\x08")))
     name_bytes: bytes = csfield(cs.NullTerminated(cs.GreedyBytes))
-    name: str = csfield(cs.Computed(lambda ctx: ctx.name_bytes.decode("latin-1")))
+    name: str = ignoredcsfield(
+        cs.Computed(lambda ctx: ctx.name_bytes.decode("latin-1"))
+    )
     skip_optional_08_2: bytes | None = csfield(cs.Optional(cs.Const(b"\x08")))
     skip_optional_09: bytes | None = csfield(cs.Optional(cs.Const(b"\x09")))
     name_appendix: str | None = csfield(
@@ -258,6 +263,12 @@ class BgfTexture(DataclassMixin):
     # num13: int = csfield(cs.Float32l)
     # skip bytes until 0x28
     skip_until_28: SkipUntil28 = csfield(DataclassStruct(SkipUntil28))
+
+    @property
+    def name_normalized(self) -> str:
+        """Return the normalized name of the texture."""
+
+        return Path(strip_non_ascii(self.name.lower())).stem
 
 
 @dataclass
@@ -347,3 +358,9 @@ class Bgf(BaseConstruct):
         """Return the format of the construct."""
 
         return SourceFormat.BGF
+
+    @property
+    def name(self) -> str:
+        """Return the name of the construct."""
+
+        return self.path.stem

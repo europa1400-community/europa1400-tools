@@ -344,7 +344,6 @@ class SceneElement(DataclassMixin):
     """Structure of a scene element."""
 
     skip1: Skip1 = ignoredcsfield(DataclassStruct(Skip1))
-    ones_count: int = csfield(cs.Computed(lambda ctx: len(ctx.skip1.skipped)))
     name: str = csfield(cs.CString("ascii"))
     width: int = csfield(cs.Int32ul)
     height: int | None = csfield(cs.If(lambda ctx: ctx._.type != b"\xAF", cs.Int32ul))
@@ -390,23 +389,9 @@ class SceneElement(DataclassMixin):
     )
     skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
     skip_length: int = csfield(cs.Computed(lambda ctx: len(ctx.skip0.skipped)))
-    hierarchy: Hierarchy = csfield(
-        cs.Computed(
-            lambda ctx: Hierarchy.DOWN
-            if ctx.skip_length == 0
-            else Hierarchy.SAME
-            if ctx.skip_length == 1
-            else Hierarchy.UP
-        )
-    )
     script_elements: list[ScriptElement] = csfield(
         cs.GreedyRange(DataclassStruct(ScriptElement))
     )
-
-
-def is_sub_element(obj: SceneElement, ctx):
-    if obj.skip1.skipped != [1, 1]:
-        raise cs.CancelParsing
 
 
 @dataclass
@@ -417,9 +402,5 @@ class Ed3(BaseConstruct):
     const: bytes = ignoredcsfield(cs.Const(b"\x00\x6c\x3a"))
     main_camera_element: MainCameraElement = csfield(DataclassStruct(MainCameraElement))
     scene_elements: list[SceneElement] = csfield(
-        cs.RepeatUntil(
-            lambda obj, lst, ctx: ctx._io.read(1) == b""
-            and bool(ctx._io.seek(-1, SEEK_CUR)),
-            DataclassStruct(SceneElement),
-        )
+        cs.GreedyRange(DataclassStruct(SceneElement))
     )

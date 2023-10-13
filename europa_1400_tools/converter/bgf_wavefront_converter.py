@@ -1,17 +1,11 @@
-import logging
 import shutil
 from pathlib import Path
 
-from europa_1400_tools.const import (
-    MTL_EXTENSION,
-    OBJ_EXTENSION,
-    PNG_EXTENSION,
-    TargetFormat,
-)
+from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION, TargetFormat
 from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
 from europa_1400_tools.converter.bgf_converter import BgfConverter
-from europa_1400_tools.helpers import convert_bmp_to_png_with_transparency
+from europa_1400_tools.converter.common import Texture
 
 
 class BgfWavefrontConverter(BgfConverter):
@@ -19,59 +13,16 @@ class BgfWavefrontConverter(BgfConverter):
 
     def convert_bgf_file(
         self,
-        file_path: Path,
+        bgf: Bgf,
         output_path: Path,
-        base_path: Path,
         target_format: TargetFormat,
-        create_subdirectories: bool = False,
+        textures: list[Texture],
     ) -> list[Path]:
-        name = file_path.stem
-        obj_output_path = output_path / Path(name).with_suffix(OBJ_EXTENSION)
-        mtl_output_path = output_path / Path(name).with_suffix(MTL_EXTENSION)
+        obj_output_path = output_path / Path(bgf.name).with_suffix(OBJ_EXTENSION)
+        mtl_output_path = output_path / Path(bgf.name).with_suffix(MTL_EXTENSION)
 
-        bgf = Bgf.from_file(file_path)
-
-        name, (obj_string, mtl_string) = self.convert_bgf_to_wavefront(bgf)
-
-        with open(obj_output_path, "w") as obj_file:
-            obj_file.write(obj_string)
-
-        with open(mtl_output_path, "w") as mtl_file:
-            mtl_file.write(mtl_string)
-
-        texture_names = [Path(texture.name).stem.lower() for texture in bgf.textures]
-        texture_paths = [
-            texture_path
-            for texture_path in self.extracted_textures_paths
-            if texture_path.stem.lower() in texture_names
-        ]
-
-        if len(texture_paths) != len(texture_names):
-            logging.debug(
-                "Amount of texture files found differs "
-                "from amount specified specified in bgf file."
-            )
-
-        for texture_path in texture_paths:
-            bgf_texture = bgf.textures[texture_names.index(texture_path.stem.lower())]
-            if bgf_texture.num0B == 3:
-                texture_png = convert_bmp_to_png_with_transparency(texture_path)
-                png_output_path = output_path / Path(texture_path.stem).with_suffix(
-                    PNG_EXTENSION
-                )
-                texture_png.save(png_output_path, format="png")
-            else:
-                shutil.copy(texture_path, output_path)
-
-        return [obj_output_path]
-
-    @staticmethod
-    def convert_bgf_to_wavefront(bgf: Bgf) -> tuple[str, tuple[str, str]]:
-        """Convert Bgf to wavefront."""
-
-        name: str = bgf.path.stem
         obj_string: str = ""
-        mtl_name = Path(name).with_suffix(MTL_EXTENSION)
+        mtl_name = Path(bgf.name).with_suffix(MTL_EXTENSION)
         mtl_string: str = ""
 
         obj_string += f"mtllib {mtl_name}\n"
@@ -84,10 +35,6 @@ class BgfWavefrontConverter(BgfConverter):
 
         if not models:
             raise ValueError("no models found")
-
-        texture_names = [texture.name for texture in bgf.textures]
-
-        material_names = [texture_name.split(".")[0] for texture_name in texture_names]
 
         face_offset = 0
         tex_offset = 0
@@ -110,7 +57,7 @@ class BgfWavefrontConverter(BgfConverter):
             ]
 
             materials: list[str] = [
-                bgf.textures[texture_index].name.split(".")[0]
+                Path(textures[texture_index].main_texture_name).stem
                 for texture_index in texture_indices
                 if texture_index < len(bgf.textures)
             ]
@@ -141,15 +88,21 @@ class BgfWavefrontConverter(BgfConverter):
             face_offset += len(vertices)
             tex_offset += len(texture_mappings * 3)
 
-        for texture_name, material_name in zip(texture_names, material_names):
-            bgf_texture = bgf.textures[texture_names.index(texture_name)]
-            if bgf_texture.num0B == 3:
-                texture_name = Path(texture_name).with_suffix(PNG_EXTENSION).name
+        for texture in textures:
+            material_name = Path(texture.main_texture_name).stem
 
             mtl_string += f"newmtl {material_name}\n"
             mtl_string += "Ka 1.0 1.0 1.0\n"
             mtl_string += "Kd 1.0 1.0 1.0\n"
             mtl_string += "Ks 0.0 0.0 0.0\n"
-            mtl_string += f"map_Kd {texture_name }\n"
+            mtl_string += f"map_Kd {texture.main_texture_name}\n"
 
-        return name, (obj_string, mtl_string)
+            shutil.copy(texture.main_texture_path, output_path)
+
+        with open(obj_output_path, "w") as obj_file:
+            obj_file.write(obj_string)
+
+        with open(mtl_output_path, "w") as mtl_file:
+            mtl_file.write(mtl_string)
+
+        return [obj_output_path]

@@ -279,6 +279,15 @@ class SourceFormat(Format):
         "building_data",
         AGEB_PATH,
     )
+    TXS: tuple[str, str, list[TargetFormat], str, Path] = (
+        "txs",
+        TXS_EXTENSION,
+        [
+            TargetFormat.JSON,
+        ],
+        "txs",
+        OBJECTS_PATH,
+    )
 
     @property
     def target_formats(self) -> list[TargetFormat]:
