@@ -7,7 +7,7 @@ from construct_typed import DataclassMixin, DataclassStruct, csfield
 from europa_1400_tools.const import OBJECTS_STRING_ENCODING, SourceFormat
 from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.base_construct import BaseConstruct
-from europa_1400_tools.construct.common import ignoredcsfield
+from europa_1400_tools.construct.common import Skip0, SkipNonLatin1, ignoredcsfield
 from europa_1400_tools.helpers import strip_non_ascii
 
 
@@ -302,43 +302,50 @@ class BgfHeader(DataclassMixin):
 
 
 @dataclass
+class BgfTextureName(DataclassMixin):
+    """Construct for BgfTextureName."""
+
+    name_bytes: bytes = csfield(cs.NullTerminated(cs.GreedyBytes))
+    name: str = csfield(cs.Computed(lambda ctx: ctx.name_bytes.decode("latin-1")))
+    skip_non_latin1: SkipNonLatin1 = csfield(DataclassStruct(SkipNonLatin1))
+    optional_2f: bytes | None = csfield(cs.Optional(cs.Const(b"\x2F")))
+
+
+@dataclass
 class BgfFooter(DataclassMixin):
     """Construct for BgfFooter."""
 
-    footer_bytes: bytes = csfield(cs.GreedyBytes)
-    texture_names: list[str] = csfield(
-        cs.Computed(
-            lambda ctx: BgfFooter.get_texture_names(ctx._.textures, ctx.footer_bytes)
-        )
+    texture_names: list[BgfTextureName] = csfield(
+        cs.GreedyRange(DataclassStruct(BgfTextureName))
     )
 
-    @staticmethod
-    def get_texture_names(textures: list[BgfTexture], footer_bytes: bytes) -> list[str]:
-        """Extract texture names from footer bytes."""
+    # @staticmethod
+    # def get_texture_names(textures: list[BgfTexture], footer_bytes: bytes) -> list[str]:
+    #     """Extract texture names from footer bytes."""
 
-        texture_names_to_position: dict[str, int] = {}
+    #     texture_names_to_position: dict[str, int] = {}
 
-        for texture in textures:
-            texture_full_name = texture.name
-            texture_name = texture.name.split(".")[0]
-            texture_name_bytes = texture_name.encode(OBJECTS_STRING_ENCODING)
+    #     for texture in textures:
+    #         texture_full_name = texture.name
+    #         texture_name = texture.name.split(".")[0]
+    #         texture_name_bytes = texture_name.encode(OBJECTS_STRING_ENCODING)
 
-            if texture_full_name in texture_names_to_position:
-                continue
+    #         if texture_full_name in texture_names_to_position:
+    #             continue
 
-            position = footer_bytes.find(texture_name_bytes)
+    #         position = footer_bytes.find(texture_name_bytes)
 
-            if position == -1:
-                continue
+    #         if position == -1:
+    #             continue
 
-            texture_names_to_position[texture_full_name] = position
+    #         texture_names_to_position[texture_full_name] = position
 
-        texture_names = list(texture_names_to_position.keys())
-        texture_names.sort(
-            key=lambda texture_name: texture_names_to_position[texture_name]
-        )
+    #     texture_names = list(texture_names_to_position.keys())
+    #     texture_names.sort(
+    #         key=lambda texture_name: texture_names_to_position[texture_name]
+    #     )
 
-        return texture_names
+    #     return texture_names
 
 
 @dataclass

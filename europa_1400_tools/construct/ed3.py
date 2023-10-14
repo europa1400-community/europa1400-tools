@@ -6,52 +6,23 @@ import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
 from europa_1400_tools.construct.base_construct import BaseConstruct
-from europa_1400_tools.construct.common import Transform, Vector3, ignoredcsfield
+from europa_1400_tools.construct.common import (
+    Skip0,
+    Skip1,
+    Transform,
+    Vector3,
+    ignoredcsfield,
+)
 
 
 def is_01(obj, ctx):
     return obj == 1
 
 
-def cancel_on_unacceptable(obj, ctx):
-    if obj not in ctx.acceptable_values:
-        raise cs.CancelParsing
-
-
 class Hierarchy(IntEnum):
     DOWN = 0
     SAME = 1
     UP = 2
-
-
-@dataclass
-class Skip0(DataclassMixin):
-    """Structure of a skip0 block."""
-
-    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0]))
-    skipped: list[int] = ignoredcsfield(
-        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
-    )
-
-
-@dataclass
-class Skip01(DataclassMixin):
-    """Structure of a skip01 block."""
-
-    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0, 1]))
-    skipped: list[int] = ignoredcsfield(
-        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
-    )
-
-
-@dataclass
-class Skip1(DataclassMixin):
-    """Structure of a skip01 block."""
-
-    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [1]))
-    skipped: list[int] = ignoredcsfield(
-        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
-    )
 
 
 @dataclass

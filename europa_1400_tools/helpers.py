@@ -15,6 +15,26 @@ from PIL import Image
 from europa_1400_tools.const import OBJECTS_STRING_ENCODING
 
 
+def normalize(
+    value: str,
+    perform_strip_non_ascii: bool = True,
+    perform_lower: bool = True,
+    perform_remove_suffix: bool = True,
+) -> str:
+    """Normalizes the specified string."""
+
+    if perform_strip_non_ascii:
+        value = strip_non_ascii(value)
+
+    if perform_lower:
+        value = value.lower()
+
+    if perform_remove_suffix:
+        value = Path(value).stem
+
+    return value
+
+
 def create_transparent_texture(
     output_path: Path, width: int = 1, height: int = 1
 ) -> None:

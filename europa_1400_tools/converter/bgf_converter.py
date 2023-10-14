@@ -9,6 +9,7 @@ from europa_1400_tools.converter.common import Texture
 from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import (
     create_transparent_texture,
+    normalize,
     rebase_path,
     strip_non_ascii,
 )
@@ -43,7 +44,9 @@ class BgfConverter(BaseConverter, ABC):
         target_format: TargetFormat,
         create_subdirectories: bool = False,
     ) -> list[Path]:
-        output_sub_path: Path = rebase_path(file_path.parent, base_path, output_path)
+        output_sub_path: Path = rebase_path(
+            file_path.parent, base_path, output_path / target_format.value[0]
+        )
 
         if not output_sub_path.exists():
             output_sub_path.mkdir(parents=True)

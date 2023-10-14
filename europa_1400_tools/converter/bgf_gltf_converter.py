@@ -1,8 +1,6 @@
-import logging
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-from timeit import default_timer as timer
 
 import numpy as np
 from pygltflib import (
@@ -12,7 +10,7 @@ from pygltflib import (
     ELEMENT_ARRAY_BUFFER,
     FLOAT,
     GLTF2,
-    MASK,
+    OPAQUE,
     SCALAR,
     UNSIGNED_INT,
     VEC2,
@@ -33,9 +31,9 @@ from pygltflib import (
     PbrMetallicRoughness,
     Primitive,
     Scene,
-    Texture,
-    TextureInfo,
 )
+from pygltflib import Texture as GltfTexture
+from pygltflib import TextureInfo
 
 from europa_1400_tools.const import (
     GLB_EXTENSION,
@@ -46,13 +44,16 @@ from europa_1400_tools.const import (
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.bgf_converter import BgfConverter
+from europa_1400_tools.converter.common import Texture
 from europa_1400_tools.decoder.commands import decode_animations, decode_objects
 from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import (
     bitmap_to_gltf_uri,
     bytes_to_gltf_uri,
     convert_bmp_to_png_with_transparency,
+    normalize,
     png_to_gltf_uri,
+    strip_non_ascii,
 )
 from europa_1400_tools.mapper.commands import map_animations
 
@@ -67,6 +68,7 @@ class GltfPrimitive:
     uvs: np.ndarray
     indices: np.ndarray
     texture_index: int
+    texture: Texture
 
 
 @dataclass
@@ -120,20 +122,40 @@ class BgfGltfConverter(BgfConverter):
 
     def convert_bgf_file(
         self,
-        file_path: Path,
+        bgf: Bgf,
         output_path: Path,
-        base_path: Path,
         target_format: TargetFormat,
-        create_subdirectories: bool = False,
+        textures: list[Texture],
     ) -> list[Path]:
-        time_start = timer()
+        if bgf.name == "gb_GUTSHAUS":
+            pass
 
-        bgf = Bgf.from_file(file_path)
+        reordered_textures = [None] * len(textures)
+        missing_textures: list[Texture] = []
 
-        time_end = timer()
-        time_decode = time_end - time_start
+        footer_names = [
+            bgf_texture.name
+            for bgf_texture in bgf.footer.texture_names
+            if normalize(bgf_texture.name)
+            in [normalize(texture.bgf_texture.name) for texture in textures]
+        ]
 
-        logging.debug(f"Decoded {file_path} in {time_decode:.2f}s")
+        normalized_footer_names = [
+            normalize(footer_name) for footer_name in footer_names
+        ]
+        for i, texture in enumerate(textures):
+            if normalize(texture.bgf_texture.name) not in normalized_footer_names:
+                missing_textures.append(texture)
+                continue
+
+            texture_index = normalized_footer_names.index(
+                normalize(texture.bgf_texture.name)
+            )
+            reordered_textures[texture_index] = texture
+
+        reordered_textures = [texture for texture in reordered_textures if texture]
+        reordered_textures.extend(missing_textures)
+        textures = reordered_textures
 
         name = bgf.path.stem
 
@@ -142,8 +164,6 @@ class BgfGltfConverter(BgfConverter):
         bafs: list[Baf] = []
 
         if target_format == TargetFormat.GLTF:
-            time_start = timer()
-
             baf_paths = [
                 (self.common_options.decoded_animations_path / baf_path).with_suffix(
                     PICKLE_EXTENSION
@@ -157,14 +177,7 @@ class BgfGltfConverter(BgfConverter):
                     baf = pickle.load(input_file)
                     bafs.append(baf)
 
-            time_end = timer()
-            time_anim_load = time_end - time_start
-
-            logging.debug(f"Loaded {len(bafs)} animations in {time_anim_load:.2f}s")
-
-        time_start = timer()
-
-        gltf_mesh = self._convert_mesh(bgf, bafs, name)
+        gltf_mesh = self._convert_mesh(bgf, bafs, name, textures)
 
         scene = Scene(nodes=[0])
         gltf.scenes.append(scene)
@@ -188,7 +201,7 @@ class BgfGltfConverter(BgfConverter):
                     "TEXCOORD_0": len(gltf.accessors) + 3,
                 },
                 indices=len(gltf.accessors),
-                material=gltf_primitive.texture_index,
+                material=i,
             )
             primitives.append(primitive)
 
@@ -229,6 +242,39 @@ class BgfGltfConverter(BgfConverter):
                 name=f"uv_coordinates_{i}",
             )
 
+            if gltf_primitive.texture.main_texture_path.suffix.lower() == PNG_EXTENSION:
+                texture_uri = png_to_gltf_uri(gltf_primitive.texture.main_texture_path)
+            else:
+                texture_uri = bitmap_to_gltf_uri(
+                    gltf_primitive.texture.main_texture_path
+                )
+
+            gltf.images.append(
+                Image(
+                    uri=texture_uri,
+                )
+            )
+            gltf.textures.append(
+                GltfTexture(
+                    source=i,
+                    name=gltf_primitive.texture.main_texture_name,
+                )
+            )
+            gltf.materials.append(
+                Material(
+                    name=gltf_primitive.texture.main_texture_name,
+                    pbrMetallicRoughness=PbrMetallicRoughness(
+                        baseColorTexture=TextureInfo(
+                            index=i,
+                        ),
+                        metallicFactor=0.0,
+                        roughnessFactor=1.0,
+                    ),
+                    doubleSided=True,
+                    alphaMode=BLEND if gltf_primitive.texture.has_alpha else OPAQUE,
+                )
+            )
+
             total_vertices_per_key: np.ndarray = (
                 np.concatenate(gltf_primitive.baf_to_vertices_per_key)
                 if gltf_primitive.baf_to_vertices_per_key
@@ -251,77 +297,6 @@ class BgfGltfConverter(BgfConverter):
                         POSITION=len(gltf.accessors) - 1,
                     )
                 )
-
-        texture_names = bgf.footer.texture_names
-
-        missing_texture_indices: list[int] = []
-
-        for i, texture_name in enumerate(texture_names):
-            texture_path: Path | None = None
-            for extracted_textures_path in self.extracted_textures_paths:
-                if (
-                    extracted_textures_path.stem.lower()
-                    == Path(texture_name).stem.lower()
-                ):
-                    texture_path = extracted_textures_path
-                    break
-
-            if texture_path is None:
-                missing_texture_indices.append(i)
-                continue
-
-            bgf_texture = bgf.textures[i]
-            if bgf_texture.num0B != 0:
-                png_texture = convert_bmp_to_png_with_transparency(texture_path)
-                png_texture_path = texture_path.with_suffix(PNG_EXTENSION)
-                png_texture.save(png_texture_path, format="png")
-                texture_uri = png_to_gltf_uri(png_texture_path)
-            else:
-                texture_uri = bitmap_to_gltf_uri(texture_path)
-
-            gltf.images.append(
-                Image(
-                    uri=texture_uri,
-                )
-            )
-            gltf.textures.append(
-                Texture(
-                    source=len(gltf.images) - 1,
-                )
-            )
-            gltf.materials.append(
-                Material(
-                    pbrMetallicRoughness=PbrMetallicRoughness(
-                        baseColorTexture=TextureInfo(
-                            index=len(gltf.textures) - 1,
-                        ),
-                        metallicFactor=0.0,
-                        roughnessFactor=1.0,
-                    ),
-                    doubleSided=True,
-                    alphaMode=BLEND,
-                )
-            )
-
-        for _ in missing_texture_indices:
-            gltf.textures.append(
-                Texture(
-                    source=0,
-                )
-            )
-            gltf.materials.append(
-                Material(
-                    pbrMetallicRoughness=PbrMetallicRoughness(
-                        baseColorTexture=TextureInfo(
-                            index=len(gltf.textures) - 1,
-                        ),
-                        metallicFactor=0.0,
-                        roughnessFactor=1.0,
-                    ),
-                    doubleSided=True,
-                    alphaMode=MASK,
-                )
-            )
 
         target_index = 0
 
@@ -391,20 +366,8 @@ class BgfGltfConverter(BgfConverter):
 
                 target_index += keyframe_count
 
-        time_end = timer()
-        time_encode = time_end - time_start
-
-        logging.debug(f"Encoded {file_path} in {time_encode:.2f}s")
-
-        time_start = timer()
-
         glb_output_path = output_path / Path(name).with_suffix(GLB_EXTENSION)
         gltf.save_binary(glb_output_path)
-
-        time_end = timer()
-        time_write = time_end - time_start
-
-        logging.debug(f"Wrote {glb_output_path} in {time_write:.2f}s")
 
         return [glb_output_path]
 
@@ -467,7 +430,9 @@ class BgfGltfConverter(BgfConverter):
 
         return data_buffer, data_buffer_view, data_accessor
 
-    def _convert_mesh(self, bgf: Bgf, bafs: list[Baf], name: str) -> Mesh:
+    def _convert_mesh(
+        self, bgf: Bgf, bafs: list[Baf], name: str, textures: list[Texture]
+    ) -> Mesh:
         """Convert Bgf to gltf mesh."""
 
         gltf_primitives: list[GltfPrimitive] = []
@@ -476,11 +441,24 @@ class BgfGltfConverter(BgfConverter):
             primitives=gltf_primitives,
         )
 
-        texture_indices = set(
-            polygon.texture_index for polygon in bgf.mapping_object.polygons
+        faces = np.array(
+            [
+                [
+                    polygon.face.a,
+                    polygon.face.c,
+                    polygon.face.b,
+                ]
+                for polygon in bgf.mapping_object.polygons
+            ],
+            dtype=np.uint32,
         )
 
-        bgf_vertices = np.array(
+        texture_indices = np.array(
+            [polygon.texture_index for polygon in bgf.mapping_object.polygons],
+            dtype=np.uint32,
+        )
+
+        vertices = np.array(
             [
                 [
                     vertex_mapping.vertex1.x,
@@ -492,7 +470,7 @@ class BgfGltfConverter(BgfConverter):
             dtype=np.float32,
         )
 
-        bgf_normals = np.array(
+        normals = np.array(
             [
                 [
                     vertex_mapping.vertex2.x,
@@ -504,114 +482,126 @@ class BgfGltfConverter(BgfConverter):
             dtype=np.float32,
         )
 
-        baf_to_bgf_vertices_per_key = []
-        for baf in bafs:
-            bgf_vertices_per_key = baf.get_vertices_per_key()
-            baf_to_bgf_vertices_per_key.append(bgf_vertices_per_key)
-
-        # iterate over all textures
-        for texture_index in texture_indices:
-            # skip indices of missing textures
-            if texture_index >= len(bgf.footer.texture_names):
-                continue
-
-            # each texture has its own primitive
-            # with its own indices, vertices, normals and uvs
-            primitive_indices: list = []
-            vertices: list = []
-            normals: list = []
-            uvs: list = []
-
-            # each texture also has its own animation vertices
-            vertices_per_key_per_anim = []
-            for bgf_vertices_per_key in baf_to_bgf_vertices_per_key:
-                vertices_per_key = np.empty_like(bgf_vertices_per_key, dtype=np.float32)
-                vertices_per_key_per_anim.append(vertices_per_key)
-
-            # select all indices with the current texture index
-            indices_per_polygon = np.array(
+        face_uvs = np.array(
+            [
                 [
                     [
-                        polygon.face.a,
-                        polygon.face.c,
-                        polygon.face.b,
-                    ]
-                    for polygon in bgf.mapping_object.polygons
-                    if polygon.texture_index == texture_index
-                ]
-            )
-            uvs_per_polygon = np.array(
-                [
+                        polygon.texture_mapping.a.u,
+                        polygon.texture_mapping.a.v,
+                    ],
                     [
-                        [
-                            polygon.texture_mapping.a.u,
-                            polygon.texture_mapping.a.v,
-                        ],
-                        [
-                            polygon.texture_mapping.c.u,
-                            polygon.texture_mapping.c.v,
-                        ],
-                        [
-                            polygon.texture_mapping.b.u,
-                            polygon.texture_mapping.b.v,
-                        ],
-                    ]
-                    for polygon in bgf.mapping_object.polygons
-                    if polygon.texture_index == texture_index
+                        polygon.texture_mapping.c.u,
+                        polygon.texture_mapping.c.v,
+                    ],
+                    [
+                        polygon.texture_mapping.b.u,
+                        polygon.texture_mapping.b.v,
+                    ],
                 ]
+                for polygon in bgf.mapping_object.polygons
+            ]
+        )
+
+        # baf_to_bgf_vertices_per_key = []
+        # for baf in bafs:
+        #     bgf_vertices_per_key = baf.get_vertices_per_key()
+        #     baf_to_bgf_vertices_per_key.append(bgf_vertices_per_key)
+
+        for texture_index in range(len(textures)):
+            primitive = self.calculate_primitive(
+                faces,
+                texture_indices,
+                vertices,
+                normals,
+                face_uvs,
+                texture_index,
+                textures[texture_index],
             )
 
-            vertex_dict = {}
-
-            # iterate
-            for face, uvs_per_face in zip(indices_per_polygon, uvs_per_polygon):
-                for vertex_index, uv in zip(face, uvs_per_face):
-                    key = (vertex_index, uv[0], uv[1])
-
-                    if key not in vertex_dict:
-                        vertex_dict[key] = len(vertices)
-                        vertex = bgf_vertices[vertex_index]
-                        vertices.append(vertex)
-                        normals.append(bgf_normals[vertex_index])
-                        uvs.append(uv)
-
-                        for bgf_vertices_per_key, vertices_per_key in zip(
-                            baf_to_bgf_vertices_per_key, vertices_per_key_per_anim
-                        ):
-                            for keyframe in range(bgf_vertices_per_key.shape[0]):
-                                vertex_per_key = bgf_vertices_per_key[keyframe][
-                                    vertex_index
-                                ]
-                                vertices_per_key = np.append(
-                                    vertices_per_key, vertex_per_key
-                                )
-
-                    index = vertex_dict[key]
-                    primitive_indices.append(index)
-
-            primitive_indices_np = np.array(primitive_indices, dtype=np.uint32)
-            vertices_np = np.array(vertices, dtype=np.float32)
-            normals_np = np.array(normals, dtype=np.float32)
-            uvs_np = np.array(uvs, dtype=np.float32)
-
-            for vertices_per_key in vertices_per_key_per_anim:
-                vertices_per_key = np.array(vertices_per_key, dtype=np.float32)
-
-            if np.isnan(uvs_np).any():
-                uvs_np = np.nan_to_num(uvs_np)
-
-            for vertices_per_key in vertices_per_key_per_anim:
-                if np.isnan(vertices_per_key).any():
-                    raise ValueError("vertices_per_key contains nan")
-
-            gltf_primitive = GltfPrimitive(
-                indices=primitive_indices_np,
-                vertices=vertices_np,
-                baf_to_vertices_per_key=vertices_per_key_per_anim,
-                normals=normals_np,
-                uvs=uvs_np,
-                texture_index=texture_index,
-            )
-            gltf_primitives.append(gltf_primitive)
+            if primitive is not None:
+                gltf_primitives.append(primitive)
 
         return gltf_mesh
+
+    def calculate_primitive(
+        self,
+        faces: np.ndarray,
+        texture_indices: np.ndarray,
+        vertices: np.ndarray,
+        normals: np.ndarray,
+        face_uvs: np.ndarray,
+        texture_index: int,
+        texture: Texture,
+    ) -> GltfPrimitive | None:
+        # each texture also has its own animation vertices
+        # vertices_per_key_per_anim = []
+        # for bgf_vertices_per_key in baf_to_bgf_vertices_per_key:
+        #     vertices_per_key = np.empty_like(bgf_vertices_per_key, dtype=np.float32)
+        #     vertices_per_key_per_anim.append(vertices_per_key)
+
+        selected_faces = faces[texture_indices == texture_index]
+        selected_face_uvs = face_uvs[texture_indices == texture_index]
+
+        if len(selected_faces) == 0 or len(selected_face_uvs) == 0:
+            return None
+
+        primitive_indices: list = []
+        primitive_face_uvs: list = []
+        primitive_vertices: list = []
+        primitive_normals: list = []
+
+        vertex_dict = {}
+
+        for selected_face, selected_face_uvs in zip(selected_faces, selected_face_uvs):
+            for selected_face_vertex_index, selected_face_uv in zip(
+                selected_face, selected_face_uvs
+            ):
+                selected_face_u = selected_face_uv[0]
+                selected_face_v = selected_face_uv[1]
+
+                key = (selected_face_vertex_index, selected_face_u, selected_face_v)
+
+                if key not in vertex_dict:
+                    primitive_index = len(primitive_vertices)
+                    vertex_dict[key] = primitive_index
+
+                    vertex = vertices[selected_face_vertex_index]
+                    normal = normals[selected_face_vertex_index]
+
+                    primitive_vertices.append(vertex)
+                    primitive_normals.append(normal)
+                    primitive_face_uvs.append(selected_face_uv)
+
+                    # for bgf_vertices_per_key, vertices_per_key in zip(
+                    #     baf_to_bgf_vertices_per_key, vertices_per_key_per_anim
+                    # ):
+                    #     for keyframe in range(bgf_vertices_per_key.shape[0]):
+                    #         vertex_per_key = bgf_vertices_per_key[keyframe][
+                    #             vertex_index
+                    #         ]
+                    #         vertices_per_key = np.append(
+                    #             vertices_per_key, vertex_per_key
+                    #         )
+
+                primitive_indices.append(vertex_dict[key])
+
+        primitive_indices_np = np.array(primitive_indices, dtype=np.uint32)
+        primitive_uvs_np = np.array(primitive_face_uvs, dtype=np.float32)
+        primitive_normals_np = np.array(primitive_normals, dtype=np.float32)
+        primitive_vertices_np = np.array(primitive_vertices, dtype=np.float32)
+
+        # for vertices_per_key in vertices_per_key_per_anim:
+        #     vertices_per_key = np.array(vertices_per_key, dtype=np.float32)
+
+        gltf_primitive = GltfPrimitive(
+            indices=primitive_indices_np,
+            vertices=primitive_vertices_np,
+            # baf_to_vertices_per_key=vertices_per_key_per_anim,
+            baf_to_vertices_per_key=[],
+            normals=primitive_normals_np,
+            uvs=primitive_uvs_np,
+            texture_index=texture_index,
+            texture=texture,
+        )
+
+        return gltf_primitive

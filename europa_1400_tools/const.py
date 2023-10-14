@@ -355,6 +355,9 @@ BAF_INI_FILE_LOOP_OUT = "LoopOut"
 DEFAULT_OUTPUT_PATH = Path("output")
 
 
+LATIN1_VALUES: list[int] = list(range(0x20, 0x7F)) + list(range(0xA0, 0x100))
+
+
 BAF_TO_BGFS = {
     "LowPolyCharacter/Soldat/karrenziehen_SOLDAT_LOW.baf": [
         "_DYNAMIC/Low_Poly_Character/Bettler2_Low_MANN2.bgf",
