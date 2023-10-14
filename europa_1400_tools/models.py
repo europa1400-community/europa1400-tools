@@ -25,6 +25,7 @@ from europa_1400_tools.const import (
     OUTPUT_SCENES_DIR,
     OUTPUT_SFX_DIR,
     OUTPUT_TEXTURES_DIR,
+    OUTPUT_TXS_DIR,
     RESOURCES_DIR,
     SCENES_BIN,
     SFX_DIR,
@@ -79,6 +80,11 @@ class CommonOptions:
         return self.output_path / EXTRACTED_DIR / OUTPUT_TEXTURES_DIR
 
     @property
+    def converted_textures_path(self) -> Path:
+        """Return the path to the converted textures directory."""
+        return self.output_path / CONVERTED_DIR / OUTPUT_TEXTURES_DIR
+
+    @property
     def game_ageb_path(self) -> Path:
         """Return the path to the A_Geb file."""
         return self.game_data_path / A_GEB_DAT
@@ -107,6 +113,11 @@ class CommonOptions:
     def converted_objects_path(self) -> Path:
         """Return the path to the converted objects directory."""
         return self.converted_path / OUTPUT_OBJECTS_DIR
+
+    @property
+    def decoded_txs_path(self) -> Path:
+        """Return the path to the extracted txs directory."""
+        return self.output_path / EXTRACTED_DIR / OUTPUT_TXS_DIR
 
     @property
     def game_animations_path(self) -> Path:

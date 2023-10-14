@@ -5,7 +5,7 @@ import numpy as np
 from europa_1400_tools.construct.baf import Baf, Vector3
 
 
-class AnimationsMapper:
+class AnimationsPreprocessor:
     @staticmethod
     def map_animation(baf: Baf, bgf_to_vertices: dict[Path, np.ndarray]) -> list[Path]:
         """Map animation to object."""

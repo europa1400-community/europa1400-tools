@@ -4,12 +4,12 @@ from pathlib import Path
 from europa_1400_tools.const import PNG_EXTENSION
 from europa_1400_tools.construct.bgf import BgfTexture
 from europa_1400_tools.construct.txs import Txs
-from europa_1400_tools.helpers import (
-    convert_bmp_to_png_with_transparency,
-    create_transparent_texture,
-    strip_non_ascii,
-)
+from europa_1400_tools.helpers import strip_non_ascii
 from europa_1400_tools.models import CommonOptions
+from europa_1400_tools.preprocessor.textures_preprocessor import (
+    convert_bmp_to_png_with_transparency,
+    create_dummy_texture,
+)
 
 
 @dataclass
@@ -80,7 +80,7 @@ class Texture:
                 png_file_path = common_options.extracted_textures_path / Path(
                     file_name
                 ).with_suffix(PNG_EXTENSION)
-                create_transparent_texture(png_file_path)
+                create_dummy_texture(png_file_path)
                 file_name = png_file_path.name
                 file_path = png_file_path
 

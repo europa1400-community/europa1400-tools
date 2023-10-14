@@ -40,6 +40,7 @@ from europa_1400_tools.construct.ed3 import Ed3
 from europa_1400_tools.construct.gfx import Gfx
 from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.construct.sbf import Sbf
+from europa_1400_tools.construct.txs import Txs
 from europa_1400_tools.extractor.commands import extract
 from europa_1400_tools.helpers import get_files, rebase_path
 from europa_1400_tools.models import CommonOptions
@@ -155,6 +156,31 @@ def cmd_decode_objects(
     return decode_objects(common_options, file_paths)
 
 
+@app.command("txs")
+def cmd_decode_txs(
+    ctx: typer.Context,
+    file_paths: Annotated[
+        Optional[list[Path]],
+        typer.Option("--file", "-f", help=".txs files to decode."),
+    ] = None,
+) -> list[Path]:
+    """Command to decode TXS files."""
+
+    common_options: CommonOptions = ctx.obj
+
+    if not file_paths:
+        if common_options.extracted_objects_path.exists() and common_options.use_cache:
+            file_paths = get_files(common_options.extracted_objects_path, TXS_EXTENSION)
+        else:
+            file_paths = extract(ctx, [common_options.game_objects_path])
+
+    if not file_paths:
+        logging.warning("No files to decode.")
+        return []
+
+    return decode_txs(common_options, file_paths)
+
+
 def decode_objects(
     common_options: CommonOptions,
     file_paths: list[Path],
@@ -186,6 +212,45 @@ def decode_objects(
         with open(pickle_output_path, "wb") as pickle_output_file:
             pickle.dump(
                 bgf,
+                pickle_output_file,
+            )
+
+        pickle_output_paths.append(pickle_output_path)
+
+    return pickle_output_paths
+
+
+def decode_txs(
+    common_options: CommonOptions,
+    file_paths: list[Path],
+) -> list[Path]:
+    """Decode TXS files."""
+
+    pickle_output_paths: list[Path] = []
+
+    for file_path in file_paths:
+        logging.debug(f"Decoding {file_path}...")
+
+        if file_path.suffix.lower() == BGF_EXTENSION:
+            continue
+
+        if file_path.suffix.lower() != TXS_EXTENSION:
+            raise ValueError(f"Unknown file extension: {file_path.suffix}")
+
+        txs = Txs.from_file(file_path)
+
+        pickle_output_path = rebase_path(
+            file_path,
+            common_options.extracted_objects_path,
+            common_options.decoded_txs_path,
+        ).with_suffix(PICKLE_EXTENSION)
+
+        if not pickle_output_path.parent.exists():
+            pickle_output_path.parent.mkdir(parents=True)
+
+        with open(pickle_output_path, "wb") as pickle_output_file:
+            pickle.dump(
+                txs,
                 pickle_output_file,
             )
 

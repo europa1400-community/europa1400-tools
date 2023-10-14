@@ -50,12 +50,10 @@ from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import (
     bitmap_to_gltf_uri,
     bytes_to_gltf_uri,
-    convert_bmp_to_png_with_transparency,
     normalize,
     png_to_gltf_uri,
-    strip_non_ascii,
 )
-from europa_1400_tools.mapper.commands import map_animations
+from europa_1400_tools.preprocessor.commands import preprocess_animations
 
 
 @dataclass
@@ -113,7 +111,7 @@ class BgfGltfConverter(BgfConverter):
                     common_options, self.extracted_animations_paths
                 )
 
-                self.baf_to_bgfs, _ = map_animations(
+                self.baf_to_bgfs, _ = preprocess_animations(
                     self.common_options.extracted_objects_path,
                     self.common_options.extracted_animations_path,
                     self.decoded_objects_paths,

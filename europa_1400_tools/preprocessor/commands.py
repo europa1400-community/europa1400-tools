@@ -15,16 +15,62 @@ from europa_1400_tools.const import (
 )
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
-from europa_1400_tools.decoder.commands import cmd_decode_animations, cmd_decode_objects
+from europa_1400_tools.decoder.commands import (
+    cmd_decode_animations,
+    cmd_decode_objects,
+    cmd_decode_txs,
+)
+from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import get_files
-from europa_1400_tools.mapper.animations_mapper import AnimationsMapper
 from europa_1400_tools.models import CommonOptions
+from europa_1400_tools.preprocessor.animations_preprocessor import (
+    AnimationsPreprocessor,
+)
+from europa_1400_tools.preprocessor.textures_preprocessor import TexturesPreprocessor
 
 app = typer.Typer()
 
 
+@app.command("textures")
+def cmd_preprocess_textures(
+    ctx: typer.Context,
+) -> list[Path]:
+    common_options: CommonOptions = ctx.obj
+
+    extracted_texture_paths: list[Path]
+    objects_pickle_paths: list[Path]
+    txs_pickle_paths: list[Path]
+
+    if common_options.extracted_textures_path.exists() and common_options.use_cache:
+        extracted_texture_paths = get_files(
+            common_options.extracted_textures_path, PICKLE_EXTENSION
+        )
+    else:
+        extracted_texture_paths = extract_file(
+            common_options.game_textures_path,
+            common_options.extracted_textures_path,
+        )
+
+    if common_options.decoded_objects_path.exists() and common_options.use_cache:
+        objects_pickle_paths = get_files(
+            common_options.decoded_objects_path, PICKLE_EXTENSION
+        )
+    else:
+        objects_pickle_paths = cmd_decode_objects(ctx)
+
+    if common_options.decoded_txs_path.exists() and common_options.use_cache:
+        txs_pickle_paths = get_files(common_options.decoded_txs_path, PICKLE_EXTENSION)
+    else:
+        txs_pickle_paths = cmd_decode_txs(ctx)
+
+    converted_texture_paths = TexturesPreprocessor.preprocess_textures(
+        common_options, extracted_texture_paths, objects_pickle_paths, txs_pickle_paths
+    )
+    return converted_texture_paths
+
+
 @app.command("animations")
-def cmd_map_animations(
+def cmd_preprocess_animations(
     ctx: typer.Context,
 ) -> Path:
     """Command to map animation files to object files."""
@@ -55,7 +101,7 @@ def cmd_map_animations(
     else:
         objects_pickle_paths = cmd_decode_objects(ctx)
 
-    baf_to_bgfs, missing_paths = map_animations(
+    baf_to_bgfs, missing_paths = preprocess_animations(
         extracted_objects_path,
         extracted_animations_path,
         objects_pickle_paths,
@@ -74,7 +120,7 @@ def cmd_map_animations(
     return output_path
 
 
-def map_animations(
+def preprocess_animations(
     extracted_objects_path: Path,
     extracted_animations_path: Path,
     decoded_objects_paths: list[Path],
@@ -120,7 +166,7 @@ def map_animations(
     missing_paths: list[Path] = []
     for baf in bafs:
         logging.debug(f"Mapping {baf.path}.")
-        mapped_bgf_paths = AnimationsMapper.map_animation(baf, bgf_to_vertices)
+        mapped_bgf_paths = AnimationsPreprocessor.map_animation(baf, bgf_to_vertices)
 
         stripped_baf_path = baf.path.relative_to(extracted_animations_path)
 

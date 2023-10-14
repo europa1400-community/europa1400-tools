@@ -35,15 +35,6 @@ def normalize(
     return value
 
 
-def create_transparent_texture(
-    output_path: Path, width: int = 1, height: int = 1
-) -> None:
-    """Create a transparent texture with the specified dimensions."""
-
-    texture = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    texture.save(output_path)
-
-
 def strip_non_ascii(input_string):
     stripped_string = re.sub(r"[^\x00-\x7F]+", "", input_string)
     return stripped_string
@@ -99,25 +90,6 @@ def png_to_gltf_uri(png_path: Path) -> str:
     uri = f"data:image/png;base64,{encoded_data}"
 
     return uri
-
-
-def convert_bmp_to_png_with_transparency(bmp_path: Path, output_path: Path) -> None:
-    """Converts a BMP image to a PNG image with zero pixels being transparency."""
-
-    bmp_image = Image.open(bmp_path)
-    bmp_image = bmp_image.convert("RGB")
-    png_image = Image.new("RGBA", bmp_image.size)
-
-    for x in range(bmp_image.width):
-        for y in range(bmp_image.height):
-            r, g, b = bmp_image.getpixel((x, y))
-
-            if r == 0 and g == 0 and b == 0:
-                png_image.putpixel((x, y), (0, 0, 0, 0))
-            else:
-                png_image.putpixel((x, y), (r, g, b, 255))
-
-    png_image.save(output_path, format="png")
 
 
 def bytes_to_gltf_uri(data: bytes) -> str:
@@ -305,7 +277,7 @@ def get_files(
             if exclude is not None and file_path in exclude:
                 continue
 
-            if extension is not None and file_path.suffix != extension:
+            if extension is not None and file_path.suffix.lower() != extension.lower():
                 continue
 
             file_paths.append(file_path)

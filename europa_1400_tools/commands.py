@@ -11,14 +11,14 @@ from europa_1400_tools.converter.commands import app as convert_app
 from europa_1400_tools.decoder.commands import app as decode_app
 from europa_1400_tools.extractor.commands import app as extract_app
 from europa_1400_tools.helpers import ask_for_game_path
-from europa_1400_tools.mapper.commands import app as map_app
 from europa_1400_tools.models import CommonOptions
+from europa_1400_tools.preprocessor.commands import app as preprocess_app
 
 app = typer.Typer()
 app.add_typer(extract_app, name="extract")
 app.add_typer(decode_app, name="decode")
 app.add_typer(convert_app, name="convert")
-app.add_typer(map_app, name="map")
+app.add_typer(preprocess_app, name="preprocess")
 
 
 @app.callback()
