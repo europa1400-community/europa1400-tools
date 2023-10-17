@@ -4,6 +4,8 @@ from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 
+from rich.console import Console
+
 from europa_1400_tools.const import (
     A_GEB_DAT,
     A_OBJ_DAT,

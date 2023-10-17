@@ -1,6 +1,5 @@
 """Command line interface for europa_1400_tools."""
 
-import logging
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -22,8 +21,6 @@ def extract(
     ] = None,
 ) -> list[Path]:
     """Extract all files."""
-
-    logging.info("Extracting all zipped files from the game.")
 
     common_options: CommonOptions = ctx.obj
     output_paths: list[Path] = []

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from rich.console import Console
 
 from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import DEFAULT_OUTPUT_PATH

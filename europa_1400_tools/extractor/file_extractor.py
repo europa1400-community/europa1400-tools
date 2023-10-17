@@ -3,7 +3,7 @@ from zipfile import ZipFile
 
 from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.helpers import get_files
-from europa_1400_tools.rich import Rich
+from europa_1400_tools.rich.progress import Progress
 
 
 class FileExtractor:
@@ -26,22 +26,20 @@ class FileExtractor:
                 and not zip_file_info.is_dir()
             ]
 
-            live, progress = Rich.create_live_progress(
-                title=f"Extracting {file_path.name}", total=len(zip_file_paths)
+            progress = Progress(
+                title=f"Extracting {file_path.name}",
+                total_file_count=len(zip_file_paths),
             )
 
-            with live:
+            with progress:
                 if (
                     output_path.exists()
                     and any(output_path.iterdir())
                     and self.common_options.use_cache
                 ):
                     file_paths = get_files(output_path, file_suffix=file_suffix)
-                    progress.update(
-                        progress.task_ids[0],
-                        cached_file_count=len(file_paths),
-                        completed=len(file_paths),
-                    )
+
+                    progress.cached_file_count = len(file_paths)
 
                     return file_paths
 
@@ -52,10 +50,11 @@ class FileExtractor:
                     output_path.mkdir(parents=True)
 
                 for zip_file_path in zip_file_paths:
-                    progress.update(
-                        progress.task_ids[0], file_path=zip_file_path, advance=1
-                    )
+                    progress.file_path = zip_file_path
+
                     zip_file.extract(zip_file_path, output_path)
+
+                    progress.completed_file_count += 1
 
         file_paths = get_files(output_path, file_suffix=file_suffix)
 

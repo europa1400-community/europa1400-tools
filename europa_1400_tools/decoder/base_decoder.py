@@ -1,14 +1,14 @@
 import pickle
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Generic, Iterable, Optional, Type, TypeVar
+from typing import Generic, Type, TypeVar
 
 from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import PICKLE_EXTENSION
 from europa_1400_tools.construct.base_construct import BaseConstruct
 from europa_1400_tools.extractor.file_extractor import FileExtractor
 from europa_1400_tools.helpers import get_files, normalize
-from europa_1400_tools.rich import Rich
+from europa_1400_tools.rich.progress import Progress
 
 ConstructType = TypeVar("ConstructType", bound=BaseConstruct)
 
@@ -47,11 +47,12 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                 if normalize(file_path.suffix) == normalize(self.file_suffix)
             ]
 
-        live, progress = Rich.create_live_progress(
-            title=f"Decoding {self.construct_type.__name__}", total=len(file_paths)
+        progress = Progress(
+            title=f"Decoding {self.construct_type.__name__}",
+            total_file_count=len(file_paths),
         )
 
-        with live:
+        with progress:
             for file_path in file_paths:
                 if normalize(file_path.suffix) != normalize(self.file_suffix):
                     continue
@@ -65,7 +66,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                 )
                 relative_file_path = file_path.relative_to(base_path)
 
-                progress.update(progress.task_ids[0], file_path=relative_file_path)
+                progress.file_path = relative_file_path
 
                 decoded_output_path = (
                     self.decoded_path
@@ -77,9 +78,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
 
                 if decoded_output_path.exists() and self.common_options.use_cache:
                     decoded_file_paths.append(decoded_output_path)
-                    progress.update(
-                        progress.task_ids[0], advance=1, cached_file_count_advance=1
-                    )
+                    progress.cached_file_count += 1
                     continue
 
                 decoded_value = self.decode_file(file_path)
@@ -95,7 +94,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
 
                 decoded_file_paths.append(decoded_output_path)
 
-                progress.update(progress.task_ids[0], advance=1)
+                progress.completed_file_count += 1
 
         return decoded_file_paths
 
