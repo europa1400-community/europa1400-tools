@@ -208,6 +208,16 @@ class CommonOptions:
         return self.game_resources_path / SCENES_BIN
 
     @property
+    def extracted_scenes_path(self) -> Path:
+        """Return the path to the extracted scenes directory."""
+        return self.extracted_path / OUTPUT_SCENES_DIR
+
+    @property
+    def decoded_scenes_path(self) -> Path:
+        """Return the path to the decoded scenes directory."""
+        return self.decoded_path / OUTPUT_SCENES_DIR
+
+    @property
     def converted_scenes_path(self) -> Path:
         """Return the path to the converted scenes directory."""
         return self.converted_path / OUTPUT_SCENES_DIR
@@ -216,6 +226,16 @@ class CommonOptions:
     def game_groups_path(self) -> Path:
         """Return the path to the game groups directory."""
         return self.game_resources_path / GROUPS_BIN
+
+    @property
+    def extracted_groups_path(self) -> Path:
+        """Return the path to the extracted groups directory."""
+        return self.extracted_path / OUTPUT_GROUPS_DIR
+
+    @property
+    def decoded_groups_path(self) -> Path:
+        """Return the path to the decoded groups directory."""
+        return self.decoded_path / OUTPUT_GROUPS_DIR
 
     @property
     def converted_groups_path(self) -> Path:

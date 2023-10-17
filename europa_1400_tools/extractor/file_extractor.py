@@ -17,27 +17,13 @@ class FileExtractor:
     ) -> list[Path]:
         """Extract a single file."""
 
-        if (
-            output_path.exists()
-            and any(output_path.iterdir())
-            and self.common_options.use_cache
-        ):
-            file_paths = get_files(output_path, file_suffix=file_suffix)
-
-            return file_paths
-
-        if not file_path.exists():
-            raise FileNotFoundError(f"File does not exist: {file_path}")
-
-        if not output_path.exists():
-            output_path.mkdir(parents=True)
-
         with ZipFile(file_path, "r") as zip_file:
             zip_file_infos = zip_file.filelist
             zip_file_paths = [
                 zip_file_info.filename
                 for zip_file_info in zip_file_infos
-                if file_suffix is None or zip_file_info.filename.endswith(file_suffix)
+                if (file_suffix is None or zip_file_info.filename.endswith(file_suffix))
+                and not zip_file_info.is_dir()
             ]
 
             live, progress = Rich.create_live_progress(
@@ -45,6 +31,26 @@ class FileExtractor:
             )
 
             with live:
+                if (
+                    output_path.exists()
+                    and any(output_path.iterdir())
+                    and self.common_options.use_cache
+                ):
+                    file_paths = get_files(output_path, file_suffix=file_suffix)
+                    progress.update(
+                        progress.task_ids[0],
+                        cached_file_count=len(file_paths),
+                        completed=len(file_paths),
+                    )
+
+                    return file_paths
+
+                if not file_path.exists():
+                    raise FileNotFoundError(f"File does not exist: {file_path}")
+
+                if not output_path.exists():
+                    output_path.mkdir(parents=True)
+
                 for zip_file_path in zip_file_paths:
                     progress.update(
                         progress.task_ids[0], file_path=zip_file_path, advance=1

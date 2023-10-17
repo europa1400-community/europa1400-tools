@@ -30,7 +30,9 @@ def main(
     output_path: Path = typer.Option(
         DEFAULT_OUTPUT_PATH, "--output-path", "-o", help="Path to the output directory."
     ),
-    use_cache: bool = typer.Option(True, "--use-cache", "-c", help="Use cached files."),
+    use_cache: bool = typer.Option(
+        False, "--use-cache", "-c", help="Use cached files."
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output."),
 ) -> None:
     """Main entry point."""

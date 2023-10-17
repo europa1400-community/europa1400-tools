@@ -35,7 +35,8 @@ def extract(
 
     for file_path in file_paths:
         output_subdir = common_options.extracted_path / file_path.stem
-        extracted_paths = FileExtractor.extract(file_path, output_subdir)
+        extractor = FileExtractor(common_options)
+        extracted_paths = extractor.extract(file_path, output_subdir)
         output_paths.extend(extracted_paths)
 
     return output_paths

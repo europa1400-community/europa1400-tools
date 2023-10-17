@@ -67,8 +67,6 @@ class BaseDecoder(ABC, Generic[ConstructType]):
 
                 progress.update(progress.task_ids[0], file_path=relative_file_path)
 
-                decoded_value = self.decode_file(file_path)
-
                 decoded_output_path = (
                     self.decoded_path
                     if self.is_single_file
@@ -76,6 +74,15 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                         PICKLE_EXTENSION
                     )
                 )
+
+                if decoded_output_path.exists() and self.common_options.use_cache:
+                    decoded_file_paths.append(decoded_output_path)
+                    progress.update(
+                        progress.task_ids[0], advance=1, cached_file_count_advance=1
+                    )
+                    continue
+
+                decoded_value = self.decode_file(file_path)
 
                 if not decoded_output_path.parent.exists():
                     decoded_output_path.parent.mkdir(parents=True)
