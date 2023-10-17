@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import PNG_EXTENSION
 from europa_1400_tools.construct.bgf import BgfTexture
 from europa_1400_tools.construct.txs import Txs
 from europa_1400_tools.helpers import strip_non_ascii
-from europa_1400_tools.models import CommonOptions
 from europa_1400_tools.preprocessor.textures_preprocessor import (
     convert_bmp_to_png_with_transparency,
     create_dummy_texture,

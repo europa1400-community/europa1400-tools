@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import typer
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import (
     MAPPED_ANIMATONS_PICKLE,
     OUTPUT_ANIMATIONS_DIR,
@@ -20,9 +21,7 @@ from europa_1400_tools.decoder.commands import (
     cmd_decode_objects,
     cmd_decode_txs,
 )
-from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import get_files
-from europa_1400_tools.models import CommonOptions
 from europa_1400_tools.preprocessor.animations_preprocessor import (
     AnimationsPreprocessor,
 )
@@ -37,35 +36,7 @@ def cmd_preprocess_textures(
 ) -> list[Path]:
     common_options: CommonOptions = ctx.obj
 
-    extracted_texture_paths: list[Path]
-    objects_pickle_paths: list[Path]
-    txs_pickle_paths: list[Path]
-
-    if common_options.extracted_textures_path.exists() and common_options.use_cache:
-        extracted_texture_paths = get_files(
-            common_options.extracted_textures_path, PICKLE_EXTENSION
-        )
-    else:
-        extracted_texture_paths = extract_file(
-            common_options.game_textures_path,
-            common_options.extracted_textures_path,
-        )
-
-    if common_options.decoded_objects_path.exists() and common_options.use_cache:
-        objects_pickle_paths = get_files(
-            common_options.decoded_objects_path, PICKLE_EXTENSION
-        )
-    else:
-        objects_pickle_paths = cmd_decode_objects(ctx)
-
-    if common_options.decoded_txs_path.exists() and common_options.use_cache:
-        txs_pickle_paths = get_files(common_options.decoded_txs_path, PICKLE_EXTENSION)
-    else:
-        txs_pickle_paths = cmd_decode_txs(ctx)
-
-    converted_texture_paths = TexturesPreprocessor.preprocess_textures(
-        common_options, extracted_texture_paths, objects_pickle_paths, txs_pickle_paths
-    )
+    converted_texture_paths = TexturesPreprocessor.preprocess_textures(common_options)
     return converted_texture_paths
 
 

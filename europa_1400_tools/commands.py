@@ -6,12 +6,12 @@ from typing import Optional
 
 import typer
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import DEFAULT_OUTPUT_PATH
 from europa_1400_tools.converter.commands import app as convert_app
 from europa_1400_tools.decoder.commands import app as decode_app
 from europa_1400_tools.extractor.commands import app as extract_app
 from europa_1400_tools.helpers import ask_for_game_path
-from europa_1400_tools.models import CommonOptions
 from europa_1400_tools.preprocessor.commands import app as preprocess_app
 
 app = typer.Typer()

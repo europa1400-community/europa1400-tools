@@ -7,12 +7,15 @@ from pathlib import Path
 from europa_1400_tools.const import (
     A_GEB_DAT,
     A_OBJ_DAT,
+    AGEB_PICKLE,
     ANIMATIONS_BIN,
+    AOBJ_PICKLE,
     CONVERTED_DIR,
     DATA_DIR,
     DECODED_DIR,
     EXTRACTED_DIR,
     GFX_DIR,
+    GFX_PICKLE,
     GILDE_ADD_ON_GERMAN_GFX,
     GROUPS_BIN,
     MAPPED_ANIMATONS_PICKLE,
@@ -90,9 +93,19 @@ class CommonOptions:
         return self.game_data_path / A_GEB_DAT
 
     @property
+    def decoded_ageb_path(self) -> Path:
+        """Return the path to the decoded A_Geb file."""
+        return self.decoded_path / AGEB_PICKLE
+
+    @property
     def game_aobj_path(self) -> Path:
         """Return the path to the A_Obj file."""
         return self.game_data_path / A_OBJ_DAT
+
+    @property
+    def decoded_aobj_path(self) -> Path:
+        """Return the path to the decoded A_Obj file."""
+        return self.decoded_path / AOBJ_PICKLE
 
     @property
     def game_objects_path(self) -> Path:
@@ -115,9 +128,14 @@ class CommonOptions:
         return self.converted_path / OUTPUT_OBJECTS_DIR
 
     @property
-    def decoded_txs_path(self) -> Path:
+    def extracted_txs_path(self) -> Path:
         """Return the path to the extracted txs directory."""
         return self.output_path / EXTRACTED_DIR / OUTPUT_TXS_DIR
+
+    @property
+    def decoded_txs_path(self) -> Path:
+        """Return the path to the decoded txs directory."""
+        return self.output_path / DECODED_DIR / OUTPUT_TXS_DIR
 
     @property
     def game_animations_path(self) -> Path:
@@ -151,8 +169,13 @@ class CommonOptions:
 
     @property
     def game_gfx_path(self) -> Path:
-        """Return the path to the game gfx directory."""
+        """Return the path to the game gfx file."""
         return self.game_path / GFX_DIR / GILDE_ADD_ON_GERMAN_GFX
+
+    @property
+    def decoded_gfx_path(self) -> Path:
+        """Path to the decoded gfx file."""
+        return self.decoded_path / GFX_DIR / GFX_PICKLE
 
     @property
     def converted_gfx_path(self) -> Path:
@@ -163,6 +186,16 @@ class CommonOptions:
     def game_sfx_path(self) -> Path:
         """Return the path to the game sfx directory."""
         return self.game_path / SFX_DIR
+
+    @property
+    def extracted_sfx_path(self) -> Path:
+        """Return the path to the extracted sfx directory."""
+        return self.extracted_path / OUTPUT_SFX_DIR
+
+    @property
+    def decoded_sfx_path(self) -> Path:
+        """Return the path to the decoded sfx directory."""
+        return self.decoded_path / OUTPUT_SFX_DIR
 
     @property
     def converted_sfx_path(self) -> Path:

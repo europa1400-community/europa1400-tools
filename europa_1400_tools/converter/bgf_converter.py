@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+import typer
+
 from europa_1400_tools.const import TXS_EXTENSION, TargetFormat
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.construct.txs import Txs
 from europa_1400_tools.converter.base_converter import BaseConverter
 from europa_1400_tools.converter.common import Texture
-from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import rebase_path
+from europa_1400_tools.preprocessor.textures_preprocessor import TexturesPreprocessor
 
 
 class BgfConverter(BaseConverter, ABC):
@@ -22,9 +24,8 @@ class BgfConverter(BaseConverter, ABC):
     ):
         super().__init__(common_options)
 
-        self.extracted_texture_paths = extract_file(
-            self.common_options.game_textures_path,
-            self.common_options.extracted_textures_path,
+        TexturesPreprocessor.preprocess_textures(
+            common_options,
         )
 
         self.extracted_texture_names = [

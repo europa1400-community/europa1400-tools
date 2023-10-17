@@ -102,6 +102,9 @@ OUTPUT_TXS_DIR = "txs"
 OUTPUT_TEXTURES_DIR = "textures"
 MAPPED_ANIMATONS_PICKLE = "mapped_animations.pickle"
 MISSING_PATHS_TXT = "missing_paths.txt"
+AGEB_PICKLE = "ageb.pickle"
+AOBJ_PICKLE = "aobj.pickle"
+GFX_PICKLE = "gfx.pickle"
 
 # File Extensions
 

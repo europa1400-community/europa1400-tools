@@ -6,8 +6,7 @@ import struct
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
-from typing import BinaryIO
-from zipfile import ZipFile
+from typing import Any, BinaryIO, Iterable
 
 import construct as cs
 from PIL import Image
@@ -243,28 +242,8 @@ def sanitize_filename(path, replacement="_"):
     return sanitized_path
 
 
-def extract_zipfile(input_path: Path, output_path: Path) -> list[Path]:
-    """Extracts the contents of a zip file to the specified output path."""
-
-    if not input_path.is_file():
-        raise FileNotFoundError(f"File not found: {input_path}")
-
-    if not output_path.is_dir():
-        raise FileNotFoundError(f"Path is not a directory: {output_path}")
-
-    if not output_path.exists():
-        os.makedirs(output_path)
-
-    with ZipFile(input_path, "r") as zip_file:
-        zip_file.extractall(output_path)
-
-    file_paths = get_files(output_path)
-
-    return file_paths
-
-
 def get_files(
-    path: Path, extension: str | None = None, exclude: list[Path] | None = None
+    path: Path, file_suffix: str | None = None, exclude: list[Path] | None = None
 ) -> list[Path]:
     """Returns a list of files in the specified directory and its subdirectories."""
 
@@ -277,7 +256,9 @@ def get_files(
             if exclude is not None and file_path in exclude:
                 continue
 
-            if extension is not None and file_path.suffix.lower() != extension.lower():
+            if file_suffix is not None and normalize(file_path.suffix) != normalize(
+                file_suffix.lower()
+            ):
                 continue
 
             file_paths.append(file_path)

@@ -6,6 +6,7 @@ from typing import Annotated, List, Optional
 
 import typer
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import (
     BIN_EXTENSION,
     CONVERTIBLE_PATHS,
@@ -23,9 +24,7 @@ from europa_1400_tools.converter.ed3_converter import Ed3Converter
 from europa_1400_tools.converter.gfx_converter import GfxConverter
 from europa_1400_tools.converter.ogr_converter import OgrConverter
 from europa_1400_tools.converter.sbf_converter import SbfConverter
-from europa_1400_tools.extractor.commands import extract_file
 from europa_1400_tools.helpers import get_files
-from europa_1400_tools.models import CommonOptions
 
 app = typer.Typer()
 

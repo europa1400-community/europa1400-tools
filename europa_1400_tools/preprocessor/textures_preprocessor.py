@@ -4,22 +4,50 @@ from pathlib import Path
 
 from PIL import Image
 
-from europa_1400_tools.const import PNG_EXTENSION
+from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.const import PICKLE_EXTENSION, PNG_EXTENSION
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.construct.txs import Txs
-from europa_1400_tools.helpers import normalize, rebase_path
-from europa_1400_tools.models import CommonOptions
+from europa_1400_tools.extractor.file_extractor import FileExtractor
+from europa_1400_tools.helpers import get_files, normalize, rebase_path
 
 
 class TexturesPreprocessor:
     @staticmethod
     def preprocess_textures(
         common_options: CommonOptions,
-        extracted_texture_paths: list[Path],
         object_pickle_paths: list[Path],
         txs_pickle_paths: list[Path],
     ) -> list[Path]:
         """Preprocess textures."""
+
+        extracted_texture_paths: list[Path]
+        objects_pickle_paths: list[Path]
+        txs_pickle_paths: list[Path]
+
+        if common_options.extracted_textures_path.exists() and common_options.use_cache:
+            extracted_texture_paths = get_files(
+                common_options.extracted_textures_path, PICKLE_EXTENSION
+            )
+        else:
+            extracted_texture_paths = FileExtractor.extract(
+                common_options.game_textures_path,
+                common_options.extracted_textures_path,
+            )
+
+        if common_options.decoded_objects_path.exists() and common_options.use_cache:
+            objects_pickle_paths = get_files(
+                common_options.decoded_objects_path, PICKLE_EXTENSION
+            )
+        else:
+            objects_pickle_paths = cmd_decode_objects(ctx)
+
+        if common_options.decoded_txs_path.exists() and common_options.use_cache:
+            txs_pickle_paths = get_files(
+                common_options.decoded_txs_path, PICKLE_EXTENSION
+            )
+        else:
+            txs_pickle_paths = cmd_decode_txs(ctx)
 
         for object_pickle_path in object_pickle_paths:
             with open(object_pickle_path, "rb") as object_pickle_file:

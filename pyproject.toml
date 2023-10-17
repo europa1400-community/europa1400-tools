@@ -9,7 +9,7 @@ packages = [{include = "europa_1400_tools"}]
 
 [tool.poetry.scripts]
 main = "europa_1400_tools.main:main"
-models = "europa_1400_tools.models_decoder:main"
+models = "europa_1400_tools.common_options_decoder:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
@@ -21,6 +21,7 @@ ffmpeg-python = "^0.2.0"
 numpy = "^1.26.0"
 pillow = "^10.0.1"
 types-pillow = "^10.0.0.3"
+rich = "^13.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.17.3"

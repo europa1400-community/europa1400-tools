@@ -45,8 +45,8 @@ from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.bgf_converter import BgfConverter
 from europa_1400_tools.converter.common import Texture
-from europa_1400_tools.decoder.commands import decode_animations, decode_objects
-from europa_1400_tools.extractor.commands import extract_file
+from europa_1400_tools.decoder.baf_decoder import BafDecoder
+from europa_1400_tools.decoder.bgf_decoder import BgfDecoder
 from europa_1400_tools.helpers import (
     bitmap_to_gltf_uri,
     bytes_to_gltf_uri,
@@ -93,23 +93,11 @@ class BgfGltfConverter(BgfConverter):
                 ) as input_file:
                     self.baf_to_bgfs = pickle.load(input_file)
             else:
-                self.extracted_objects_paths = extract_file(
-                    self.common_options.game_objects_path,
-                    self.common_options.extracted_objects_path,
-                )
+                bgf_decoder = BgfDecoder(common_options)
+                self.decoded_objects_paths = bgf_decoder.decode_files(None)
 
-                self.extracted_animations_paths = extract_file(
-                    self.common_options.game_animations_path,
-                    self.common_options.extracted_animations_path,
-                )
-
-                self.decoded_objects_paths = decode_objects(
-                    common_options, self.extracted_objects_paths
-                )
-
-                self.decoded_animations_paths = decode_animations(
-                    common_options, self.extracted_animations_paths
-                )
+                baf_decoder = BafDecoder(common_options)
+                self.decoded_animations_paths = baf_decoder.decode_files(None)
 
                 self.baf_to_bgfs, _ = preprocess_animations(
                     self.common_options.extracted_objects_path,

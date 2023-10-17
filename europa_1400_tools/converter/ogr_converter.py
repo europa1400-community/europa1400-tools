@@ -2,11 +2,7 @@ import dataclasses
 import json
 from pathlib import Path
 
-from europa_1400_tools.const import JSON_EXTENSION, OgrElementType, TargetFormat
-from europa_1400_tools.construct.ogr import Ogr
-from europa_1400_tools.converter.base_converter import BaseConverter
-from europa_1400_tools.helpers import rebase_path
-from europa_1400_tools.models import (
+from europa_1400_tools.common_options import (
     OgrDummyElementJson,
     OgrElementJson,
     OgrJson,
@@ -16,6 +12,10 @@ from europa_1400_tools.models import (
     OgrTransformJson,
     VertexJson,
 )
+from europa_1400_tools.const import JSON_EXTENSION, OgrElementType, TargetFormat
+from europa_1400_tools.construct.ogr import Ogr
+from europa_1400_tools.converter.base_converter import BaseConverter
+from europa_1400_tools.helpers import rebase_path
 
 
 class OgrConverter(BaseConverter):

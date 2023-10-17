@@ -6,8 +6,8 @@ from pathlib import Path
 from timeit import default_timer as timer
 from typing import TypeVar, final
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import SourceFormat, TargetFormat
-from europa_1400_tools.models import CommonOptions
 
 InputType = TypeVar("InputType")
 OutputType = TypeVar("OutputType")
