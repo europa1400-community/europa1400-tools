@@ -25,7 +25,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
         self.common_options = common_options
         self.construct_type = construct_type
 
-    def decode_files(self, file_paths: list[Path] | None) -> list[Path]:
+    def decode_files(self, file_paths: list[Path] | None = None) -> list[Path]:
         """Decode files."""
 
         decoded_file_paths: list[Path] = []
@@ -82,6 +82,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                     continue
 
                 decoded_value = self.decode_file(file_path)
+                decoded_value.path = relative_file_path
 
                 if not decoded_output_path.parent.exists():
                     decoded_output_path.parent.mkdir(parents=True)

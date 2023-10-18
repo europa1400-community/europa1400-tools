@@ -44,7 +44,6 @@ from europa_1400_tools.const import (
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.converter.bgf_converter import BgfConverter
-from europa_1400_tools.converter.common import Texture
 from europa_1400_tools.decoder.baf_decoder import BafDecoder
 from europa_1400_tools.decoder.bgf_decoder import BgfDecoder
 from europa_1400_tools.helpers import (
@@ -66,7 +65,6 @@ class GltfPrimitive:
     uvs: np.ndarray
     indices: np.ndarray
     texture_index: int
-    texture: Texture
 
 
 @dataclass
@@ -106,12 +104,10 @@ class BgfGltfConverter(BgfConverter):
                     self.decoded_animations_paths,
                 )
 
-    def convert_bgf_file(
+    def _convert(
         self,
         bgf: Bgf,
         output_path: Path,
-        target_format: TargetFormat,
-        textures: list[Texture],
     ) -> list[Path]:
         if bgf.name == "gb_GUTSHAUS":
             pass
@@ -416,9 +412,7 @@ class BgfGltfConverter(BgfConverter):
 
         return data_buffer, data_buffer_view, data_accessor
 
-    def _convert_mesh(
-        self, bgf: Bgf, bafs: list[Baf], name: str, textures: list[Texture]
-    ) -> Mesh:
+    def _convert_mesh(self, bgf: Bgf, bafs: list[Baf], name: str) -> Mesh:
         """Convert Bgf to gltf mesh."""
 
         gltf_primitives: list[GltfPrimitive] = []
@@ -517,7 +511,6 @@ class BgfGltfConverter(BgfConverter):
         normals: np.ndarray,
         face_uvs: np.ndarray,
         texture_index: int,
-        texture: Texture,
     ) -> GltfPrimitive | None:
         # each texture also has its own animation vertices
         # vertices_per_key_per_anim = []

@@ -1,31 +1,45 @@
 import logging
 from pathlib import Path
+from typing import Type
 
 from PIL import Image
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import PNG_EXTENSION, TargetFormat
 from europa_1400_tools.construct.gfx import Gfx, Graphic, ShapebankDefinition
-from europa_1400_tools.converter.base_converter import BaseConverter
+from europa_1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa_1400_tools.decoder.gfx_decoder import GfxDecoder
 
 
 class GfxConverter(BaseConverter):
     """Class for converting the GFX file."""
 
-    def convert_file(
+    def __init__(self, common_options: CommonOptions):
+        super().__init__(common_options, Gfx, GfxDecoder)
+
+    @property
+    def decoded_path(self) -> Path:
+        return self.common_options.decoded_gfx_path
+
+    @property
+    def converted_path(self) -> Path:
+        return self.common_options.converted_gfx_path
+
+    @property
+    def is_single_output_file(self) -> bool:
+        return False
+
+    def convert(
         self,
-        file_path: Path,
+        value: ConstructType,
         output_path: Path,
-        base_path: Path,
-        target_format: TargetFormat,
-        create_subdirectories: bool = False,
     ) -> list[Path]:
         """Convert Gfx graphics to images."""
 
-        gfx = Gfx.from_file(file_path)
         output_file_paths: list[Path] = []
         shapebank_images: dict[str, dict[str, Image.Image]] = {}
 
-        for shapebank_definition in gfx.shapebank_definitions:
+        for shapebank_definition in value.shapebank_definitions:
             if not shapebank_definition.shapebank:
                 continue
             images = self.convert_shapebank(shapebank_definition)
@@ -51,8 +65,6 @@ class GfxConverter(BaseConverter):
         shapebank_definition: ShapebankDefinition,
     ) -> dict[str, Image.Image]:
         """Convert Shapebank graphics to images."""
-
-        logging.debug(f"Converting shapebank {shapebank_definition.name}")
 
         if not shapebank_definition.shapebank:
             raise ValueError("Shapebank not found.")

@@ -1,78 +1,70 @@
+import pickle
 from abc import ABC, abstractmethod
 from pathlib import Path
 
 import typer
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import TXS_EXTENSION, TargetFormat
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.construct.txs import Txs
-from europa_1400_tools.converter.base_converter import BaseConverter
-from europa_1400_tools.converter.common import Texture
+from europa_1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa_1400_tools.decoder.bgf_decoder import BgfDecoder
+from europa_1400_tools.decoder.txs_decoder import TxsDecoder
+from europa_1400_tools.extractor.file_extractor import FileExtractor
 from europa_1400_tools.helpers import rebase_path
-from europa_1400_tools.preprocessor.textures_preprocessor import TexturesPreprocessor
+from europa_1400_tools.preprocessor.objects_preprocessor import (
+    ObjectMetadata,
+    ObjectsPreprocessor,
+)
 
 
 class BgfConverter(BaseConverter, ABC):
     """Converter for BGF files."""
 
-    extracted_texture_paths: list[Path]
-    extracted_texture_names: list[str]
+    object_metadatas: list[ObjectMetadata]
 
     def __init__(
         self,
-        common_options,
+        common_options: CommonOptions,
     ):
-        super().__init__(common_options)
+        super().__init__(common_options, Bgf, BgfDecoder)
 
-        TexturesPreprocessor.preprocess_textures(
-            common_options,
+        # self.extracted_texture_names = [
+        #     texture_path.stem for texture_path in self.extracted_texture_paths
+        # ]
+
+    def preprocess(self, file_paths: list[Path]) -> None:
+        file_extractor = FileExtractor(self.common_options)
+        texture_paths = file_extractor.extract(
+            self.common_options.game_textures_path,
+            self.common_options.extracted_textures_path,
         )
 
-        self.extracted_texture_names = [
-            texture_path.stem for texture_path in self.extracted_texture_paths
-        ]
+        txs_decoder = TxsDecoder(self.common_options)
+        txs_pickle_paths = txs_decoder.decode_files()
 
-    def convert_file(
+        objects_preprocessor = ObjectsPreprocessor(self.common_options)
+        self.object_metadatas = objects_preprocessor.preprocess_objects(
+            texture_paths,
+            file_paths,
+            txs_pickle_paths,
+        )
+
+    def convert(
         self,
-        file_path: Path,
+        value: ConstructType,
         output_path: Path,
-        base_path: Path,
-        target_format: TargetFormat,
-        create_subdirectories: bool = False,
     ) -> list[Path]:
-        output_sub_path: Path = rebase_path(
-            file_path.parent, base_path, output_path / target_format.value[0]
-        )
-
-        if not output_sub_path.exists():
-            output_sub_path.mkdir(parents=True)
-
-        bgf = Bgf.from_file(file_path)
-
-        txs_file_path = file_path.with_suffix(TXS_EXTENSION)
-        txs: Txs | None = None
-
-        if txs_file_path.exists():
-            txs = Txs.from_file(txs_file_path)
-
-        textures: list[Texture] = [
-            Texture(bgf_texture, txs, self.extracted_texture_paths, self.common_options)
-            for bgf_texture in bgf.textures
-        ]
-
-        return self.convert_bgf_file(
-            bgf,
-            output_sub_path,
-            target_format,
-            textures,
+        return self._convert(
+            value,
+            output_path,
         )
 
     @abstractmethod
-    def convert_bgf_file(
+    def _convert(
         self,
         bgf: Bgf,
         output_path: Path,
-        target_format: TargetFormat,
-        textures: list[Texture],
     ) -> list[Path]:
-        """Convert BGF file and export to output_path."""
+        """Convert BGF and export to output_path."""

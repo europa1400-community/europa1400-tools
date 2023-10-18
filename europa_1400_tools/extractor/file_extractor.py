@@ -2,7 +2,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from europa_1400_tools.common_options import CommonOptions
-from europa_1400_tools.helpers import get_files
+from europa_1400_tools.helpers import get_files, normalize
 from europa_1400_tools.rich.progress import Progress
 
 
@@ -19,11 +19,16 @@ class FileExtractor:
 
         with ZipFile(file_path, "r") as zip_file:
             zip_file_infos = zip_file.filelist
-            zip_file_paths = [
-                zip_file_info.filename
+
+            zip_file_paths: list[Path] = [
+                Path(zip_file_info.filename)
                 for zip_file_info in zip_file_infos
-                if (file_suffix is None or zip_file_info.filename.endswith(file_suffix))
-                and not zip_file_info.is_dir()
+                if not Path(zip_file_info.filename).is_dir()
+                and (
+                    file_suffix is None
+                    or normalize(Path(zip_file_info.filename).suffix)
+                    == normalize(file_suffix)
+                )
             ]
 
             progress = Progress(
@@ -52,7 +57,7 @@ class FileExtractor:
                 for zip_file_path in zip_file_paths:
                     progress.file_path = zip_file_path
 
-                    zip_file.extract(zip_file_path, output_path)
+                    zip_file.extract(zip_file_path.as_posix(), output_path)
 
                     progress.completed_file_count += 1
 

@@ -15,12 +15,15 @@ from europa_1400_tools.const import OBJECTS_STRING_ENCODING
 
 
 def normalize(
-    value: str,
+    value: Path | str,
     perform_strip_non_ascii: bool = True,
     perform_lower: bool = True,
     perform_remove_suffix: bool = True,
 ) -> str:
     """Normalizes the specified string."""
+
+    if isinstance(value, Path):
+        value = value.as_posix()
 
     if perform_strip_non_ascii:
         value = strip_non_ascii(value)
@@ -226,7 +229,7 @@ def rebase_path(path: Path, base_path: Path, target_path: Path) -> Path:
     base_path = base_path.resolve()
     target_path = target_path.resolve()
 
-    if not path.is_relative_to(base_path):
+    if not path.samefile(base_path) and not path.is_relative_to(base_path):
         raise ValueError("Path must be a subpath of the base path.")
 
     relative_path = path.relative_to(base_path)

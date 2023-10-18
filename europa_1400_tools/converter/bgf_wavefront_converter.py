@@ -5,21 +5,34 @@ from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION, TargetFormat
 from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
 from europa_1400_tools.converter.bgf_converter import BgfConverter
-from europa_1400_tools.converter.common import Texture
+from europa_1400_tools.preprocessor.objects_preprocessor import ObjectMetadata
 
 
 class BgfWavefrontConverter(BgfConverter):
     """Class for converting BGF files to wavefront."""
 
-    def convert_bgf_file(
+    def _convert(
         self,
         bgf: Bgf,
         output_path: Path,
-        target_format: TargetFormat,
-        textures: list[Texture],
     ) -> list[Path]:
+        object_metadata: ObjectMetadata | None = next(
+            (
+                object_metadata
+                for object_metadata in self.object_metadatas
+                if object_metadata.name == bgf.name
+            ),
+            None,
+        )
+
+        if object_metadata is None:
+            raise ValueError(f"no metadata found for {bgf.name}")
+
         obj_output_path = output_path / Path(bgf.name).with_suffix(OBJ_EXTENSION)
         mtl_output_path = output_path / Path(bgf.name).with_suffix(MTL_EXTENSION)
+
+        if not output_path.exists():
+            output_path.mkdir(parents=True)
 
         obj_string: str = ""
         mtl_name = Path(bgf.name).with_suffix(MTL_EXTENSION)
@@ -57,7 +70,7 @@ class BgfWavefrontConverter(BgfConverter):
             ]
 
             materials: list[str] = [
-                Path(textures[texture_index].main_texture_name).stem
+                Path(object_metadata.textures[texture_index].name).stem
                 for texture_index in texture_indices
                 if texture_index < len(bgf.textures)
             ]
@@ -88,16 +101,20 @@ class BgfWavefrontConverter(BgfConverter):
             face_offset += len(vertices)
             tex_offset += len(texture_mappings * 3)
 
-        for texture in textures:
-            material_name = Path(texture.main_texture_name).stem
+        for texture_metadata in object_metadata.textures:
+            texture_path = (
+                self.common_options.converted_textures_path / texture_metadata.path
+            )
+            material_name = Path(texture_metadata.name).stem
+            material_path = Path(texture_metadata.name)
 
             mtl_string += f"newmtl {material_name}\n"
             mtl_string += "Ka 1.0 1.0 1.0\n"
             mtl_string += "Kd 1.0 1.0 1.0\n"
             mtl_string += "Ks 0.0 0.0 0.0\n"
-            mtl_string += f"map_Kd {texture.main_texture_name}\n"
+            mtl_string += f"map_Kd {material_path}\n"
 
-            shutil.copy(texture.main_texture_path, output_path)
+            shutil.copy(texture_path, output_path)
 
         with open(obj_output_path, "w") as obj_file:
             obj_file.write(obj_string)

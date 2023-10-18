@@ -103,7 +103,9 @@ OUTPUT_TEXTURES_DIR = "textures"
 MAPPED_ANIMATONS_PICKLE = "mapped_animations.pickle"
 MISSING_PATHS_TXT = "missing_paths.txt"
 AGEB_PICKLE = "ageb.pickle"
+AGEB_JSON = "ageb.json"
 AOBJ_PICKLE = "aobj.pickle"
+AOBJ_JSON = "aobj.json"
 GFX_PICKLE = "gfx.pickle"
 
 # File Extensions
@@ -130,6 +132,7 @@ TXS_EXTENSION = ".txs"
 DAT_EXTENSION = ".dat"
 BIN_EXTENSION = ".bin"
 TXT_EXTENSION = ".txt"
+BMP_EXTENSION = ".bmp"
 
 IGNORED_EXTENSIONS = [
     LFS_EXTENSION,

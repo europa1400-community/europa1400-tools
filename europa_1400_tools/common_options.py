@@ -4,13 +4,13 @@ from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 
-from rich.console import Console
-
 from europa_1400_tools.const import (
     A_GEB_DAT,
     A_OBJ_DAT,
+    AGEB_JSON,
     AGEB_PICKLE,
     ANIMATIONS_BIN,
+    AOBJ_JSON,
     AOBJ_PICKLE,
     CONVERTED_DIR,
     DATA_DIR,
@@ -100,6 +100,11 @@ class CommonOptions:
         return self.decoded_path / AGEB_PICKLE
 
     @property
+    def converted_ageb_path(self) -> Path:
+        """Return the path to the converted A_Geb file."""
+        return self.converted_path / AGEB_JSON
+
+    @property
     def game_aobj_path(self) -> Path:
         """Return the path to the A_Obj file."""
         return self.game_data_path / A_OBJ_DAT
@@ -108,6 +113,11 @@ class CommonOptions:
     def decoded_aobj_path(self) -> Path:
         """Return the path to the decoded A_Obj file."""
         return self.decoded_path / AOBJ_PICKLE
+
+    @property
+    def converted_aobj_path(self) -> Path:
+        """Return the path to the converted A_Obj file."""
+        return self.converted_path / AOBJ_JSON
 
     @property
     def game_objects_path(self) -> Path:
@@ -132,12 +142,17 @@ class CommonOptions:
     @property
     def extracted_txs_path(self) -> Path:
         """Return the path to the extracted txs directory."""
-        return self.output_path / EXTRACTED_DIR / OUTPUT_TXS_DIR
+        return self.extracted_path / OUTPUT_TXS_DIR
 
     @property
     def decoded_txs_path(self) -> Path:
         """Return the path to the decoded txs directory."""
-        return self.output_path / DECODED_DIR / OUTPUT_TXS_DIR
+        return self.decoded_path / OUTPUT_TXS_DIR
+
+    @property
+    def converted_txs_path(self) -> Path:
+        """Return the path to the decoded txs directory."""
+        return self.converted_path / OUTPUT_TXS_DIR
 
     @property
     def game_animations_path(self) -> Path:

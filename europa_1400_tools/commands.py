@@ -18,7 +18,10 @@ from europa_1400_tools.preprocessor.commands import app as preprocess_app
 app = typer.Typer()
 app.add_typer(extract_app, name="extract")
 app.add_typer(decode_app, name="decode")
-app.add_typer(convert_app, name="convert")
+app.add_typer(
+    convert_app,
+    name="convert",
+)
 app.add_typer(preprocess_app, name="preprocess")
 
 
@@ -47,8 +50,8 @@ def main(
         game_path = ask_for_game_path()
 
     ctx.obj = CommonOptions(
-        game_path=game_path,
-        output_path=output_path,
+        game_path=game_path.resolve(),
+        output_path=output_path.resolve(),
         use_cache=use_cache,
         verbose=verbose,
     )

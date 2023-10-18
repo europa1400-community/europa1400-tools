@@ -4,36 +4,46 @@ from pathlib import Path
 
 import ffmpeg
 
+from europa_1400_tools.common_options import CommonOptions
 from europa_1400_tools.const import SoundType, TargetFormat
 from europa_1400_tools.construct.sbf import Sbf
-from europa_1400_tools.converter.base_converter import BaseConverter
-from europa_1400_tools.helpers import rebase_path
+from europa_1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa_1400_tools.decoder.sbf_decoder import SbfDecoder
 
 
 class SbfConverter(BaseConverter):
     """Class for converting SBF files."""
 
-    def convert_file(
+    def __init__(self, common_options: CommonOptions):
+        super().__init__(common_options, Sbf, SbfDecoder)
+
+    @property
+    def decoded_path(self) -> Path:
+        return self.common_options.decoded_sfx_path
+
+    @property
+    def converted_path(self) -> Path:
+        return self.common_options.converted_sfx_path
+
+    @property
+    def is_single_output_file(self) -> bool:
+        return False
+
+    def convert(
         self,
-        file_path: Path,
+        value: ConstructType,
         output_path: Path,
-        base_path: Path,
-        target_format: TargetFormat,
-        create_subdirectories: bool = False,
     ) -> list[Path]:
-        """Convert SBF to another format."""
-
-        sbf = Sbf.from_file(file_path)
-
+        target_format = self.common_options.target_format
         audio_bytes_dict: dict[str, list[bytes]] = {}
         audio_output_paths: list[Path] = []
 
         if target_format == TargetFormat.MP3:
-            audio_bytes_dict = SbfConverter._convert_to_mp3(sbf)
+            audio_bytes_dict = SbfConverter._convert_to_mp3(value)
         else:
-            audio_bytes_dict = SbfConverter._convert_to_wav(sbf)
+            audio_bytes_dict = SbfConverter._convert_to_wav(value)
 
-        for soundbank in sbf.soundbanks:
+        for soundbank in value.soundbanks:
             audio_bytes_list: list[bytes] = []
 
             for i, sound in enumerate(soundbank.sounds):
@@ -55,16 +65,14 @@ class SbfConverter(BaseConverter):
 
             audio_bytes_dict[soundbank.soundbank_definition.name] = audio_bytes_list
 
-        sbf_output_path = rebase_path(file_path.parent, base_path, output_path)
-
         for soundbank_name, audio_bytes_list in audio_bytes_dict.items():
             for i, audio_bytes in enumerate(audio_bytes_list):
-                name = f"{sbf.name}_{soundbank_name}"
+                name = f"{value.name}_{soundbank_name}"
                 if len(audio_bytes_list) > 1:
                     name += f"_{i}"
 
                 audio_output_path = (
-                    sbf_output_path
+                    output_path
                     / soundbank_name
                     / Path(name).with_suffix(target_format.extension)
                 )

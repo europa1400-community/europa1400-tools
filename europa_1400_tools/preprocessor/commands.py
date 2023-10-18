@@ -25,7 +25,7 @@ from europa_1400_tools.helpers import get_files
 from europa_1400_tools.preprocessor.animations_preprocessor import (
     AnimationsPreprocessor,
 )
-from europa_1400_tools.preprocessor.textures_preprocessor import TexturesPreprocessor
+from europa_1400_tools.preprocessor.objects_preprocessor import ObjectsPreprocessor
 
 app = typer.Typer()
 
@@ -36,7 +36,7 @@ def cmd_preprocess_textures(
 ) -> list[Path]:
     common_options: CommonOptions = ctx.obj
 
-    converted_texture_paths = TexturesPreprocessor.preprocess_textures(common_options)
+    converted_texture_paths = ObjectsPreprocessor.preprocess_objects(common_options)
     return converted_texture_paths
 
 
