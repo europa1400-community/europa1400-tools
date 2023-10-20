@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from europa_1400_tools.cli.convert_options import ConvertOptions
 from europa_1400_tools.const import JSON_EXTENSION, TargetFormat
 from europa_1400_tools.construct.ed3 import Ed3
 from europa_1400_tools.converter.base_converter import BaseConverter, ConstructType
@@ -9,16 +10,16 @@ from europa_1400_tools.decoder.ed3_decoder import Ed3Decoder
 class Ed3Converter(BaseConverter):
     """Convert Ed3 files."""
 
-    def __init__(self, common_options):
-        super().__init__(common_options, Ed3, Ed3Decoder)
+    def __init__(self):
+        super().__init__(Ed3, Ed3Decoder)
 
     @property
     def decoded_path(self) -> Path:
-        return self.common_options.decoded_scenes_path
+        return ConvertOptions.instance.decoded_scenes_path
 
     @property
     def converted_path(self) -> Path:
-        return self.common_options.converted_scenes_path
+        return ConvertOptions.instance.converted_scenes_path
 
     @property
     def is_single_output_file(self) -> bool:

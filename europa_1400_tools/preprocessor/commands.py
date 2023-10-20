@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import typer
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import (
     MAPPED_ANIMATONS_PICKLE,
     OUTPUT_ANIMATIONS_DIR,
@@ -30,20 +30,17 @@ from europa_1400_tools.preprocessor.objects_preprocessor import ObjectsPreproces
 app = typer.Typer()
 
 
-@app.command("textures")
-def cmd_preprocess_textures(
+@app.command("objects")
+def cmd_preprocess_objects(
     ctx: typer.Context,
-) -> list[Path]:
-    common_options: CommonOptions = ctx.obj
-
-    converted_texture_paths = ObjectsPreprocessor.preprocess_objects(common_options)
-    return converted_texture_paths
+):
+    ObjectsPreprocessor.preprocess_objects()
 
 
 @app.command("animations")
 def cmd_preprocess_animations(
     ctx: typer.Context,
-) -> Path:
+):
     """Command to map animation files to object files."""
 
     common_options: CommonOptions = ctx.obj
@@ -81,8 +78,6 @@ def cmd_preprocess_animations(
 
     with open(output_path, "wb") as output_file:
         pickle.dump(baf_to_bgfs, output_file)
-
-    # output the missing paths into self.common_options.missing_paths_path text file
 
     with open(common_options.missing_paths_path, "w") as missing_paths_file:
         for missing_path in missing_paths:

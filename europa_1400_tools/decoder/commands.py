@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 
 import typer
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.decoder.ageb_decoder import AGebDecoder
 from europa_1400_tools.decoder.aobj_decoder import AObjDecoder
 from europa_1400_tools.decoder.baf_decoder import BafDecoder

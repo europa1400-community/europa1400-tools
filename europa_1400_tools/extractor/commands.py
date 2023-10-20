@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 
 import typer
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import BIN_FILES
 from europa_1400_tools.extractor.file_extractor import FileExtractor
 

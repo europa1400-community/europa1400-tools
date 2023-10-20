@@ -7,10 +7,11 @@ from pathlib import Path
 from dataclasses_json import config, dataclass_json
 from PIL import Image
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import (
     BMP_EXTENSION,
     JSON_EXTENSION,
+    OUTPUT_META_DIR,
     PICKLE_EXTENSION,
     PNG_EXTENSION,
 )
@@ -52,11 +53,6 @@ class ObjectMetadata:
 class ObjectsPreprocessor:
     """Preprocess objects."""
 
-    common_options: CommonOptions
-
-    def __init__(self, common_options: CommonOptions):
-        self.common_options = common_options
-
     def preprocess_objects(
         self,
         texture_paths: list[Path],
@@ -76,12 +72,14 @@ class ObjectsPreprocessor:
         with progress:
             for object_pickle_path in object_pickle_paths:
                 relative_path = object_pickle_path.relative_to(
-                    self.common_options.decoded_objects_path
+                    CommonOptions.instance.decoded_objects_path
                 )
 
                 progress.file_path = relative_path
                 object_metadata_path = (
-                    self.common_options.converted_objects_path / relative_path
+                    CommonOptions.instance.converted_objects_path
+                    / OUTPUT_META_DIR
+                    / relative_path
                 ).with_suffix(JSON_EXTENSION)
 
                 if not object_metadata_path.parent.exists():
@@ -117,7 +115,7 @@ class ObjectsPreprocessor:
 
                 if txs_pickle_path is not None:
                     relative_txs_path = txs_pickle_path.relative_to(
-                        self.common_options.decoded_txs_path
+                        CommonOptions.instance.decoded_txs_path
                     )
                     with open(txs_pickle_path, "rb") as txs_pickle_file:
                         txs = pickle.load(txs_pickle_file)
@@ -176,19 +174,21 @@ class ObjectsPreprocessor:
                     )
 
                     if texture_metadata.path is None:
-                        bmp_path = self.common_options.extracted_textures_path / Path(
-                            texture_metadata.name
-                        ).with_suffix(BMP_EXTENSION)
-                        png_path = self.common_options.converted_textures_path / Path(
-                            texture_metadata.name
-                        ).with_suffix(PNG_EXTENSION)
+                        bmp_path = (
+                            CommonOptions.instance.extracted_textures_path
+                            / Path(texture_metadata.name).with_suffix(BMP_EXTENSION)
+                        )
+                        png_path = (
+                            CommonOptions.instance.converted_textures_path
+                            / Path(texture_metadata.name).with_suffix(PNG_EXTENSION)
+                        )
                     else:
                         bmp_path = texture_metadata.path
                         png_path = (
                             rebase_path(
                                 texture_path,
-                                self.common_options.extracted_textures_path,
-                                self.common_options.converted_textures_path,
+                                CommonOptions.instance.extracted_textures_path,
+                                CommonOptions.instance.converted_textures_path,
                             )
                             .with_stem(texture_metadata.name)
                             .with_suffix(PNG_EXTENSION)
@@ -208,7 +208,7 @@ class ObjectsPreprocessor:
                         self.convert_bmp_to_png(bmp_path, png_path)
 
                     relative_png_path = png_path.relative_to(
-                        self.common_options.converted_textures_path
+                        CommonOptions.instance.converted_textures_path
                     )
                     texture_metadata.path = relative_png_path
 

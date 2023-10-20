@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Generic, Type, TypeVar
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import PICKLE_EXTENSION
 from europa_1400_tools.construct.base_construct import BaseConstruct
 from europa_1400_tools.extractor.file_extractor import FileExtractor
@@ -16,13 +16,9 @@ ConstructType = TypeVar("ConstructType", bound=BaseConstruct)
 class BaseDecoder(ABC, Generic[ConstructType]):
     """Base class for decoders."""
 
-    common_options: CommonOptions
     construct_type: Type[ConstructType]
 
-    def __init__(
-        self, common_options: CommonOptions, construct_type: Type[ConstructType]
-    ):
-        self.common_options = common_options
+    def __init__(self, construct_type: Type[ConstructType]):
         self.construct_type = construct_type
 
     def decode_files(self, file_paths: list[Path] | None = None) -> list[Path]:
@@ -32,7 +28,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
 
         if file_paths is None:
             if self.is_archive and self.extracted_path is not None:
-                file_extractor = FileExtractor(self.common_options)
+                file_extractor = FileExtractor()
                 file_paths = file_extractor.extract(
                     self.game_path, self.extracted_path, self.file_suffix
                 )
@@ -76,7 +72,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                     )
                 )
 
-                if decoded_output_path.exists() and self.common_options.use_cache:
+                if decoded_output_path.exists() and CommonOptions.instance.use_cache:
                     decoded_file_paths.append(decoded_output_path)
                     progress.cached_file_count += 1
                     continue

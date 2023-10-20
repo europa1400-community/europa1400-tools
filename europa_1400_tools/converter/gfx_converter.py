@@ -4,7 +4,8 @@ from typing import Type
 
 from PIL import Image
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
+from europa_1400_tools.cli.convert_options import ConvertOptions
 from europa_1400_tools.const import PNG_EXTENSION, TargetFormat
 from europa_1400_tools.construct.gfx import Gfx, Graphic, ShapebankDefinition
 from europa_1400_tools.converter.base_converter import BaseConverter, ConstructType
@@ -14,16 +15,16 @@ from europa_1400_tools.decoder.gfx_decoder import GfxDecoder
 class GfxConverter(BaseConverter):
     """Class for converting the GFX file."""
 
-    def __init__(self, common_options: CommonOptions):
-        super().__init__(common_options, Gfx, GfxDecoder)
+    def __init__(self):
+        super().__init__(Gfx, GfxDecoder)
 
     @property
     def decoded_path(self) -> Path:
-        return self.common_options.decoded_gfx_path
+        return ConvertOptions.instance.decoded_gfx_path
 
     @property
     def converted_path(self) -> Path:
-        return self.common_options.converted_gfx_path
+        return ConvertOptions.instance.converted_gfx_path
 
     @property
     def is_single_output_file(self) -> bool:

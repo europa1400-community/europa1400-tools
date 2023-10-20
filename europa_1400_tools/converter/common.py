@@ -1,7 +1,7 @@
 # from dataclasses import dataclass
 # from pathlib import Path
 
-# from europa_1400_tools.common_options import CommonOptions
+# from europa_1400_tools.cli.common_options import CommonOptions
 # from europa_1400_tools.const import PNG_EXTENSION
 # from europa_1400_tools.construct.bgf import BgfTexture
 # from europa_1400_tools.construct.txs import Txs
@@ -33,7 +33,7 @@
 #     ):
 #         self.bgf_texture = bgf_texture
 #         self.txs = txs
-#         self.common_options = common_options
+#         ConvertOptions.instance = common_options
 
 #         texture_paths_normalized = [
 #             texture_path.with_name(

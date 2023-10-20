@@ -35,6 +35,7 @@ from pygltflib import (
 from pygltflib import Texture as GltfTexture
 from pygltflib import TextureInfo
 
+from europa_1400_tools.cli.convert_options import ConvertOptions
 from europa_1400_tools.const import (
     GLB_EXTENSION,
     PICKLE_EXTENSION,
@@ -42,7 +43,7 @@ from europa_1400_tools.const import (
     TargetFormat,
 )
 from europa_1400_tools.construct.baf import Baf
-from europa_1400_tools.construct.bgf import Bgf
+from europa_1400_tools.construct.bgf import Bgf, BgfTexture
 from europa_1400_tools.converter.bgf_converter import BgfConverter
 from europa_1400_tools.decoder.baf_decoder import BafDecoder
 from europa_1400_tools.decoder.bgf_decoder import BgfDecoder
@@ -53,6 +54,10 @@ from europa_1400_tools.helpers import (
     png_to_gltf_uri,
 )
 from europa_1400_tools.preprocessor.commands import preprocess_animations
+from europa_1400_tools.preprocessor.objects_preprocessor import (
+    ObjectMetadata,
+    TextureMetadata,
+)
 
 
 @dataclass
@@ -65,6 +70,7 @@ class GltfPrimitive:
     uvs: np.ndarray
     indices: np.ndarray
     texture_index: int
+    texture_metadata: TextureMetadata
 
 
 @dataclass
@@ -78,28 +84,28 @@ class GltfMesh:
 class BgfGltfConverter(BgfConverter):
     """Class for converting BGF files to gLTF."""
 
-    def __init__(self, common_options):
-        super().__init__(common_options)
+    def __init__(self):
+        super().__init__()
 
-        if common_options.target_format != TargetFormat.GLTF_STATIC:
+        if ConvertOptions.instance.target_format != TargetFormat.GLTF_STATIC:
             if (
-                self.common_options.mapped_animations_path.exists()
-                and common_options.use_cache
+                ConvertOptions.instance.mapped_animations_path.exists()
+                and ConvertOptions.instance.use_cache
             ):
                 with open(
-                    self.common_options.mapped_animations_path, "rb"
+                    ConvertOptions.instance.mapped_animations_path, "rb"
                 ) as input_file:
                     self.baf_to_bgfs = pickle.load(input_file)
             else:
-                bgf_decoder = BgfDecoder(common_options)
+                bgf_decoder = BgfDecoder(ConvertOptions.instance)
                 self.decoded_objects_paths = bgf_decoder.decode_files(None)
 
-                baf_decoder = BafDecoder(common_options)
+                baf_decoder = BafDecoder(ConvertOptions.instance)
                 self.decoded_animations_paths = baf_decoder.decode_files(None)
 
                 self.baf_to_bgfs, _ = preprocess_animations(
-                    self.common_options.extracted_objects_path,
-                    self.common_options.extracted_animations_path,
+                    ConvertOptions.instance.extracted_objects_path,
+                    ConvertOptions.instance.extracted_animations_path,
                     self.decoded_objects_paths,
                     self.decoded_animations_paths,
                 )
@@ -109,35 +115,38 @@ class BgfGltfConverter(BgfConverter):
         bgf: Bgf,
         output_path: Path,
     ) -> list[Path]:
-        if bgf.name == "gb_GUTSHAUS":
-            pass
+        object_metadata: ObjectMetadata | None = next(
+            (
+                object_metadata
+                for object_metadata in self.object_metadatas
+                if object_metadata.name == bgf.name
+            ),
+            None,
+        )
 
-        reordered_textures = [None] * len(textures)
-        missing_textures: list[Texture] = []
+        reordered_textures = [None] * len(bgf.textures)
+        missing_textures: list[BgfTexture] = []
 
         footer_names = [
-            bgf_texture.name
-            for bgf_texture in bgf.footer.texture_names
-            if normalize(bgf_texture.name)
-            in [normalize(texture.bgf_texture.name) for texture in textures]
+            bgf_texture_name.name
+            for bgf_texture_name in bgf.footer.texture_names
+            if normalize(bgf_texture_name.name)
+            in [normalize(bgf_texture.name) for bgf_texture in bgf.textures]
         ]
 
         normalized_footer_names = [
             normalize(footer_name) for footer_name in footer_names
         ]
-        for i, texture in enumerate(textures):
-            if normalize(texture.bgf_texture.name) not in normalized_footer_names:
-                missing_textures.append(texture)
+        for i, bgf_texture in enumerate(bgf.textures):
+            if normalize(bgf_texture.name) not in normalized_footer_names:
+                missing_textures.append(bgf_texture)
                 continue
 
-            texture_index = normalized_footer_names.index(
-                normalize(texture.bgf_texture.name)
-            )
-            reordered_textures[texture_index] = texture
+            texture_index = normalized_footer_names.index(normalize(bgf_texture.name))
+            reordered_textures[texture_index] = bgf_texture
 
         reordered_textures = [texture for texture in reordered_textures if texture]
         reordered_textures.extend(missing_textures)
-        textures = reordered_textures
 
         name = bgf.path.stem
 
@@ -145,11 +154,11 @@ class BgfGltfConverter(BgfConverter):
 
         bafs: list[Baf] = []
 
-        if target_format == TargetFormat.GLTF:
+        if ConvertOptions.instance.target_format == TargetFormat.GLTF:
             baf_paths = [
-                (self.common_options.decoded_animations_path / baf_path).with_suffix(
-                    PICKLE_EXTENSION
-                )
+                (
+                    ConvertOptions.instance.decoded_animations_path / baf_path
+                ).with_suffix(PICKLE_EXTENSION)
                 for baf_path, bgfs in self.baf_to_bgfs.items()
                 if any(bgf_path.stem.lower() == name.lower() for bgf_path in bgfs)
             ]
@@ -159,7 +168,9 @@ class BgfGltfConverter(BgfConverter):
                     baf = pickle.load(input_file)
                     bafs.append(baf)
 
-        gltf_mesh = self._convert_mesh(bgf, bafs, name, textures)
+        gltf_mesh = self._convert_mesh(
+            bgf, bafs, name, reordered_textures, object_metadata
+        )
 
         scene = Scene(nodes=[0])
         gltf.scenes.append(scene)
@@ -224,12 +235,11 @@ class BgfGltfConverter(BgfConverter):
                 name=f"uv_coordinates_{i}",
             )
 
-            if gltf_primitive.texture.main_texture_path.suffix.lower() == PNG_EXTENSION:
-                texture_uri = png_to_gltf_uri(gltf_primitive.texture.main_texture_path)
-            else:
-                texture_uri = bitmap_to_gltf_uri(
-                    gltf_primitive.texture.main_texture_path
-                )
+            texture_path = (
+                ConvertOptions.instance.converted_textures_path
+                / gltf_primitive.texture_metadata.path
+            )
+            texture_uri = png_to_gltf_uri(texture_path)
 
             gltf.images.append(
                 Image(
@@ -239,12 +249,12 @@ class BgfGltfConverter(BgfConverter):
             gltf.textures.append(
                 GltfTexture(
                     source=i,
-                    name=gltf_primitive.texture.main_texture_name,
+                    name=gltf_primitive.texture_metadata.name,
                 )
             )
             gltf.materials.append(
                 Material(
-                    name=gltf_primitive.texture.main_texture_name,
+                    name=gltf_primitive.texture_metadata.name,
                     pbrMetallicRoughness=PbrMetallicRoughness(
                         baseColorTexture=TextureInfo(
                             index=i,
@@ -253,7 +263,9 @@ class BgfGltfConverter(BgfConverter):
                         roughnessFactor=1.0,
                     ),
                     doubleSided=True,
-                    alphaMode=BLEND if gltf_primitive.texture.has_alpha else OPAQUE,
+                    alphaMode=BLEND
+                    if gltf_primitive.texture_metadata.has_transparency
+                    else OPAQUE,
                 )
             )
 
@@ -349,6 +361,10 @@ class BgfGltfConverter(BgfConverter):
                 target_index += keyframe_count
 
         glb_output_path = output_path / Path(name).with_suffix(GLB_EXTENSION)
+
+        if not output_path.exists():
+            output_path.mkdir(parents=True)
+
         gltf.save_binary(glb_output_path)
 
         return [glb_output_path]
@@ -412,7 +428,14 @@ class BgfGltfConverter(BgfConverter):
 
         return data_buffer, data_buffer_view, data_accessor
 
-    def _convert_mesh(self, bgf: Bgf, bafs: list[Baf], name: str) -> Mesh:
+    def _convert_mesh(
+        self,
+        bgf: Bgf,
+        bafs: list[Baf],
+        name: str,
+        reordered_bgf_textures: list[BgfTexture],
+        object_metadata: ObjectMetadata,
+    ) -> GltfMesh:
         """Convert Bgf to gltf mesh."""
 
         gltf_primitives: list[GltfPrimitive] = []
@@ -487,7 +510,21 @@ class BgfGltfConverter(BgfConverter):
         #     bgf_vertices_per_key = baf.get_vertices_per_key()
         #     baf_to_bgf_vertices_per_key.append(bgf_vertices_per_key)
 
-        for texture_index in range(len(textures)):
+        for texture_index, bgf_texture in enumerate(reordered_bgf_textures):
+            texture_metadata = next(
+                (
+                    texture_metadata
+                    for texture_metadata in object_metadata.textures
+                    if normalize(texture_metadata.name) == normalize(bgf_texture.name)
+                ),
+                None,
+            )
+
+            if texture_metadata is None:
+                raise ValueError(
+                    f"texture metadata not found for texture {bgf_texture.name}"
+                )
+
             primitive = self.calculate_primitive(
                 faces,
                 texture_indices,
@@ -495,7 +532,7 @@ class BgfGltfConverter(BgfConverter):
                 normals,
                 face_uvs,
                 texture_index,
-                textures[texture_index],
+                texture_metadata,
             )
 
             if primitive is not None:
@@ -511,6 +548,7 @@ class BgfGltfConverter(BgfConverter):
         normals: np.ndarray,
         face_uvs: np.ndarray,
         texture_index: int,
+        texture_metadata: TextureMetadata,
     ) -> GltfPrimitive | None:
         # each texture also has its own animation vertices
         # vertices_per_key_per_anim = []
@@ -580,7 +618,7 @@ class BgfGltfConverter(BgfConverter):
             normals=primitive_normals_np,
             uvs=primitive_uvs_np,
             texture_index=texture_index,
-            texture=texture,
+            texture_metadata=texture_metadata,
         )
 
         return gltf_primitive

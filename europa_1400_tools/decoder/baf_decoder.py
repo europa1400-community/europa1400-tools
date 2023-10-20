@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import BAF_EXTENSION, INI_EXTENSION
 from europa_1400_tools.construct.baf import Baf, BafIni
 from europa_1400_tools.decoder.base_decoder import BaseDecoder
@@ -37,12 +37,12 @@ class BafDecoder(BaseDecoder[Baf]):
 
     @property
     def game_path(self) -> Path:
-        return self.common_options.game_animations_path
+        return CommonOptions.instance.game_animations_path
 
     @property
     def extracted_path(self) -> Path | None:
-        return self.common_options.extracted_animations_path
+        return CommonOptions.instance.extracted_animations_path
 
     @property
     def decoded_path(self) -> Path:
-        return self.common_options.decoded_animations_path
+        return CommonOptions.instance.decoded_animations_path

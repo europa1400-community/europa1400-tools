@@ -1,17 +1,12 @@
 from pathlib import Path
 from zipfile import ZipFile
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.helpers import get_files, normalize
 from europa_1400_tools.rich.progress import Progress
 
 
 class FileExtractor:
-    common_options: CommonOptions
-
-    def __init__(self, common_options: CommonOptions):
-        self.common_options = common_options
-
     def extract(
         self, file_path: Path, output_path: Path, file_suffix: str | None = None
     ) -> list[Path]:
@@ -40,7 +35,7 @@ class FileExtractor:
                 if (
                     output_path.exists()
                     and any(output_path.iterdir())
-                    and self.common_options.use_cache
+                    and CommonOptions.instance.use_cache
                 ):
                     file_paths = get_files(output_path, file_suffix=file_suffix)
 

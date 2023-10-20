@@ -1,8 +1,8 @@
-"""Models for the Europa 1400 tools."""
-
-from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Annotated, Optional
+
+import typer
 
 from europa_1400_tools.const import (
     A_GEB_DAT,
@@ -15,6 +15,7 @@ from europa_1400_tools.const import (
     CONVERTED_DIR,
     DATA_DIR,
     DECODED_DIR,
+    DEFAULT_OUTPUT_PATH,
     EXTRACTED_DIR,
     GFX_DIR,
     GFX_PICKLE,
@@ -26,6 +27,7 @@ from europa_1400_tools.const import (
     OUTPUT_ANIMATIONS_DIR,
     OUTPUT_GFX_DIR,
     OUTPUT_GROUPS_DIR,
+    OUTPUT_META_DIR,
     OUTPUT_OBJECTS_DIR,
     OUTPUT_SCENES_DIR,
     OUTPUT_SFX_DIR,
@@ -37,17 +39,63 @@ from europa_1400_tools.const import (
     TEXTURES_BIN,
     TargetFormat,
 )
+from europa_1400_tools.helpers import ask_for_game_path
 
 
 @dataclass
 class CommonOptions:
-    """Common options."""
+    """Dataclass defining CLI options used by all commands."""
 
-    game_path: Path
-    output_path: Path
-    use_cache: bool
-    verbose: bool
-    target_format: TargetFormat | None = None
+    instance = None
+
+    def __post_init__(self):
+        CommonOptions.instance = self
+
+    _game_path: Annotated[
+        Optional[str],
+        typer.Option(
+            "--game-path",
+            "-g",
+            help="Path to the game directory.",
+        ),
+    ] = None
+    _output_path: Annotated[
+        str,
+        typer.Option(
+            "--output-path",
+            "-o",
+            help="Path to the output directory.",
+        ),
+    ] = str(DEFAULT_OUTPUT_PATH)
+    use_cache: Annotated[
+        bool, typer.Option("--use-cache", "-c", help="Use cached files.")
+    ] = False
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Verbose output.")
+    ] = False
+
+    ATTRNAME: str = field(default="common_params", metadata={"ignore": True})
+
+    @property
+    def game_path(self) -> Path:
+        """Return the path to the game directory."""
+
+        if self._game_path is None:
+            self._game_path = ask_for_game_path()
+
+        return Path(self._game_path).resolve()
+
+    @property
+    def output_path(self) -> Path:
+        """Return the path to the output directory."""
+        return Path(self._output_path).resolve()
+
+    @classmethod
+    def from_context(cls, ctx: typer.Context) -> "CommonOptions":
+        if (common_params_dict := getattr(ctx, "common_params", None)) is None:
+            raise ValueError("Context missing common_params")
+
+        return cls(**common_params_dict)
 
     @property
     def game_resources_path(self) -> Path:
@@ -138,6 +186,26 @@ class CommonOptions:
     def converted_objects_path(self) -> Path:
         """Return the path to the converted objects directory."""
         return self.converted_path / OUTPUT_OBJECTS_DIR
+
+    @property
+    def converted_objects_meta_path(self) -> Path:
+        """Return the path to the converted objects directory."""
+        return self.converted_objects_path / OUTPUT_META_DIR
+
+    @property
+    def converted_objects_wavefront_path(self) -> Path:
+        """Return the path to the converted objects directory."""
+        return self.converted_objects_path / TargetFormat.WAVEFRONT.value[0]
+
+    @property
+    def converted_objects_gltf_static_path(self) -> Path:
+        """Return the path to the converted objects directory."""
+        return self.converted_objects_path / TargetFormat.GLTF_STATIC.value[0]
+
+    @property
+    def converted_objects_gltf_path(self) -> Path:
+        """Return the path to the converted objects directory."""
+        return self.converted_objects_path / TargetFormat.GLTF.value[0]
 
     @property
     def extracted_txs_path(self) -> Path:
@@ -258,66 +326,3 @@ class CommonOptions:
     def converted_groups_path(self) -> Path:
         """Return the path to the converted groups directory."""
         return self.converted_path / OUTPUT_GROUPS_DIR
-
-
-@dataclass
-class VertexJson:
-    """Vertex in JSON format."""
-
-    x: float
-    y: float
-    z: float
-
-
-@dataclass
-class OgrTransformJson:
-    """OGR element data in JSON format."""
-
-    position: VertexJson
-    rotation: VertexJson
-
-
-@dataclass
-class OgrElementJson(ABC):
-    """OGR element in JSON format."""
-
-    name: str
-    type: str
-
-
-@dataclass
-class OgrObjectElementJson(OgrElementJson):
-    """OGR object element in JSON format."""
-
-    object_name: str
-    transform: OgrTransformJson
-    additional_transform: OgrTransformJson | None
-
-
-@dataclass
-class OgrDummyElementJson(OgrElementJson):
-    """OGR dummy element in JSON format."""
-
-    transform: OgrTransformJson
-
-
-@dataclass
-class OgrLightBlockJson:
-    """OGR light block in JSON format."""
-
-    values: list[float]
-
-
-@dataclass
-class OgrLightElementJson(OgrElementJson):
-    """OGR light element in JSON format."""
-
-    blocks: list[OgrLightBlockJson]
-
-
-@dataclass
-class OgrJson:
-    """OGR in JSON format."""
-
-    name: str
-    elements: list[OgrElementJson]

@@ -1,24 +1,12 @@
 """Commands for converting files"""
 
-import logging
-from pathlib import Path
-from typing import Annotated, List, Optional
-
 import typer
 
-from europa_1400_tools.common_options import CommonOptions
-from europa_1400_tools.const import (
-    BIN_EXTENSION,
-    CONVERTIBLE_PATHS,
-    IGNORED_EXTENSIONS,
-    SourceFormat,
-    TargetFormat,
-    TyperTargetFormat,
-)
+from europa_1400_tools.cli.command import command
+from europa_1400_tools.cli.convert_options import ConvertOptions
+from europa_1400_tools.const import TargetFormat
 from europa_1400_tools.converter.ageb_converter import AGebConverter
 from europa_1400_tools.converter.aobj_converter import AObjConverter
-from europa_1400_tools.converter.base_converter import BaseConverter
-from europa_1400_tools.converter.bgf_converter import BgfConverter
 from europa_1400_tools.converter.bgf_gltf_converter import BgfGltfConverter
 from europa_1400_tools.converter.bgf_wavefront_converter import BgfWavefrontConverter
 from europa_1400_tools.converter.ed3_converter import Ed3Converter
@@ -26,165 +14,101 @@ from europa_1400_tools.converter.gfx_converter import GfxConverter
 from europa_1400_tools.converter.ogr_converter import OgrConverter
 from europa_1400_tools.converter.sbf_converter import SbfConverter
 from europa_1400_tools.converter.txs_converter import TxsConverter
-from europa_1400_tools.helpers import get_files
 
 app = typer.Typer()
 
 
-@app.callback()
-def cmd_main(
-    ctx: typer.Context,
-    typer_target_format: Optional[TyperTargetFormat] = typer.Option(
-        None, "--target-format", "-t"
-    ),
-) -> None:
-    common_options: CommonOptions = ctx.obj
-    target_format = TargetFormat.from_typer(typer_target_format)
-
-    common_options.target_format = target_format
-
-
-@app.command("groups")
+@command(app, ConvertOptions, "groups")
 def cmd_convert_groups(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".ogr files to convert."),
-    ] = None,
 ):
     """Command to convert OGR files"""
 
-    common_options: CommonOptions = ctx.obj
-
-    ogr_converter = OgrConverter(common_options)
-    ogr_converter.convert_files(file_paths)
+    ogr_converter = OgrConverter()
+    ogr_converter.convert_files()
 
 
-@app.command("scenes")
+@command(app, ConvertOptions, "scenes")
 def cmd_convert_scenes(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".ed3 files to convert."),
-    ] = None,
 ):
     """Command to convert ED3 files"""
 
-    common_options: CommonOptions = ctx.obj
-
-    ed3_converter = Ed3Converter(common_options)
-    ed3_converter.convert_files(file_paths)
+    ed3_converter = Ed3Converter()
+    ed3_converter.convert_files()
 
 
-@app.command("sfx")
+@command(app, ConvertOptions, "sfx")
 def cmd_convert_sfx(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".sbf files to convert."),
-    ] = None,
 ):
     """Command to convert SBF files"""
 
-    common_options: CommonOptions = ctx.obj
+    if ConvertOptions.instance.target_format is None:
+        ConvertOptions.instance.target_format = TargetFormat.WAV
 
-    if common_options.target_format is None:
-        common_options.target_format = TargetFormat.WAV
-
-    sbf_converter = SbfConverter(common_options)
-    sbf_converter.convert_files(
-        file_paths,
-    )
+    sbf_converter = SbfConverter()
+    sbf_converter.convert_files()
 
 
-@app.command("gfx")
+@command(app, ConvertOptions, "gfx")
 def cmd_convert_gfx(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".gfx files to convert."),
-    ] = None,
 ):
     """Command to convert GFX files"""
 
-    common_options: CommonOptions = ctx.obj
-
-    gfx_converter = GfxConverter(common_options)
-    gfx_converter.convert_files(file_paths)
+    gfx_converter = GfxConverter()
+    gfx_converter.convert_files()
 
 
-@app.command("ageb")
+@command(app, ConvertOptions, "ageb")
 def cmd_convert_ageb(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".ageb files to convert."),
-    ] = None,
 ):
     """Command to convert AGEB files"""
 
-    common_options: CommonOptions = ctx.obj
-
-    ageb_converter = AGebConverter(common_options)
-    ageb_converter.convert_files(file_paths)
+    ageb_converter = AGebConverter()
+    ageb_converter.convert_files()
 
 
-@app.command("aobj")
+@command(app, ConvertOptions, "aobj")
 def cmd_convert_aobj(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".aobj files to convert."),
-    ] = None,
 ):
     """Command to convert AOBJ files"""
 
-    common_options: CommonOptions = ctx.obj
-
-    aobj_converter = AObjConverter(common_options)
-    aobj_converter.convert_files(file_paths)
+    aobj_converter = AObjConverter()
+    aobj_converter.convert_files()
 
 
-@app.command("txs")
+@command(app, ConvertOptions, "txs")
 def cmd_convert_txs(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".txs files to convert."),
-    ] = None,
 ):
     """Command to convert TXS files"""
 
-    common_options: CommonOptions = ctx.obj
-
-    txs_converter = TxsConverter(common_options)
-    txs_converter.convert_files(file_paths)
+    txs_converter = TxsConverter()
+    txs_converter.convert_files()
 
 
-@app.command("objects")
+@command(app, ConvertOptions, "objects")
 def cmd_convert_objects(
     ctx: typer.Context,
-    file_paths: Annotated[
-        Optional[List[Path]],
-        typer.Argument(help=".bgf files to convert."),
-    ] = None,
 ):
     """Command to convert BGF files"""
 
-    common_options: CommonOptions = ctx.obj
+    if ConvertOptions.instance.target_format is None:
+        ConvertOptions.instance.target_format = TargetFormat.WAVEFRONT
 
-    if common_options.target_format is None:
-        common_options.target_format = TargetFormat.WAVEFRONT
-
-    if common_options.target_format == TargetFormat.WAVEFRONT:
-        bgf_wavefront_converter = BgfWavefrontConverter(common_options)
-        bgf_wavefront_converter.convert_files(file_paths)
+    if ConvertOptions.instance.target_format == TargetFormat.WAVEFRONT:
+        bgf_wavefront_converter = BgfWavefrontConverter()
+        bgf_wavefront_converter.convert_files()
     elif (
-        common_options.target_format == TargetFormat.GLTF
-        or common_options.target_format == TargetFormat.GLTF_STATIC
+        ConvertOptions.instance.target_format == TargetFormat.GLTF
+        or ConvertOptions.instance.target_format == TargetFormat.GLTF_STATIC
     ):
-        bgf_gltf_converter = BgfGltfConverter(common_options)
-        bgf_gltf_converter.convert_files(file_paths)
+        bgf_gltf_converter = BgfGltfConverter()
+        bgf_gltf_converter.convert_files()
 
 
 # @app.callback(invoke_without_command=True)

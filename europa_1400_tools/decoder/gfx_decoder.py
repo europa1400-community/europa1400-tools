@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import GFX_EXTENSION
 from europa_1400_tools.construct.gfx import Gfx
 from europa_1400_tools.decoder.base_decoder import BaseDecoder
@@ -9,8 +9,8 @@ from europa_1400_tools.decoder.base_decoder import BaseDecoder
 class GfxDecoder(BaseDecoder[Gfx]):
     """Decoder for Gfx files."""
 
-    def __init__(self, common_options: CommonOptions):
-        super().__init__(common_options, Gfx)
+    def __init__(self):
+        super().__init__(Gfx)
 
     @property
     def file_suffix(self) -> str:
@@ -26,7 +26,7 @@ class GfxDecoder(BaseDecoder[Gfx]):
 
     @property
     def game_path(self) -> Path:
-        return self.common_options.game_gfx_path
+        return CommonOptions.instance.game_gfx_path
 
     @property
     def extracted_path(self) -> Path | None:
@@ -34,4 +34,4 @@ class GfxDecoder(BaseDecoder[Gfx]):
 
     @property
     def decoded_path(self) -> Path:
-        return self.common_options.decoded_gfx_path
+        return CommonOptions.instance.decoded_gfx_path

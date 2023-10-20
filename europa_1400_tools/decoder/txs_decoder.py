@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import TXS_EXTENSION
 from europa_1400_tools.construct.txs import Txs
 from europa_1400_tools.decoder.base_decoder import BaseDecoder
@@ -9,8 +9,8 @@ from europa_1400_tools.decoder.base_decoder import BaseDecoder
 class TxsDecoder(BaseDecoder[Txs]):
     """Decoder for TXS files."""
 
-    def __init__(self, common_options: CommonOptions):
-        super().__init__(common_options, Txs)
+    def __init__(self):
+        super().__init__(Txs)
 
     @property
     def file_suffix(self) -> str:
@@ -26,12 +26,12 @@ class TxsDecoder(BaseDecoder[Txs]):
 
     @property
     def game_path(self) -> Path:
-        return self.common_options.game_objects_path
+        return CommonOptions.instance.game_objects_path
 
     @property
     def extracted_path(self) -> Path | None:
-        return self.common_options.extracted_txs_path
+        return CommonOptions.instance.extracted_txs_path
 
     @property
     def decoded_path(self) -> Path:
-        return self.common_options.decoded_txs_path
+        return CommonOptions.instance.decoded_txs_path

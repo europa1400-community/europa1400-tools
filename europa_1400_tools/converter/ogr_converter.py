@@ -1,37 +1,25 @@
-import dataclasses
-import json
 from pathlib import Path
 
-from europa_1400_tools.common_options import (
-    OgrDummyElementJson,
-    OgrElementJson,
-    OgrJson,
-    OgrLightBlockJson,
-    OgrLightElementJson,
-    OgrObjectElementJson,
-    OgrTransformJson,
-    VertexJson,
-)
-from europa_1400_tools.const import JSON_EXTENSION, OgrElementType, TargetFormat
+from europa_1400_tools.cli.common_options import CommonOptions
+from europa_1400_tools.const import JSON_EXTENSION
 from europa_1400_tools.construct.ogr import Ogr
 from europa_1400_tools.converter.base_converter import BaseConverter, ConstructType
 from europa_1400_tools.decoder.ogr_decoder import OgrDecoder
-from europa_1400_tools.helpers import rebase_path
 
 
 class OgrConverter(BaseConverter):
     """Converter for OGR files."""
 
-    def __init__(self, common_options):
-        super().__init__(common_options, Ogr, OgrDecoder)
+    def __init__(self):
+        super().__init__(Ogr, OgrDecoder)
 
     @property
     def decoded_path(self) -> Path:
-        return self.common_options.decoded_groups_path
+        return CommonOptions.instance.decoded_groups_path
 
     @property
     def converted_path(self) -> Path:
-        return self.common_options.converted_groups_path
+        return CommonOptions.instance.converted_groups_path
 
     @property
     def is_single_output_file(self) -> bool:

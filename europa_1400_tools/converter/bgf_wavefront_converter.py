@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 
+from europa_1400_tools.cli.convert_options import ConvertOptions
 from europa_1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION, TargetFormat
 from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
@@ -103,7 +104,7 @@ class BgfWavefrontConverter(BgfConverter):
 
         for texture_metadata in object_metadata.textures:
             texture_path = (
-                self.common_options.converted_textures_path / texture_metadata.path
+                ConvertOptions.instance.converted_textures_path / texture_metadata.path
             )
             material_name = Path(texture_metadata.name).stem
             material_path = Path(texture_metadata.name)

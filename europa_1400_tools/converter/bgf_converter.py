@@ -4,7 +4,8 @@ from pathlib import Path
 
 import typer
 
-from europa_1400_tools.common_options import CommonOptions
+from europa_1400_tools.cli.common_options import CommonOptions
+from europa_1400_tools.cli.convert_options import ConvertOptions
 from europa_1400_tools.const import TXS_EXTENSION, TargetFormat
 from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.construct.txs import Txs
@@ -24,27 +25,31 @@ class BgfConverter(BaseConverter, ABC):
 
     object_metadatas: list[ObjectMetadata]
 
-    def __init__(
-        self,
-        common_options: CommonOptions,
-    ):
-        super().__init__(common_options, Bgf, BgfDecoder)
+    def __init__(self):
+        super().__init__(Bgf, BgfDecoder)
 
-        # self.extracted_texture_names = [
-        #     texture_path.stem for texture_path in self.extracted_texture_paths
-        # ]
+    @property
+    def decoded_path(self) -> Path:
+        return ConvertOptions.instance.decoded_objects_path
 
-    def preprocess(self, file_paths: list[Path]) -> None:
-        file_extractor = FileExtractor(self.common_options)
-        texture_paths = file_extractor.extract(
-            self.common_options.game_textures_path,
-            self.common_options.extracted_textures_path,
+    @property
+    def converted_path(self) -> Path:
+        return (
+            ConvertOptions.instance.converted_objects_path
+            / ConvertOptions.instance.target_format.value[0]
         )
 
-        txs_decoder = TxsDecoder(self.common_options)
+    def preprocess(self, file_paths: list[Path]) -> None:
+        file_extractor = FileExtractor()
+        texture_paths = file_extractor.extract(
+            ConvertOptions.instance.game_textures_path,
+            ConvertOptions.instance.extracted_textures_path,
+        )
+
+        txs_decoder = TxsDecoder()
         txs_pickle_paths = txs_decoder.decode_files()
 
-        objects_preprocessor = ObjectsPreprocessor(self.common_options)
+        objects_preprocessor = ObjectsPreprocessor()
         self.object_metadatas = objects_preprocessor.preprocess_objects(
             texture_paths,
             file_paths,

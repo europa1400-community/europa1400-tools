@@ -854,6 +854,18 @@ files = [
 ]
 
 [[package]]
+name = "merge-args"
+version = "0.1.5"
+description = "Merge signatures of two functions with Advanced Hackery."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "merge_args-0.1.5-py2.py3-none-any.whl", hash = "sha256:f296a2dd9156dd055e3f540f0fb5784b94933457a4e0e8d0031a763c26bf24a8"},
+    {file = "merge_args-0.1.5.tar.gz", hash = "sha256:ad37e6c4c7f1eadda5a0564b26ca7d56f8a37f232f5c5c46f9ef93d352757c23"},
+]
+
+[[package]]
 name = "more-itertools"
 version = "10.1.0"
 description = "More routines for operating on iterables, beyond itertools"
@@ -1773,4 +1785,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "3027a082848a569447ae788d93d6e8660a2404a42652f3bb5ab6e81add4b5e1b"
+content-hash = "d5801a5e33ea187d4a4aae95718ea9cc50a59c6425b4e423ebfecf82d23ac93c"
