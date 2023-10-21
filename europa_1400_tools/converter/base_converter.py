@@ -54,22 +54,27 @@ class BaseConverter(ABC, Generic[ConstructType]):
             decoded_file_paths = decoder.decode_files()
         else:
             for file_path in file_paths:
-                if not file_path.exists():
-                    console.print(f"Skipping {file_path}: file does not exist")
-                    continue
-
-                if normalize(file_path.suffix) == normalize(decoder.file_suffix):
-                    extracted_file_paths.append(file_path)
-                    continue
-
-                if normalize(file_path.suffix) != normalize(PICKLE_EXTENSION):
+                if (
+                    normalize(file_path.suffix)
+                    not in [
+                        normalize(decoder.file_suffix),
+                        normalize(PICKLE_EXTENSION),
+                    ]
+                    or file_path.is_dir()
+                ):
                     console.print(
                         f"Skipping {file_path}: not a {decoder.file_suffix} "
                         + f"or {PICKLE_EXTENSION} file"
                     )
                     continue
 
-                decoded_file_paths.append(file_path)
+                if normalize(file_path.suffix) == normalize(decoder.file_suffix):
+                    extracted_file_paths.append(file_path)
+                    continue
+
+                if normalize(file_path.suffix) == normalize(PICKLE_EXTENSION):
+                    decoded_file_paths.append(file_path)
+                    continue
 
         if any(extracted_file_paths):
             decoded_extracted_file_paths = decoder.decode_files(extracted_file_paths)

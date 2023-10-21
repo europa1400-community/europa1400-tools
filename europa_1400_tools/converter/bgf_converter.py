@@ -39,21 +39,27 @@ class BgfConverter(BaseConverter, ABC):
             / ConvertOptions.instance.target_format.value[0]
         )
 
-    def preprocess(self, file_paths: list[Path]) -> None:
+    def preprocess(self, pickle_file_paths: list[Path]) -> None:
         file_extractor = FileExtractor()
         texture_paths = file_extractor.extract(
             ConvertOptions.instance.game_textures_path,
             ConvertOptions.instance.extracted_textures_path,
         )
 
+        txs_file_paths = [
+            file_path.relative_to(
+                ConvertOptions.instance.decoded_objects_path
+            ).with_suffix(TXS_EXTENSION)
+            for file_path in pickle_file_paths
+        ]
         txs_decoder = TxsDecoder()
-        txs_pickle_paths = txs_decoder.decode_files()
+        txs_pickle_file_paths = txs_decoder.decode_files(txs_file_paths)
 
         objects_preprocessor = ObjectsPreprocessor()
         self.object_metadatas = objects_preprocessor.preprocess_objects(
             texture_paths,
-            file_paths,
-            txs_pickle_paths,
+            pickle_file_paths,
+            txs_pickle_file_paths,
         )
 
     def convert(
@@ -61,9 +67,22 @@ class BgfConverter(BaseConverter, ABC):
         value: ConstructType,
         output_path: Path,
     ) -> list[Path]:
+        object_metadata: ObjectMetadata | None = next(
+            (
+                object_metadata
+                for object_metadata in self.object_metadatas
+                if object_metadata.path == value.path
+            ),
+            None,
+        )
+
+        if object_metadata is None:
+            raise ValueError(f"no metadata found for {value.name}")
+
         return self._convert(
             value,
             output_path,
+            object_metadata,
         )
 
     @abstractmethod

@@ -114,16 +114,8 @@ class BgfGltfConverter(BgfConverter):
         self,
         bgf: Bgf,
         output_path: Path,
+        object_metadata: ObjectMetadata,
     ) -> list[Path]:
-        object_metadata: ObjectMetadata | None = next(
-            (
-                object_metadata
-                for object_metadata in self.object_metadatas
-                if object_metadata.name == bgf.name
-            ),
-            None,
-        )
-
         reordered_textures = [None] * len(bgf.textures)
         missing_textures: list[BgfTexture] = []
 
@@ -379,6 +371,9 @@ class BgfGltfConverter(BgfConverter):
         minmax: bool = True,
         buffer_type: int | None = None,
     ) -> tuple[Buffer, BufferView, Accessor]:
+        if np.isnan(data).any():
+            data = np.nan_to_num(data)
+
         data_bytes = data.tobytes()
 
         data_buffer = Buffer(

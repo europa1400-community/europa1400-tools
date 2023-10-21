@@ -9,6 +9,7 @@ from PIL import Image
 
 from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import (
+    BGF_EXTENSION,
     BMP_EXTENSION,
     JSON_EXTENSION,
     OUTPUT_META_DIR,
@@ -41,6 +42,12 @@ class TextureMetadata:
 @dataclass
 class ObjectMetadata:
     name: str
+    path: Path = field(
+        metadata=config(
+            encoder=lambda path: str(path),
+            decoder=lambda path: Path(path),
+        )
+    )
     textures: list[TextureMetadata]
     txs_path: Path | None = field(
         metadata=config(
@@ -73,7 +80,7 @@ class ObjectsPreprocessor:
             for object_pickle_path in object_pickle_paths:
                 relative_path = object_pickle_path.relative_to(
                     CommonOptions.instance.decoded_objects_path
-                )
+                ).with_suffix(BGF_EXTENSION)
 
                 progress.file_path = relative_path
                 object_metadata_path = (
@@ -85,7 +92,7 @@ class ObjectsPreprocessor:
                 if not object_metadata_path.parent.exists():
                     object_metadata_path.parent.mkdir(parents=True)
 
-                if object_metadata_path.exists():
+                if object_metadata_path.exists() and CommonOptions.instance.use_cache:
                     object_metadata = ObjectMetadata.from_json(
                         object_metadata_path.read_text()
                     )
@@ -129,6 +136,7 @@ class ObjectsPreprocessor:
 
                 object_metadata = ObjectMetadata(
                     name=bgf.name,
+                    path=relative_path,
                     textures=[],
                     txs_path=relative_txs_path,
                 )

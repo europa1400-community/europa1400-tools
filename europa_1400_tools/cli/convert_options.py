@@ -33,4 +33,4 @@ class ConvertOptions(CommonOptions):
         """Return the file paths to convert."""
         if self._file_paths is None or len(self._file_paths) == 0:
             return None
-        return [Path(file_path).resolve() for file_path in self._file_paths]
+        return [Path(file_path) for file_path in self._file_paths]

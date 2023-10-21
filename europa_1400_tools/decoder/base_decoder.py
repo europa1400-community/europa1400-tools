@@ -8,6 +8,7 @@ from europa_1400_tools.const import PICKLE_EXTENSION
 from europa_1400_tools.construct.base_construct import BaseConstruct
 from europa_1400_tools.extractor.file_extractor import FileExtractor
 from europa_1400_tools.helpers import get_files, normalize
+from europa_1400_tools.rich.common import console
 from europa_1400_tools.rich.progress import Progress
 
 ConstructType = TypeVar("ConstructType", bound=BaseConstruct)
@@ -21,53 +22,62 @@ class BaseDecoder(ABC, Generic[ConstructType]):
     def __init__(self, construct_type: Type[ConstructType]):
         self.construct_type = construct_type
 
-    def decode_files(self, file_paths: list[Path] | None = None) -> list[Path]:
+    def decode_files(self, input_file_paths: list[Path] | None = None) -> list[Path]:
         """Decode files."""
 
         decoded_file_paths: list[Path] = []
+        extracted_file_paths: list[Path] = []
+        file_extractor = FileExtractor()
 
-        if file_paths is None:
+        if input_file_paths is None:
             if self.is_archive and self.extracted_path is not None:
-                file_extractor = FileExtractor()
-                file_paths = file_extractor.extract(
+                extracted_file_paths = file_extractor.extract(
                     self.game_path, self.extracted_path, self.file_suffix
                 )
             elif self.is_single_file:
-                file_paths = [self.game_path]
+                extracted_file_paths = [self.game_path]
             else:
-                file_paths = get_files(self.game_path, self.file_suffix)
+                extracted_file_paths = get_files(self.game_path, self.file_suffix)
         else:
-            file_paths = [
-                file_path
-                for file_path in file_paths
-                if normalize(file_path.suffix) == normalize(self.file_suffix)
+            extractable_file_paths = [
+                file_path.resolve().relative_to(self.extracted_path)
+                if file_path.resolve().is_relative_to(self.extracted_path)
+                else file_path
+                for file_path in input_file_paths
+                if normalize(file_path.suffix) == self.file_suffix
             ]
+            extracted_game_file_paths = file_extractor.extract_files(
+                extractable_file_paths,
+                self.game_path,
+                self.extracted_path,
+                self.file_suffix,
+            )
+            extracted_file_paths.extend(extracted_game_file_paths)
+
+        if len(extracted_file_paths) == 0:
+            return []
 
         progress = Progress(
             title=f"Decoding {self.construct_type.__name__}",
-            total_file_count=len(file_paths),
+            total_file_count=len(extracted_file_paths),
         )
 
         with progress:
-            for file_path in file_paths:
-                if normalize(file_path.suffix) != normalize(self.file_suffix):
+            for extracted_file_path in extracted_file_paths:
+                if normalize(extracted_file_path.suffix) != normalize(self.file_suffix):
                     continue
 
-                base_path = (
-                    self.extracted_path
-                    if self.is_archive and self.extracted_path is not None
-                    else self.game_path.parent
-                    if self.is_single_file
-                    else self.game_path
-                )
-                relative_file_path = file_path.relative_to(base_path)
+                if extracted_file_path.is_relative_to(self.extracted_path):
+                    extracted_file_path = extracted_file_path.relative_to(
+                        self.extracted_path
+                    )
 
-                progress.file_path = relative_file_path
+                progress.file_path = extracted_file_path
 
                 decoded_output_path = (
                     self.decoded_path
                     if self.is_single_file
-                    else (self.decoded_path / relative_file_path).with_suffix(
+                    else (self.decoded_path / extracted_file_path).with_suffix(
                         PICKLE_EXTENSION
                     )
                 )
@@ -77,8 +87,15 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                     progress.cached_file_count += 1
                     continue
 
-                decoded_value = self.decode_file(file_path)
-                decoded_value.path = relative_file_path
+                extracted_file_path = (
+                    self.extracted_path / extracted_file_path
+                    if not extracted_file_path.is_relative_to(self.extracted_path)
+                    else extracted_file_path
+                )
+                decoded_value = self.decode_file(extracted_file_path)
+                decoded_value.path = extracted_file_path.relative_to(
+                    self.extracted_path
+                )
 
                 if not decoded_output_path.parent.exists():
                     decoded_output_path.parent.mkdir(parents=True)

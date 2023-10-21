@@ -16,19 +16,8 @@ class BgfWavefrontConverter(BgfConverter):
         self,
         bgf: Bgf,
         output_path: Path,
+        object_metadata: ObjectMetadata,
     ) -> list[Path]:
-        object_metadata: ObjectMetadata | None = next(
-            (
-                object_metadata
-                for object_metadata in self.object_metadatas
-                if object_metadata.name == bgf.name
-            ),
-            None,
-        )
-
-        if object_metadata is None:
-            raise ValueError(f"no metadata found for {bgf.name}")
-
         obj_output_path = output_path / Path(bgf.name).with_suffix(OBJ_EXTENSION)
         mtl_output_path = output_path / Path(bgf.name).with_suffix(MTL_EXTENSION)
 
