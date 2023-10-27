@@ -6,13 +6,40 @@ import struct
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
-from typing import BinaryIO
-from zipfile import ZipFile
+from typing import Any, BinaryIO, Iterable
 
 import construct as cs
 from PIL import Image
 
 from europa_1400_tools.const import OBJECTS_STRING_ENCODING
+
+
+def normalize(
+    value: Path | str,
+    perform_strip_non_ascii: bool = True,
+    perform_lower: bool = True,
+    perform_remove_suffix: bool = True,
+) -> str:
+    """Normalizes the specified string."""
+
+    if isinstance(value, Path):
+        value = value.as_posix()
+
+    if perform_strip_non_ascii:
+        value = strip_non_ascii(value)
+
+    if perform_lower:
+        value = value.lower()
+
+    if perform_remove_suffix:
+        value = Path(value).stem
+
+    return value
+
+
+def strip_non_ascii(input_string):
+    stripped_string = re.sub(r"[^\x00-\x7F]+", "", input_string)
+    return stripped_string
 
 
 def ask_for_game_path() -> Path:
@@ -55,29 +82,16 @@ def bitmap_to_gltf_uri(bmp_path: Path) -> str:
     return uri
 
 
-def convert_bmp_to_png_with_transparency(bmp_path: Path) -> Image.Image:
-    # Open the BMP image file
-    bmp_image = Image.open(bmp_path)
-    bmp_image = bmp_image.convert("RGB")
+def png_to_gltf_uri(png_path: Path) -> str:
+    png_image = Image.open(png_path)
+    image_bytes_buffer = io.BytesIO()
 
-    # Create a new image with transparency (RGBA mode)
-    png_image = Image.new("RGBA", bmp_image.size)
+    png_image.save(image_bytes_buffer, format="PNG")
+    image_bytes = image_bytes_buffer.getvalue()
+    encoded_data = base64.b64encode(image_bytes).decode("utf-8")
+    uri = f"data:image/png;base64,{encoded_data}"
 
-    # Iterate over each pixel in the BMP image
-    for x in range(bmp_image.width):
-        for y in range(bmp_image.height):
-            # Get the pixel value (single integer)
-            r, g, b = bmp_image.getpixel((x, y))
-
-            # Check if the pixel is completely black
-            if r == 0 and g == 0 and b == 0:
-                # Set the pixel as transparent (alpha = 0)
-                png_image.putpixel((x, y), (0, 0, 0, 0))
-            else:
-                # Copy the pixel to the PNG image
-                png_image.putpixel((x, y), (r, g, b, 255))
-
-    return png_image
+    return uri
 
 
 def bytes_to_gltf_uri(data: bytes) -> str:
@@ -215,7 +229,7 @@ def rebase_path(path: Path, base_path: Path, target_path: Path) -> Path:
     base_path = base_path.resolve()
     target_path = target_path.resolve()
 
-    if not path.is_relative_to(base_path):
+    if not path.samefile(base_path) and not path.is_relative_to(base_path):
         raise ValueError("Path must be a subpath of the base path.")
 
     relative_path = path.relative_to(base_path)
@@ -231,28 +245,8 @@ def sanitize_filename(path, replacement="_"):
     return sanitized_path
 
 
-def extract_zipfile(input_path: Path, output_path: Path) -> list[Path]:
-    """Extracts the contents of a zip file to the specified output path."""
-
-    if not input_path.is_file():
-        raise FileNotFoundError(f"File not found: {input_path}")
-
-    if not output_path.is_dir():
-        raise FileNotFoundError(f"Path is not a directory: {output_path}")
-
-    if not output_path.exists():
-        os.makedirs(output_path)
-
-    with ZipFile(input_path, "r") as zip_file:
-        zip_file.extractall(output_path)
-
-    file_paths = get_files(output_path)
-
-    return file_paths
-
-
 def get_files(
-    path: Path, extension: str | None = None, exclude: list[Path] | None = None
+    path: Path, file_suffix: str | None = None, exclude: list[Path] | None = None
 ) -> list[Path]:
     """Returns a list of files in the specified directory and its subdirectories."""
 
@@ -265,9 +259,38 @@ def get_files(
             if exclude is not None and file_path in exclude:
                 continue
 
-            if extension is not None and file_path.suffix != extension:
+            if file_suffix is not None and normalize(file_path.suffix) != normalize(
+                file_suffix.lower()
+            ):
                 continue
 
             file_paths.append(file_path)
 
     return file_paths
+
+
+def load_image_with_transparency(filepath):
+    # Load the image using Pillow
+    img = Image.open(filepath)
+
+    # Convert the image to RGBA mode (4 channels: Red, Green, Blue, Alpha)
+    img = img.convert("RGBA")
+
+    # Get the pixel data as a list of tuples (r, g, b, a)
+    pixel_data = list(img.getdata())
+
+    # Create a new pixel data list with transparency applied
+    new_pixel_data = []
+    for pixel in pixel_data:
+        # Check if the pixel is completely black (RGB: 0, 0, 0)
+        if pixel[:3] == (0, 0, 0):
+            # Make the pixel fully transparent (alpha: 0)
+            new_pixel_data.append((0, 0, 0, 0))
+        else:
+            # Keep the pixel as is
+            new_pixel_data.append(pixel)
+
+    # Update the image data with the new pixel data
+    img.putdata(new_pixel_data)
+
+    return img

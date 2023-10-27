@@ -6,52 +6,23 @@ import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
 from europa_1400_tools.construct.base_construct import BaseConstruct
-from europa_1400_tools.construct.common import Transform, Vector3, ignoredcsfield
+from europa_1400_tools.construct.common import (
+    Skip0,
+    Skip1,
+    Transform,
+    Vector3,
+    ignoredcsfield,
+)
 
 
 def is_01(obj, ctx):
     return obj == 1
 
 
-def cancel_on_unacceptable(obj, ctx):
-    if obj not in ctx.acceptable_values:
-        raise cs.CancelParsing
-
-
 class Hierarchy(IntEnum):
     DOWN = 0
     SAME = 1
     UP = 2
-
-
-@dataclass
-class Skip0(DataclassMixin):
-    """Structure of a skip0 block."""
-
-    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0]))
-    skipped: list[int] = ignoredcsfield(
-        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
-    )
-
-
-@dataclass
-class Skip01(DataclassMixin):
-    """Structure of a skip01 block."""
-
-    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0, 1]))
-    skipped: list[int] = ignoredcsfield(
-        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
-    )
-
-
-@dataclass
-class Skip1(DataclassMixin):
-    """Structure of a skip01 block."""
-
-    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [1]))
-    skipped: list[int] = ignoredcsfield(
-        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
-    )
 
 
 @dataclass
@@ -344,7 +315,6 @@ class SceneElement(DataclassMixin):
     """Structure of a scene element."""
 
     skip1: Skip1 = ignoredcsfield(DataclassStruct(Skip1))
-    ones_count: int = csfield(cs.Computed(lambda ctx: len(ctx.skip1.skipped)))
     name: str = csfield(cs.CString("ascii"))
     width: int = csfield(cs.Int32ul)
     height: int | None = csfield(cs.If(lambda ctx: ctx._.type != b"\xAF", cs.Int32ul))
@@ -390,23 +360,9 @@ class SceneElement(DataclassMixin):
     )
     skip0: Skip0 = ignoredcsfield(DataclassStruct(Skip0))
     skip_length: int = csfield(cs.Computed(lambda ctx: len(ctx.skip0.skipped)))
-    hierarchy: Hierarchy = csfield(
-        cs.Computed(
-            lambda ctx: Hierarchy.DOWN
-            if ctx.skip_length == 0
-            else Hierarchy.SAME
-            if ctx.skip_length == 1
-            else Hierarchy.UP
-        )
-    )
     script_elements: list[ScriptElement] = csfield(
         cs.GreedyRange(DataclassStruct(ScriptElement))
     )
-
-
-def is_sub_element(obj: SceneElement, ctx):
-    if obj.skip1.skipped != [1, 1]:
-        raise cs.CancelParsing
 
 
 @dataclass
@@ -417,9 +373,5 @@ class Ed3(BaseConstruct):
     const: bytes = ignoredcsfield(cs.Const(b"\x00\x6c\x3a"))
     main_camera_element: MainCameraElement = csfield(DataclassStruct(MainCameraElement))
     scene_elements: list[SceneElement] = csfield(
-        cs.RepeatUntil(
-            lambda obj, lst, ctx: ctx._io.read(1) == b""
-            and bool(ctx._io.seek(-1, SEEK_CUR)),
-            DataclassStruct(SceneElement),
-        )
+        cs.GreedyRange(DataclassStruct(SceneElement))
     )

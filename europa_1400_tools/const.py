@@ -98,9 +98,16 @@ OUTPUT_GROUPS_DIR = "groups"
 OUTPUT_ANIMATIONS_DIR = "animations"
 OUTPUT_SCENES_DIR = "scenes"
 OUTPUT_OBJECTS_DIR = "objects"
+OUTPUT_TXS_DIR = "txs"
 OUTPUT_TEXTURES_DIR = "textures"
+OUTPUT_META_DIR = "meta"
 MAPPED_ANIMATONS_PICKLE = "mapped_animations.pickle"
 MISSING_PATHS_TXT = "missing_paths.txt"
+AGEB_PICKLE = "ageb.pickle"
+AGEB_JSON = "ageb.json"
+AOBJ_PICKLE = "aobj.pickle"
+AOBJ_JSON = "aobj.json"
+GFX_PICKLE = "gfx.pickle"
 
 # File Extensions
 
@@ -126,6 +133,7 @@ TXS_EXTENSION = ".txs"
 DAT_EXTENSION = ".dat"
 BIN_EXTENSION = ".bin"
 TXT_EXTENSION = ".txt"
+BMP_EXTENSION = ".bmp"
 
 IGNORED_EXTENSIONS = [
     LFS_EXTENSION,
@@ -279,6 +287,15 @@ class SourceFormat(Format):
         "building_data",
         AGEB_PATH,
     )
+    TXS: tuple[str, str, list[TargetFormat], str, Path] = (
+        "txs",
+        TXS_EXTENSION,
+        [
+            TargetFormat.JSON,
+        ],
+        "txs",
+        OBJECTS_PATH,
+    )
 
     @property
     def target_formats(self) -> list[TargetFormat]:
@@ -344,6 +361,9 @@ BAF_INI_FILE_LOOP_OUT = "LoopOut"
 
 
 DEFAULT_OUTPUT_PATH = Path("output")
+
+
+LATIN1_VALUES: list[int] = list(range(0x20, 0x7F)) + list(range(0xA0, 0x100))
 
 
 BAF_TO_BGFS = {

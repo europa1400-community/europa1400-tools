@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
@@ -6,6 +7,8 @@ from construct_typed import DataclassMixin, DataclassStruct, csfield
 from europa_1400_tools.const import OBJECTS_STRING_ENCODING, SourceFormat
 from europa_1400_tools.construct.baf import Vector3
 from europa_1400_tools.construct.base_construct import BaseConstruct
+from europa_1400_tools.construct.common import Skip0, SkipNonLatin1, ignoredcsfield
+from europa_1400_tools.helpers import strip_non_ascii
 
 
 def skip_until(obj, ctx):
@@ -226,7 +229,9 @@ class BgfTexture(DataclassMixin):
     skip_optional_07: bytes | None = csfield(cs.Optional(cs.Const(b"\x07")))
     skip_optional_08: bytes | None = csfield(cs.Optional(cs.Const(b"\x08")))
     name_bytes: bytes = csfield(cs.NullTerminated(cs.GreedyBytes))
-    name: str = csfield(cs.Computed(lambda ctx: ctx.name_bytes.decode("latin-1")))
+    name: str = ignoredcsfield(
+        cs.Computed(lambda ctx: ctx.name_bytes.decode("latin-1"))
+    )
     skip_optional_08_2: bytes | None = csfield(cs.Optional(cs.Const(b"\x08")))
     skip_optional_09: bytes | None = csfield(cs.Optional(cs.Const(b"\x09")))
     name_appendix: str | None = csfield(
@@ -236,8 +241,34 @@ class BgfTexture(DataclassMixin):
             cs.CString("utf8"),
         )
     )
+    const0A: bytes | None = csfield(cs.Optional(cs.Const(b"\x0A")))
+    num0A: int | None = csfield(cs.If(lambda ctx: ctx.const0A is not None, cs.Byte))
+    const0B: bytes | None = csfield(cs.Optional(cs.Const(b"\x0B")))
+    num0B: int | None = csfield(cs.If(lambda ctx: ctx.const0B is not None, cs.Byte))
+    # const0C: bytes = csfield(cs.Const(b"\x0C"))
+    # num0C: int = csfield(cs.Byte)
+    # const0D: bytes = csfield(cs.Const(b"\x0D"))
+    # num0D: int = csfield(cs.Byte)
+    # const0E: bytes = csfield(cs.Const(b"\x0E"))
+    # num0E: int = csfield(cs.Byte)
+    # const0F: bytes = csfield(cs.Const(b"\x0F"))
+    # num0F: int = csfield(cs.Float32l)
+    # const10: bytes = csfield(cs.Const(b"\x10"))
+    # num10: int = csfield(cs.Float32l)
+    # const11: bytes = csfield(cs.Const(b"\x11"))
+    # num11: int = csfield(cs.Float32l)
+    # const12: bytes = csfield(cs.Const(b"\x12"))
+    # num12: int = csfield(cs.Float32l)
+    # const13: bytes = csfield(cs.Const(b"\x13"))
+    # num13: int = csfield(cs.Float32l)
     # skip bytes until 0x28
     skip_until_28: SkipUntil28 = csfield(DataclassStruct(SkipUntil28))
+
+    @property
+    def name_normalized(self) -> str:
+        """Return the normalized name of the texture."""
+
+        return Path(strip_non_ascii(self.name.lower())).stem
 
 
 @dataclass
@@ -271,43 +302,50 @@ class BgfHeader(DataclassMixin):
 
 
 @dataclass
+class BgfTextureName(DataclassMixin):
+    """Construct for BgfTextureName."""
+
+    name_bytes: bytes = csfield(cs.NullTerminated(cs.GreedyBytes))
+    name: str = csfield(cs.Computed(lambda ctx: ctx.name_bytes.decode("latin-1")))
+    skip_non_latin1: SkipNonLatin1 = csfield(DataclassStruct(SkipNonLatin1))
+    optional_2f: bytes | None = csfield(cs.Optional(cs.Const(b"\x2F")))
+
+
+@dataclass
 class BgfFooter(DataclassMixin):
     """Construct for BgfFooter."""
 
-    footer_bytes: bytes = csfield(cs.GreedyBytes)
-    texture_names: list[str] = csfield(
-        cs.Computed(
-            lambda ctx: BgfFooter.get_texture_names(ctx._.textures, ctx.footer_bytes)
-        )
+    texture_names: list[BgfTextureName] = csfield(
+        cs.GreedyRange(DataclassStruct(BgfTextureName))
     )
 
-    @staticmethod
-    def get_texture_names(textures: list[BgfTexture], footer_bytes: bytes) -> list[str]:
-        """Extract texture names from footer bytes."""
+    # @staticmethod
+    # def get_texture_names(textures: list[BgfTexture], footer_bytes: bytes) -> list[str]:
+    #     """Extract texture names from footer bytes."""
 
-        texture_names_to_position: dict[str, int] = {}
+    #     texture_names_to_position: dict[str, int] = {}
 
-        for texture in textures:
-            texture_full_name = texture.name
-            texture_name = texture.name.split(".")[0]
-            texture_name_bytes = texture_name.encode(OBJECTS_STRING_ENCODING)
+    #     for texture in textures:
+    #         texture_full_name = texture.name
+    #         texture_name = texture.name.split(".")[0]
+    #         texture_name_bytes = texture_name.encode(OBJECTS_STRING_ENCODING)
 
-            if texture_full_name in texture_names_to_position:
-                continue
+    #         if texture_full_name in texture_names_to_position:
+    #             continue
 
-            position = footer_bytes.find(texture_name_bytes)
+    #         position = footer_bytes.find(texture_name_bytes)
 
-            if position == -1:
-                continue
+    #         if position == -1:
+    #             continue
 
-            texture_names_to_position[texture_full_name] = position
+    #         texture_names_to_position[texture_full_name] = position
 
-        texture_names = list(texture_names_to_position.keys())
-        texture_names.sort(
-            key=lambda texture_name: texture_names_to_position[texture_name]
-        )
+    #     texture_names = list(texture_names_to_position.keys())
+    #     texture_names.sort(
+    #         key=lambda texture_name: texture_names_to_position[texture_name]
+    #     )
 
-        return texture_names
+    #     return texture_names
 
 
 @dataclass
@@ -327,3 +365,9 @@ class Bgf(BaseConstruct):
         """Return the format of the construct."""
 
         return SourceFormat.BGF
+
+    @property
+    def name(self) -> str:
+        """Return the name of the construct."""
+
+        return self.path.stem

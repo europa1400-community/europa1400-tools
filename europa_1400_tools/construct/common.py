@@ -9,6 +9,8 @@ import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 from construct_typed.generic_wrapper import Construct, Context, ParsedType
 
+from europa_1400_tools.const import LATIN1_VALUES
+
 
 def metacsfield(
     subcon: Construct[ParsedType, Any],
@@ -122,3 +124,62 @@ class Transform(DataclassMixin):
 
     position: Vector3 = csfield(DataclassStruct(Vector3))
     rotation: Vector3 = csfield(DataclassStruct(Vector3))
+
+
+@dataclass
+class Latin1String(DataclassMixin):
+    """Structure of a string in latin-1 encoding."""
+
+    _value_bytes: bytes = ignoredcsfield(cs.NullTerminated(cs.GreedyBytes))
+    value: str = csfield(cs.Computed(lambda ctx: ctx._value_bytes.decode("latin-1")))
+
+
+def cancel_on_unacceptable(obj, ctx):
+    if obj not in ctx.acceptable_values:
+        raise cs.CancelParsing
+
+
+def is_valid_latin1_int(value: int) -> bool:
+    return value in LATIN1_VALUES
+
+
+def cancel_on_latin1(obj, ctx):
+    if is_valid_latin1_int(obj):
+        raise cs.CancelParsing
+
+
+@dataclass
+class SkipNonLatin1(DataclassMixin):
+    """Structure of a skip0 block."""
+
+    skipped: list[int] = ignoredcsfield(cs.GreedyRange(cs.Byte * cancel_on_latin1))
+
+
+@dataclass
+class Skip0(DataclassMixin):
+    """Structure of a skip0 block."""
+
+    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0]))
+    skipped: list[int] = ignoredcsfield(
+        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
+    )
+
+
+@dataclass
+class Skip01(DataclassMixin):
+    """Structure of a skip01 block."""
+
+    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [0, 1]))
+    skipped: list[int] = ignoredcsfield(
+        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
+    )
+
+
+@dataclass
+class Skip1(DataclassMixin):
+    """Structure of a skip01 block."""
+
+    acceptable_values: list[int] = ignoredcsfield(cs.Computed(lambda ctx: [1]))
+    skipped: list[int] = ignoredcsfield(
+        cs.GreedyRange(cs.Byte * cancel_on_unacceptable)
+    )

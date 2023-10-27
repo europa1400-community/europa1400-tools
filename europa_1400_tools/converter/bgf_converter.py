@@ -1,56 +1,105 @@
+import pickle
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from europa_1400_tools.const import TargetFormat
-from europa_1400_tools.converter.base_converter import BaseConverter
-from europa_1400_tools.extractor.commands import extract_file
+import typer
+
+from europa_1400_tools.cli.common_options import CommonOptions
+from europa_1400_tools.cli.convert_options import ConvertOptions
+from europa_1400_tools.const import TXS_EXTENSION, TargetFormat
+from europa_1400_tools.construct.bgf import Bgf
+from europa_1400_tools.construct.txs import Txs
+from europa_1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa_1400_tools.decoder.baf_decoder import BafDecoder
+from europa_1400_tools.decoder.bgf_decoder import BgfDecoder
+from europa_1400_tools.decoder.txs_decoder import TxsDecoder
+from europa_1400_tools.extractor.file_extractor import FileExtractor
 from europa_1400_tools.helpers import rebase_path
+from europa_1400_tools.preprocessor.animations_preprocessor import (
+    AnimationsPreprocessor,
+)
+from europa_1400_tools.preprocessor.objects_preprocessor import (
+    ObjectMetadata,
+    ObjectsPreprocessor,
+)
 
 
 class BgfConverter(BaseConverter, ABC):
     """Converter for BGF files."""
 
-    extracted_texture_paths: list[Path]
+    object_metadatas: list[ObjectMetadata]
 
-    def __init__(
-        self,
-        common_options,
-    ):
-        super().__init__(common_options)
+    def __init__(self):
+        super().__init__(Bgf, BgfDecoder)
 
-        self.extracted_textures_paths = extract_file(
-            self.common_options.game_textures_path,
-            self.common_options.extracted_textures_path,
+    @property
+    def decoded_path(self) -> Path:
+        return ConvertOptions.instance.decoded_objects_path
+
+    @property
+    def converted_path(self) -> Path:
+        return (
+            ConvertOptions.instance.converted_objects_path
+            / ConvertOptions.instance.target_format.value[0]
         )
 
-    def convert_file(
+    def preprocess(self, pickle_file_paths: list[Path]) -> None:
+        file_extractor = FileExtractor()
+
+        baf_decoder = BafDecoder()
+        animations_pickle_paths = baf_decoder.decode_files()
+
+        animations_preprocessor = AnimationsPreprocessor()
+        animation_metadatas = animations_preprocessor.preprocess_animations(
+            animations_pickle_paths
+        )
+
+        texture_paths = file_extractor.extract(
+            ConvertOptions.instance.game_textures_path,
+            ConvertOptions.instance.extracted_textures_path,
+        )
+
+        txs_file_paths = [
+            file_path.relative_to(
+                ConvertOptions.instance.decoded_objects_path
+            ).with_suffix(TXS_EXTENSION)
+            for file_path in pickle_file_paths
+        ]
+        txs_decoder = TxsDecoder()
+        txs_pickle_file_paths = txs_decoder.decode_files(txs_file_paths)
+
+        objects_preprocessor = ObjectsPreprocessor()
+        self.object_metadatas = objects_preprocessor.preprocess_objects(
+            texture_paths, pickle_file_paths, txs_pickle_file_paths, animation_metadatas
+        )
+
+    def convert(
         self,
-        file_path: Path,
+        value: ConstructType,
         output_path: Path,
-        base_path: Path,
-        target_format: TargetFormat,
-        create_subdirectories: bool = False,
     ) -> list[Path]:
-        output_sub_path: Path = rebase_path(file_path.parent, base_path, output_path)
+        object_metadata: ObjectMetadata | None = next(
+            (
+                object_metadata
+                for object_metadata in self.object_metadatas
+                if object_metadata.path == value.path
+            ),
+            None,
+        )
 
-        if not output_sub_path.exists():
-            output_sub_path.mkdir(parents=True)
+        if object_metadata is None:
+            raise ValueError(f"no metadata found for {value.name}")
 
-        return self.convert_bgf_file(
-            file_path,
-            output_sub_path,
-            base_path,
-            target_format,
-            create_subdirectories,
+        return self._convert(
+            value,
+            output_path,
+            object_metadata,
         )
 
     @abstractmethod
-    def convert_bgf_file(
+    def _convert(
         self,
-        file_path: Path,
+        bgf: Bgf,
         output_path: Path,
-        base_path: Path,
-        target_format: TargetFormat,
-        create_subdirectories: bool = False,
     ) -> list[Path]:
-        """Convert BGF file and export to output_path."""
+        """Convert BGF and export to output_path."""

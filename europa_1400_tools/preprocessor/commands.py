@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import typer
 
+from europa_1400_tools.cli.common_options import CommonOptions
 from europa_1400_tools.const import (
     MAPPED_ANIMATONS_PICKLE,
     OUTPUT_ANIMATIONS_DIR,
@@ -15,18 +16,31 @@ from europa_1400_tools.const import (
 )
 from europa_1400_tools.construct.baf import Baf
 from europa_1400_tools.construct.bgf import Bgf
-from europa_1400_tools.decoder.commands import cmd_decode_animations, cmd_decode_objects
+from europa_1400_tools.decoder.commands import (
+    cmd_decode_animations,
+    cmd_decode_objects,
+    cmd_decode_txs,
+)
 from europa_1400_tools.helpers import get_files
-from europa_1400_tools.mapper.animations_mapper import AnimationsMapper
-from europa_1400_tools.models import CommonOptions
+from europa_1400_tools.preprocessor.animations_preprocessor import (
+    AnimationsPreprocessor,
+)
+from europa_1400_tools.preprocessor.objects_preprocessor import ObjectsPreprocessor
 
 app = typer.Typer()
 
 
-@app.command("animations")
-def cmd_map_animations(
+@app.command("objects")
+def cmd_preprocess_objects(
     ctx: typer.Context,
-) -> Path:
+):
+    ObjectsPreprocessor.preprocess_objects()
+
+
+@app.command("animations")
+def cmd_preprocess_animations(
+    ctx: typer.Context,
+):
     """Command to map animation files to object files."""
 
     common_options: CommonOptions = ctx.obj
@@ -55,7 +69,7 @@ def cmd_map_animations(
     else:
         objects_pickle_paths = cmd_decode_objects(ctx)
 
-    baf_to_bgfs, missing_paths = map_animations(
+    baf_to_bgfs, missing_paths = preprocess_animations(
         extracted_objects_path,
         extracted_animations_path,
         objects_pickle_paths,
@@ -65,8 +79,6 @@ def cmd_map_animations(
     with open(output_path, "wb") as output_file:
         pickle.dump(baf_to_bgfs, output_file)
 
-    # output the missing paths into self.common_options.missing_paths_path text file
-
     with open(common_options.missing_paths_path, "w") as missing_paths_file:
         for missing_path in missing_paths:
             missing_paths_file.write(f"{missing_path}\n")
@@ -74,7 +86,7 @@ def cmd_map_animations(
     return output_path
 
 
-def map_animations(
+def preprocess_animations(
     extracted_objects_path: Path,
     extracted_animations_path: Path,
     decoded_objects_paths: list[Path],
@@ -120,7 +132,7 @@ def map_animations(
     missing_paths: list[Path] = []
     for baf in bafs:
         logging.debug(f"Mapping {baf.path}.")
-        mapped_bgf_paths = AnimationsMapper.map_animation(baf, bgf_to_vertices)
+        mapped_bgf_paths = AnimationsPreprocessor.map_animation(baf, bgf_to_vertices)
 
         stripped_baf_path = baf.path.relative_to(extracted_animations_path)
 
