@@ -20,41 +20,12 @@ from europa_1400_tools.construct.bgf import Bgf
 from europa_1400_tools.construct.txs import Txs
 from europa_1400_tools.extractor.file_extractor import FileExtractor
 from europa_1400_tools.helpers import get_files, normalize, rebase_path
+from europa_1400_tools.models.metadata import (
+    AnimationMetadata,
+    ObjectMetadata,
+    TextureMetadata,
+)
 from europa_1400_tools.rich.progress import Progress
-
-
-@dataclass_json
-@dataclass
-class TextureMetadata:
-    """Metadata for a texture."""
-
-    name: str
-    path: Path = field(
-        metadata=config(
-            encoder=lambda path: str(path),
-            decoder=lambda path: Path(path),
-        )
-    )
-    has_transparency: bool
-
-
-@dataclass_json
-@dataclass
-class ObjectMetadata:
-    name: str
-    path: Path = field(
-        metadata=config(
-            encoder=lambda path: str(path),
-            decoder=lambda path: Path(path),
-        )
-    )
-    textures: list[TextureMetadata]
-    txs_path: Path | None = field(
-        metadata=config(
-            encoder=lambda path: str(path) if path is not None else None,
-            decoder=lambda path: Path(path) if path is not None else None,
-        )
-    )
 
 
 class ObjectsPreprocessor:
@@ -65,6 +36,7 @@ class ObjectsPreprocessor:
         texture_paths: list[Path],
         object_pickle_paths: list[Path],
         txs_pickle_paths: list[Path],
+        animation_metadatas: list[AnimationMetadata],
     ) -> list[ObjectMetadata]:
         """Preprocess objects."""
 
@@ -138,6 +110,7 @@ class ObjectsPreprocessor:
                     name=bgf.name,
                     path=relative_path,
                     textures=[],
+                    animations=[],
                     txs_path=relative_txs_path,
                 )
 
@@ -222,6 +195,28 @@ class ObjectsPreprocessor:
 
                     object_metadata.textures.append(texture_metadata)
                     texture_metadatas.append(texture_metadata)
+
+                for animation_metadata in animation_metadatas:
+                    normalized_baf_name = normalize(animation_metadata.name)
+                    normalized_object_name = normalize(object_metadata.name)
+
+                    split_baf_name = normalized_baf_name.split("_")
+                    split_object_name = normalized_object_name.split("_")
+
+                    has_identical_part: bool = False
+
+                    for baf_name_part in split_baf_name:
+                        if baf_name_part in split_object_name:
+                            has_identical_part = True
+                            break
+
+                    has_identical_vertices_count: bool = (
+                        bgf.mapping_object.vertex_mapping_count
+                        == animation_metadata.vertices_count
+                    )
+
+                    if has_identical_part and has_identical_vertices_count:
+                        object_metadata.animations.append(animation_metadata)
 
                 object_metadatas.append(object_metadata)
                 object_metadata_path.write_text(object_metadata.to_json(indent=4))

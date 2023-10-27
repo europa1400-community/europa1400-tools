@@ -87,28 +87,28 @@ class BgfGltfConverter(BgfConverter):
     def __init__(self):
         super().__init__()
 
-        if ConvertOptions.instance.target_format != TargetFormat.GLTF_STATIC:
-            if (
-                ConvertOptions.instance.mapped_animations_path.exists()
-                and ConvertOptions.instance.use_cache
-            ):
-                with open(
-                    ConvertOptions.instance.mapped_animations_path, "rb"
-                ) as input_file:
-                    self.baf_to_bgfs = pickle.load(input_file)
-            else:
-                bgf_decoder = BgfDecoder(ConvertOptions.instance)
-                self.decoded_objects_paths = bgf_decoder.decode_files(None)
+        # if ConvertOptions.instance.target_format != TargetFormat.GLTF_STATIC:
+        #     if (
+        #         ConvertOptions.instance.mapped_animations_path.exists()
+        #         and ConvertOptions.instance.use_cache
+        #     ):
+        #         with open(
+        #             ConvertOptions.instance.mapped_animations_path, "rb"
+        #         ) as input_file:
+        #             self.baf_to_bgfs = pickle.load(input_file)
+        #     else:
+        #         bgf_decoder = BgfDecoder()
+        #         self.decoded_objects_paths = bgf_decoder.decode_files(None)
 
-                baf_decoder = BafDecoder(ConvertOptions.instance)
-                self.decoded_animations_paths = baf_decoder.decode_files(None)
+        #         baf_decoder = BafDecoder()
+        #         self.decoded_animations_paths = baf_decoder.decode_files(None)
 
-                self.baf_to_bgfs, _ = preprocess_animations(
-                    ConvertOptions.instance.extracted_objects_path,
-                    ConvertOptions.instance.extracted_animations_path,
-                    self.decoded_objects_paths,
-                    self.decoded_animations_paths,
-                )
+        #         self.baf_to_bgfs, _ = preprocess_animations(
+        #             ConvertOptions.instance.extracted_objects_path,
+        #             ConvertOptions.instance.extracted_animations_path,
+        #             self.decoded_objects_paths,
+        #             self.decoded_animations_paths,
+        #         )
 
     def _convert(
         self,

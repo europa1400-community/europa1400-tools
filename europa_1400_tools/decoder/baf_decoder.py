@@ -9,8 +9,8 @@ from europa_1400_tools.decoder.base_decoder import BaseDecoder
 class BafDecoder(BaseDecoder[Baf]):
     """Decoder for BAF files."""
 
-    def __init__(self, common_options: CommonOptions):
-        super().__init__(common_options, Baf)
+    def __init__(self):
+        super().__init__(Baf)
 
     def decode_file(self, file_path: Path) -> Baf:
         baf = Baf.from_file(file_path)
