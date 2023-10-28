@@ -11,8 +11,8 @@ on:
       - master
 
 env:
-  SONAR_PROJECT_KEY: europa-1400-community_europa-1400-tools
-  SONAR_PROJECT_ORGANIZATION: europa-1400-community
+  SONAR_PROJECT_KEY: europa1400-community_europa1400-tools
+  SONAR_PROJECT_ORGANIZATION: europa1400-community
 
 jobs:
   cache:
@@ -84,7 +84,7 @@ jobs:
 
       - name: Run black
         run: |
-          poetry run black --check europa_1400_tools tests --diff
+          poetry run black --check europa1400_tools tests --diff
 
   isort:
     needs: cache
@@ -116,7 +116,7 @@ jobs:
 
       - name: Run isort
         run: |
-          poetry run isort --check-only --diff europa_1400_tools tests
+          poetry run isort --check-only --diff europa1400_tools tests
 
   mypy:
     needs: cache
@@ -148,7 +148,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          poetry run mypy europa_1400_tools tests
+          poetry run mypy europa1400_tools tests
 
   bandit:
     needs: cache
@@ -180,7 +180,7 @@ jobs:
 
       - name: Run bandit
         run: |
-          poetry run bandit -r europa_1400_tools -c pyproject.toml
+          poetry run bandit -r europa1400_tools -c pyproject.toml
 
   flake8:
     needs: cache
@@ -212,7 +212,7 @@ jobs:
 
       - name: Run flake8
         run: |
-          poetry run flake8 europa_1400_tools tests
+          poetry run flake8 europa1400_tools tests
 
   pytest:
     needs: cache
@@ -244,7 +244,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          poetry run pytest --cov=europa_1400_tools --cov-report=xml
+          poetry run pytest --cov=europa1400_tools --cov-report=xml
 
   sonarcloud:
     needs: cache
@@ -284,6 +284,6 @@ jobs:
             -Dsonar.organization=${{ env.SONAR_PROJECT_ORGANIZATION }}
             -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
             -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.sources=europa_1400_tools
+            -Dsonar.sources=europa1400_tools
             -Dsonar.tests=tests/
             -Dsonar.python.version=3.11

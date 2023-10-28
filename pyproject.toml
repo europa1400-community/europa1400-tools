@@ -1,15 +1,15 @@
 [tool.poetry]
-name = "europa-1400-tools"
+name = "europa1400-tools"
 version = "0.0.0"
 description = ""
 authors = ["Lennard Beers <l.beers@outlook.de>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "europa_1400_tools"}]
+packages = [{include = "europa1400_tools"}]
 
 [tool.poetry.scripts]
-main = "europa_1400_tools.main:main"
-models = "europa_1400_tools.common_options_decoder:main"
+main = "europa1400_tools.main:main"
+models = "europa1400_tools.common_options_decoder:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
