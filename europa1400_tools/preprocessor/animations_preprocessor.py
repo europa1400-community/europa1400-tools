@@ -30,7 +30,7 @@ class AnimationsPreprocessor:
                     CommonOptions.instance.decoded_animations_path
                 )
 
-                progress.file_path = relative_path
+                progress.file_path = relative_path.as_posix()
 
                 animation_metadata_path = (
                     CommonOptions.instance.converted_animations_path

@@ -40,7 +40,7 @@ class FileExtractor:
             ]
 
             for file_path in file_paths:
-                progress.file_path = file_path
+                progress.file_path = file_path.as_posix()
 
                 if file_path not in zip_file_paths:
                     progress.completed_file_count += 1
@@ -64,7 +64,7 @@ class FileExtractor:
         with progress:
             with ZipFile(archive_path, "r") as zip_file:
                 for extractable_file_path in extractable_file_paths:
-                    progress.file_path = extractable_file_path
+                    progress.file_path = extractable_file_path.as_posix()
 
                     if (
                         extractable_file_path.exists()
@@ -83,6 +83,9 @@ class FileExtractor:
                         ),
                         None,
                     )
+
+                    if zip_file_path is None:
+                        continue
 
                     zip_file.extract(zip_file_path, output_path)
 
@@ -149,7 +152,7 @@ class FileExtractor:
                     output_path.mkdir(parents=True)
 
                 for zip_file_path in zip_file_paths:
-                    progress.file_path = zip_file_path
+                    progress.file_path = zip_file_path.as_posix()
 
                     zip_file.extract(zip_file_path.as_posix(), output_path)
 

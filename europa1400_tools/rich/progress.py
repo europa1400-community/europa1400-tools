@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from rich.console import Group
@@ -107,9 +108,3 @@ class Progress:
             total=self.total_file_count,
         )
         self.live.update(self.panel)
-
-    def get_renderable(self) -> RenderableType:
-        return self.live
-
-    def __rich__(self) -> RenderableType:
-        return self.get_renderable()

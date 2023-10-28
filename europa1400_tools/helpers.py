@@ -9,17 +9,20 @@ from tkinter import filedialog
 from typing import Any, BinaryIO, Iterable
 
 import construct as cs
-from europa1400_tools.const import OBJECTS_STRING_ENCODING
 from PIL import Image
+
+from europa1400_tools.const import OBJECTS_STRING_ENCODING
 
 
 def normalize(
-    value: Path | str,
+    path: Path | str,
     perform_strip_non_ascii: bool = True,
     perform_lower: bool = True,
     perform_remove_suffix: bool = True,
 ) -> str:
     """Normalizes the specified string."""
+
+    value: str = str(path)
 
     if isinstance(value, Path):
         value = value.as_posix()

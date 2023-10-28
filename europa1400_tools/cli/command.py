@@ -1,16 +1,14 @@
 from dataclasses import fields
 from functools import wraps
 from inspect import Parameter, signature
-from typing import TypeVar
+from typing import Type
 
 from typer import Typer
 
 from europa1400_tools.cli.common_options import CommonOptions
 
-OptionsType = TypeVar("OptionsType", bound="CommonOptions")
 
-
-def callback(typer_app: Typer, options_type: OptionsType, *args, **kwargs):
+def callback(typer_app: Typer, options_type: Type[CommonOptions], *args, **kwargs):
     def decorator(__f):
         @wraps(__f)
         def wrapper(*__args, **__kwargs):
@@ -28,7 +26,7 @@ def callback(typer_app: Typer, options_type: OptionsType, *args, **kwargs):
     return decorator
 
 
-def command(typer_app, options_type, *args, **kwargs):
+def command(typer_app, options_type: Type[CommonOptions], *args, **kwargs):
     def decorator(__f):
         @wraps(__f)
         def wrapper(*__args, **__kwargs):
@@ -46,13 +44,13 @@ def command(typer_app, options_type, *args, **kwargs):
     return decorator
 
 
-def _patch_wrapper_kwargs(options_type, **kwargs):
+def _patch_wrapper_kwargs(options_type: Type[CommonOptions], **kwargs):
     if (ctx := kwargs.get("ctx")) is None:
         raise RuntimeError("Context should be provided")
 
     common_opts_params: dict = {}
 
-    if options_type.instance is not None:
+    if hasattr(options_type, "instance") and options_type.instance is not None:
         common_opts_params.update(options_type.instance.__dict__)
 
     for field in fields(options_type):
@@ -72,7 +70,7 @@ def _patch_wrapper_kwargs(options_type, **kwargs):
     return {"ctx": ctx, **kwargs}
 
 
-def _patch_command_sig(__w, options_type) -> None:
+def _patch_command_sig(__w, options_type: Type[CommonOptions]) -> None:
     sig = signature(__w)
     new_parameters = sig.parameters.copy()
 

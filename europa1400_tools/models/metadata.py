@@ -1,12 +1,11 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from dataclasses_json import config, dataclass_json
+from dataclasses_json import DataClassJsonMixin, config
 
 
-@dataclass_json
 @dataclass
-class AnimationMetadata:
+class AnimationMetadata(DataClassJsonMixin):
     """Metadata for an animation."""
 
     name: str
@@ -19,9 +18,8 @@ class AnimationMetadata:
     vertices_count: int
 
 
-@dataclass_json
 @dataclass
-class TextureMetadata:
+class TextureMetadata(DataClassJsonMixin):
     """Metadata for a texture."""
 
     name: str
@@ -34,9 +32,8 @@ class TextureMetadata:
     has_transparency: bool
 
 
-@dataclass_json
 @dataclass
-class ObjectMetadata:
+class ObjectMetadata(DataClassJsonMixin):
     name: str
     path: Path = field(
         metadata=config(

@@ -2,12 +2,13 @@ from pathlib import Path
 
 from europa1400_tools.cli.convert_options import ConvertOptions
 from europa1400_tools.const import JSON_EXTENSION, TargetFormat
+from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.ed3 import Ed3
-from europa1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa1400_tools.converter.base_converter import BaseConverter
 from europa1400_tools.decoder.ed3_decoder import Ed3Decoder
 
 
-class Ed3Converter(BaseConverter):
+class Ed3Converter(BaseConverter[Ed3, Ed3Decoder]):
     """Convert Ed3 files."""
 
     def __init__(self):
@@ -27,7 +28,7 @@ class Ed3Converter(BaseConverter):
 
     def convert(
         self,
-        value: ConstructType,
+        value: Ed3,
         output_path: Path,
     ) -> list[Path]:
         value_json = value.to_json()

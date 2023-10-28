@@ -3,11 +3,12 @@ from pathlib import Path
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
 from europa1400_tools.construct.ageb import AGeb
-from europa1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa1400_tools.construct.base_construct import BaseConstruct
+from europa1400_tools.converter.base_converter import BaseConverter
 from europa1400_tools.decoder.ageb_decoder import AGebDecoder
 
 
-class AGebConverter(BaseConverter):
+class AGebConverter(BaseConverter[AGeb, AGebDecoder]):
     """Convert AGeb files."""
 
     def __init__(self):
@@ -27,7 +28,7 @@ class AGebConverter(BaseConverter):
 
     def convert(
         self,
-        value: ConstructType,
+        value: AGeb,
         output_path: Path,
     ) -> list[Path]:
         ageb_json = value.to_json()

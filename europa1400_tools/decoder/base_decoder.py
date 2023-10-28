@@ -38,7 +38,7 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                 extracted_file_paths = [self.game_path]
             else:
                 extracted_file_paths = get_files(self.game_path, self.file_suffix)
-        else:
+        elif self.extracted_path is not None:
             extractable_file_paths = [
                 file_path.resolve().relative_to(self.extracted_path)
                 if file_path.resolve().is_relative_to(self.extracted_path)
@@ -67,12 +67,15 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                 if normalize(extracted_file_path.suffix) != normalize(self.file_suffix):
                     continue
 
-                if extracted_file_path.is_relative_to(self.extracted_path):
-                    extracted_file_path = extracted_file_path.relative_to(
-                        self.extracted_path
-                    )
+                relative_path: Path = extracted_file_path
 
-                progress.file_path = extracted_file_path
+                if (
+                    self.extracted_path is not None
+                    and extracted_file_path.is_relative_to(self.extracted_path)
+                ):
+                    relative_path = extracted_file_path.relative_to(self.extracted_path)
+
+                progress.file_path = relative_path.as_posix()
 
                 decoded_output_path = (
                     self.decoded_path
@@ -87,15 +90,8 @@ class BaseDecoder(ABC, Generic[ConstructType]):
                     progress.cached_file_count += 1
                     continue
 
-                extracted_file_path = (
-                    self.extracted_path / extracted_file_path
-                    if not extracted_file_path.is_relative_to(self.extracted_path)
-                    else extracted_file_path
-                )
                 decoded_value = self.decode_file(extracted_file_path)
-                decoded_value.path = extracted_file_path.relative_to(
-                    self.extracted_path
-                )
+                decoded_value.path = relative_path
 
                 if not decoded_output_path.parent.exists():
                     decoded_output_path.parent.mkdir(parents=True)

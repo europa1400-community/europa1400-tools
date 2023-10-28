@@ -22,16 +22,9 @@ class Txs(BaseConstruct):
 
     @property
     def texture_names(self) -> list[str]:
-        return {
-            texture_name.value.lower()
-            for texture_name in self._texture_names
-            if texture_name.value != ""
-        }
-
-    @property
-    def texture_names_normalized(self) -> list[str]:
-        return {
-            strip_non_ascii(texture_name.value.lower())
-            for texture_name in self._texture_names
-            if texture_name.value != ""
-        }
+        return list(
+            {
+                strip_non_ascii(texture_name.value)
+                for texture_name in self._texture_names
+            }
+        )

@@ -54,7 +54,7 @@ class ObjectsPreprocessor:
                     CommonOptions.instance.decoded_objects_path
                 ).with_suffix(BGF_EXTENSION)
 
-                progress.file_path = relative_path
+                progress.file_path = relative_path.as_posix()
                 object_metadata_path = (
                     CommonOptions.instance.converted_objects_path
                     / OUTPUT_META_DIR
@@ -70,11 +70,11 @@ class ObjectsPreprocessor:
                     )
                     object_metadatas.append(object_metadata)
 
-                    for texture_metadata in object_metadata.textures:
-                        if texture_metadata in texture_metadatas:
+                    for object_texture_metadata in object_metadata.textures:
+                        if object_texture_metadata in texture_metadatas:
                             continue
 
-                        texture_metadatas.append(texture_metadata)
+                        texture_metadatas.append(object_texture_metadata)
 
                     progress.cached_file_count += 1
                     continue
@@ -92,19 +92,14 @@ class ObjectsPreprocessor:
                 )
                 relative_txs_path: Path | None = None
 
+                txs: Txs | None = None
+
                 if txs_pickle_path is not None:
                     relative_txs_path = txs_pickle_path.relative_to(
                         CommonOptions.instance.decoded_txs_path
                     )
                     with open(txs_pickle_path, "rb") as txs_pickle_file:
                         txs = pickle.load(txs_pickle_file)
-
-                txs: Txs | None = None
-
-                txs_main_texture_name = None
-
-                if txs is not None and len(txs.texture_names) > 0:
-                    txs_main_texture_name = list(txs.texture_names)[0]
 
                 object_metadata = ObjectMetadata(
                     name=bgf.name,
@@ -115,7 +110,7 @@ class ObjectsPreprocessor:
                 )
 
                 for texture in bgf.textures:
-                    texture_metadata = next(
+                    texture_metadata: TextureMetadata | None = next(
                         (
                             texture_metadata
                             for texture_metadata in texture_metadatas
@@ -137,43 +132,52 @@ class ObjectsPreprocessor:
                         None,
                     )
 
-                    if texture_path is None and txs is not None:
+                    if (
+                        texture_path is None
+                        and txs is not None
+                        and len(txs.texture_names) > 0
+                    ):
                         texture_path = next(
                             (
                                 texture_path
                                 for texture_path in texture_paths
                                 if normalize(texture_path.stem)
-                                == normalize(txs_main_texture_name)
+                                == normalize(list(txs.texture_names)[0])
                             ),
                             None,
                         )
 
-                    texture_metadata = TextureMetadata(
-                        name=Path(texture.name).stem,
-                        path=texture_path,
-                        has_transparency=texture.num0B != 0,
-                    )
+                    texture_name = Path(texture.name).stem
 
-                    if texture_metadata.path is None:
+                    if texture_path is None:
                         bmp_path = (
                             CommonOptions.instance.extracted_textures_path
-                            / Path(texture_metadata.name).with_suffix(BMP_EXTENSION)
+                            / Path(texture_name).with_suffix(BMP_EXTENSION)
                         )
                         png_path = (
                             CommonOptions.instance.converted_textures_path
-                            / Path(texture_metadata.name).with_suffix(PNG_EXTENSION)
+                            / Path(texture_name).with_suffix(PNG_EXTENSION)
                         )
                     else:
-                        bmp_path = texture_metadata.path
+                        bmp_path = texture_path
                         png_path = (
                             rebase_path(
                                 texture_path,
                                 CommonOptions.instance.extracted_textures_path,
                                 CommonOptions.instance.converted_textures_path,
                             )
-                            .with_stem(texture_metadata.name)
+                            .with_stem(texture_name)
                             .with_suffix(PNG_EXTENSION)
                         )
+
+                    relative_png_path = png_path.relative_to(
+                        CommonOptions.instance.converted_textures_path
+                    )
+                    texture_metadata = TextureMetadata(
+                        name=texture_name,
+                        path=relative_png_path,
+                        has_transparency=texture.num0B != 0,
+                    )
 
                     if not png_path.parent.exists():
                         png_path.parent.mkdir(parents=True)

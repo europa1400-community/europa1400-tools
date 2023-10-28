@@ -2,12 +2,13 @@ from pathlib import Path
 
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.const import JSON_EXTENSION
+from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.ogr import Ogr
-from europa1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa1400_tools.converter.base_converter import BaseConverter
 from europa1400_tools.decoder.ogr_decoder import OgrDecoder
 
 
-class OgrConverter(BaseConverter):
+class OgrConverter(BaseConverter[Ogr, OgrDecoder]):
     """Converter for OGR files."""
 
     def __init__(self):
@@ -27,7 +28,7 @@ class OgrConverter(BaseConverter):
 
     def convert(
         self,
-        value: ConstructType,
+        value: Ogr,
         output_path: Path,
     ) -> list[Path]:
         value_json = value.to_json()

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, ClassVar, Optional, Self
 
 import typer
 
@@ -46,7 +46,7 @@ from europa1400_tools.helpers import ask_for_game_path
 class CommonOptions:
     """Dataclass defining CLI options used by all commands."""
 
-    instance = None
+    instance: ClassVar[Self]
 
     def __post_init__(self):
         CommonOptions.instance = self
@@ -81,7 +81,10 @@ class CommonOptions:
         """Return the path to the game directory."""
 
         if self._game_path is None:
-            self._game_path = ask_for_game_path()
+            self._game_path = ask_for_game_path().as_posix()
+
+        if self._game_path is None:
+            raise ValueError("Game path is None")
 
         return Path(self._game_path).resolve()
 

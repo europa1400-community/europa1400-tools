@@ -22,19 +22,10 @@ from europa1400_tools.decoder.commands import (
     cmd_decode_txs,
 )
 from europa1400_tools.helpers import get_files
-from europa1400_tools.preprocessor.animations_preprocessor import (
-    AnimationsPreprocessor,
-)
+from europa1400_tools.preprocessor.animations_preprocessor import AnimationsPreprocessor
 from europa1400_tools.preprocessor.objects_preprocessor import ObjectsPreprocessor
 
 app = typer.Typer()
-
-
-@app.command("objects")
-def cmd_preprocess_objects(
-    ctx: typer.Context,
-):
-    ObjectsPreprocessor.preprocess_objects()
 
 
 @app.command("animations")

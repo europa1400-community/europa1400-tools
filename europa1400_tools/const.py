@@ -2,7 +2,7 @@
 
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Self
 
 # Game Directories and Files
 
@@ -187,6 +187,7 @@ class TyperTargetFormat(Enum):
 class TargetFormat(Format):
     """Target formats."""
 
+    NONE = ("none", "")
     WAV = ("wav", WAV_EXTENSION)
     MP3 = ("mp3", MP3_EXTENSION)
     WAVEFRONT = ("wavefront", OBJ_EXTENSION)
@@ -202,13 +203,13 @@ class TargetFormat(Format):
         return Enum("TyperTargetFormat", enum_dict)
 
     @staticmethod
-    def from_typer(typer_target_format: str) -> Optional["TargetFormat"]:
+    def from_typer(typer_target_format: str) -> "TargetFormat":
         """Return the target format for the given typer target format."""
         for target_format in TargetFormat:
             if target_format.value[0] == typer_target_format:
                 return target_format
 
-        return None
+        return TargetFormat.NONE
 
 
 class SourceFormat(Format):

@@ -19,9 +19,9 @@ class ConvertOptions(CommonOptions):
     ] = None
 
     @property
-    def target_format(self) -> TargetFormat | None:
+    def target_format(self) -> TargetFormat:
         """Return the target format."""
-        return TargetFormat.from_typer(self._target_format)
+        return TargetFormat.from_typer(self._target_format or "")
 
     @target_format.setter
     def target_format(self, value: TargetFormat) -> None:

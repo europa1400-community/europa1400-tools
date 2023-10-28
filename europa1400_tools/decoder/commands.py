@@ -40,12 +40,10 @@ def cmd_decode_animations(
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".baf files to decode."),
     ] = None,
-) -> list[Path]:
+):
     """Command to decode BAF files."""
 
-    common_options: CommonOptions = ctx.obj
-
-    baf_decoder = BafDecoder(common_options)
+    baf_decoder = BafDecoder()
     baf_decoder.decode_files(file_paths)
 
 
@@ -56,12 +54,10 @@ def cmd_decode_objects(
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".bgf files to decode."),
     ] = None,
-) -> list[Path]:
+):
     """Command to decode BGF files."""
 
-    common_options: CommonOptions = ctx.obj
-
-    bgf_decoder = BgfDecoder(common_options)
+    bgf_decoder = BgfDecoder()
     bgf_decoder.decode_files(file_paths)
 
 
@@ -72,12 +68,10 @@ def cmd_decode_txs(
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".txs files to decode."),
     ] = None,
-) -> list[Path]:
+):
     """Command to decode TXS files."""
 
-    common_options: CommonOptions = ctx.obj
-
-    txs_decoder = TxsDecoder(common_options)
+    txs_decoder = TxsDecoder()
     txs_decoder.decode_files(file_paths)
 
 
@@ -88,12 +82,10 @@ def cmd_decode_scenes(
         Optional[list[Path]],
         typer.Option("--file", "-f", help=".ed3 files to decode."),
     ] = None,
-) -> list[Path]:
+):
     """Decode ED3 files."""
 
-    common_options: CommonOptions = ctx.obj
-
-    ed3_decoder = Ed3Decoder(common_options)
+    ed3_decoder = Ed3Decoder()
     ed3_decoder.decode_files(file_paths)
 
 
@@ -107,9 +99,7 @@ def cmd_decode_groups(
 ):
     """Decode OGR files."""
 
-    common_options: CommonOptions = ctx.obj
-
-    ogr_decoder = OgrDecoder(common_options)
+    ogr_decoder = OgrDecoder()
     ogr_decoder.decode_files(file_paths)
 
 
@@ -123,9 +113,7 @@ def cmd_decode_ageb(
 ):
     """Decode A_Geb file."""
 
-    common_options: CommonOptions = ctx.obj
-
-    ageb_decoder = AGebDecoder(common_options)
+    ageb_decoder = AGebDecoder()
     ageb_decoder.decode_files(file_paths)
 
 
@@ -136,12 +124,10 @@ def cmd_decode_aobj(
         Optional[list[Path]],
         typer.Option("--file", "-f", help="A_Obj files to decode."),
     ] = None,
-) -> list[Path]:
+):
     """Decode A_Obj file."""
 
-    common_options: CommonOptions = ctx.obj
-
-    aobj_decoder = AObjDecoder(common_options)
+    aobj_decoder = AObjDecoder()
     aobj_decoder.decode_files(file_paths)
 
 
@@ -149,14 +135,12 @@ def cmd_decode_aobj(
 def cmd_decode_gfx(
     ctx: typer.Context,
     file_path: Annotated[
-        Optional[Path], typer.Option("--file", "-f", help=".gfx file to decode.")
+        Optional[list[Path]], typer.Option("--file", "-f", help=".gfx file to decode.")
     ] = None,
-) -> list[Path]:
+):
     """Decode GFX file."""
 
-    common_options: CommonOptions = ctx.obj
-
-    gfx_decoder = GfxDecoder(common_options)
+    gfx_decoder = GfxDecoder()
     gfx_decoder.decode_files(file_path)
 
 
@@ -166,10 +150,8 @@ def cmd_decode_sfx(
     file_paths: Annotated[
         Optional[list[Path]], typer.Option("--file", "-f", help=".sbf files to decode.")
     ] = None,
-) -> list[Path]:
+):
     """Decode SFX files."""
 
-    common_options: CommonOptions = ctx.obj
-
-    sbf_decoder = SbfDecoder(common_options)
+    sbf_decoder = SbfDecoder()
     sbf_decoder.decode_files(file_paths)

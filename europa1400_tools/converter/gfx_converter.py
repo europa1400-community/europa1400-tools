@@ -7,12 +7,13 @@ from PIL import Image
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
 from europa1400_tools.const import PNG_EXTENSION, TargetFormat
+from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.gfx import Gfx, Graphic, ShapebankDefinition
-from europa1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa1400_tools.converter.base_converter import BaseConverter
 from europa1400_tools.decoder.gfx_decoder import GfxDecoder
 
 
-class GfxConverter(BaseConverter):
+class GfxConverter(BaseConverter[Gfx, GfxDecoder]):
     """Class for converting the GFX file."""
 
     def __init__(self):
@@ -32,7 +33,7 @@ class GfxConverter(BaseConverter):
 
     def convert(
         self,
-        value: ConstructType,
+        value: Gfx,
         output_path: Path,
     ) -> list[Path]:
         """Convert Gfx graphics to images."""

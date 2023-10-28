@@ -12,7 +12,7 @@ from europa1400_tools.converter.base_converter import BaseConverter, ConstructTy
 from europa1400_tools.decoder.sbf_decoder import SbfDecoder
 
 
-class SbfConverter(BaseConverter):
+class SbfConverter(BaseConverter[Sbf, SbfDecoder]):
     """Class for converting SBF files."""
 
     def __init__(self):
@@ -32,7 +32,7 @@ class SbfConverter(BaseConverter):
 
     def convert(
         self,
-        value: ConstructType,
+        value: Sbf,
         output_path: Path,
     ) -> list[Path]:
         target_format = ConvertOptions.instance.target_format

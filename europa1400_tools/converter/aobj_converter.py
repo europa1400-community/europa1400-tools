@@ -3,11 +3,12 @@ from pathlib import Path
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
 from europa1400_tools.construct.aobj import AObj
-from europa1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa1400_tools.construct.base_construct import BaseConstruct
+from europa1400_tools.converter.base_converter import BaseConverter
 from europa1400_tools.decoder.aobj_decoder import AObjDecoder
 
 
-class AObjConverter(BaseConverter):
+class AObjConverter(BaseConverter[AObj, AObjDecoder]):
     """Convert AObj files."""
 
     def __init__(self):
@@ -27,7 +28,7 @@ class AObjConverter(BaseConverter):
 
     def convert(
         self,
-        value: ConstructType,
+        value: AObj,
         output_path: Path,
     ) -> list[Path]:
         """Convert aobj file and export to output_path."""

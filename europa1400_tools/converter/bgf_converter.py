@@ -7,24 +7,23 @@ import typer
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
 from europa1400_tools.const import TXS_EXTENSION, TargetFormat
+from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.bgf import Bgf
 from europa1400_tools.construct.txs import Txs
-from europa1400_tools.converter.base_converter import BaseConverter, ConstructType
+from europa1400_tools.converter.base_converter import BaseConverter
 from europa1400_tools.decoder.baf_decoder import BafDecoder
 from europa1400_tools.decoder.bgf_decoder import BgfDecoder
 from europa1400_tools.decoder.txs_decoder import TxsDecoder
 from europa1400_tools.extractor.file_extractor import FileExtractor
 from europa1400_tools.helpers import rebase_path
-from europa1400_tools.preprocessor.animations_preprocessor import (
-    AnimationsPreprocessor,
-)
+from europa1400_tools.preprocessor.animations_preprocessor import AnimationsPreprocessor
 from europa1400_tools.preprocessor.objects_preprocessor import (
     ObjectMetadata,
     ObjectsPreprocessor,
 )
 
 
-class BgfConverter(BaseConverter, ABC):
+class BgfConverter(BaseConverter[Bgf, BgfDecoder], ABC):
     """Converter for BGF files."""
 
     object_metadatas: list[ObjectMetadata]
@@ -39,8 +38,12 @@ class BgfConverter(BaseConverter, ABC):
     @property
     def converted_path(self) -> Path:
         return (
-            ConvertOptions.instance.converted_objects_path
-            / ConvertOptions.instance.target_format.value[0]
+            (
+                ConvertOptions.instance.converted_objects_path
+                / ConvertOptions.instance.target_format.value[0]
+            )
+            if ConvertOptions.instance.target_format is not None
+            else ConvertOptions.instance.converted_objects_path
         )
 
     def preprocess(self, pickle_file_paths: list[Path]) -> None:
@@ -75,7 +78,7 @@ class BgfConverter(BaseConverter, ABC):
 
     def convert(
         self,
-        value: ConstructType,
+        value: Bgf,
         output_path: Path,
     ) -> list[Path]:
         object_metadata: ObjectMetadata | None = next(
@@ -99,7 +102,8 @@ class BgfConverter(BaseConverter, ABC):
     @abstractmethod
     def _convert(
         self,
-        bgf: Bgf,
+        value: Bgf,
         output_path: Path,
+        object_metadata: ObjectMetadata,
     ) -> list[Path]:
         """Convert BGF and export to output_path."""

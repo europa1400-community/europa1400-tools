@@ -16,14 +16,11 @@ from europa1400_tools.helpers import normalize
 from europa1400_tools.rich.common import console
 from europa1400_tools.rich.progress import Progress
 
-InputType = TypeVar("InputType")
-OutputType = TypeVar("OutputType")
-ConverterType = TypeVar("ConverterType", bound="BaseConverter")
 ConstructType = TypeVar("ConstructType", bound=BaseConstruct)
 DecoderType = TypeVar("DecoderType", bound=BaseDecoder)
 
 
-class BaseConverter(ABC, Generic[ConstructType]):
+class BaseConverter(ABC, Generic[ConstructType, DecoderType]):
     """Base class for converters."""
 
     construct_type: Type[ConstructType]
@@ -44,7 +41,7 @@ class BaseConverter(ABC, Generic[ConstructType]):
 
         output_file_paths: list[Path] = []
 
-        decoder = self.decoder_type()
+        decoder = self.decoder_type(self.construct_type)
 
         file_paths = file_paths or ConvertOptions.instance.file_paths or []
         extracted_file_paths: list[Path] = []
@@ -93,9 +90,9 @@ class BaseConverter(ABC, Generic[ConstructType]):
                     raise ValueError(f"Unknown file extension: {file_path.suffix}")
 
                 with file_path.open("rb") as file:
-                    value: BaseConstruct = pickle.load(file)
+                    value: ConstructType = pickle.load(file)
 
-                progress.file_path = value.path
+                progress.file_path = value.path.as_posix()
 
                 converted_output_path = self.converted_path / value.path.parent
 
@@ -141,47 +138,5 @@ class BaseConverter(ABC, Generic[ConstructType]):
         self,
         value: ConstructType,
         output_path: Path,
-        base_path: Path,
     ) -> list[Path]:
         """Convert file and export to output_path."""
-
-    # @final
-    # def convert(
-    #     self,
-    #     file_paths: list[Path],
-    #     output_path: Path,
-    #     base_path: Path,
-    #     source_format: SourceFormat,
-    #     target_format: TargetFormat,
-    #     create_subdirectories: bool = False,
-    # ) -> list[Path]:
-    #     """Convert value and export to output_path."""
-
-    #     output_paths: list[Path] = []
-
-    #     for file_path in file_paths:
-    #         logging.debug(
-    #             f"Converting {file_path} from {source_format} to {target_format}..."
-    #         )
-
-    #         time_start = timer()
-
-    #         converted_file_paths = self.convert_file(
-    #             file_path,
-    #             output_path,
-    #             base_path,
-    #             target_format,
-    #             create_subdirectories,
-    #         )
-
-    #         time_end = timer()
-
-    #         logging.debug(
-    #             f"Converted {file_path} from {source_format} to {target_format}"
-    #             + f" in {time_end - time_start:.2f} seconds."
-    #         )
-
-    #         if converted_file_paths is not None:
-    #             output_paths.extend(converted_file_paths)
-
-    #     return output_paths

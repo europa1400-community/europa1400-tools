@@ -116,7 +116,7 @@ class BgfGltfConverter(BgfConverter):
         output_path: Path,
         object_metadata: ObjectMetadata,
     ) -> list[Path]:
-        reordered_textures = [None] * len(bgf.textures)
+        reordered_textures: list[BgfTexture] = []
         missing_textures: list[BgfTexture] = []
 
         footer_names = [
