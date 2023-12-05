@@ -1,50 +1,77 @@
 from dataclasses import fields
+from enum import Enum
 from functools import wraps
 from inspect import Parameter, signature
-from typing import Type
+from pathlib import Path
+from typing import Any, Callable, Optional, Type
 
 from typer import Typer
+from typer import main as typer_main
+from typer.main import generate_enum_convertor, lenient_issubclass
 
-from europa1400_tools.cli.common_options import CommonOptions
+from europa1400_tools.cli.base_options import BaseOptions
+from europa1400_tools.models.gilde_path import GildePath
 
 
-def callback(typer_app: Typer, options_type: Type[CommonOptions], *args, **kwargs):
+def determine_type_convertor(type_: Any) -> Optional[Callable[[Any], Any]]:
+    convertor: Optional[Callable[[Any], Any]] = None
+    if lenient_issubclass(type_, Path):
+        convertor = param_path_convertor
+    if lenient_issubclass(type_, Enum):
+        convertor = generate_enum_convertor(type_)
+    return convertor
+
+
+def param_path_convertor(value: Optional[str] = None) -> Optional[GildePath]:
+    if value is not None:
+        return GildePath(value)
+    return None
+
+
+typer_main.determine_type_convertor = determine_type_convertor
+
+
+def callback(typer_app: Typer, options_types: list[Type[BaseOptions]], *args, **kwargs):
     def decorator(__f):
         @wraps(__f)
         def wrapper(*__args, **__kwargs):
             if len(__args) > 0:
                 raise RuntimeError("Positional arguments are not supported")
 
-            __kwargs = _patch_wrapper_kwargs(options_type, **__kwargs)
+            for options_type in options_types:
+                __kwargs = _patch_wrapper_kwargs(options_type, **__kwargs)
 
             return __f(*__args, **__kwargs)
 
-        _patch_command_sig(wrapper, options_type)
+        for options_type in options_types:
+            _patch_command_sig(wrapper, options_type)
 
         return typer_app.callback(*args, **kwargs)(wrapper)
 
     return decorator
 
 
-def command(typer_app, options_type: Type[CommonOptions], *args, **kwargs):
+def command(typer_app, options_types: list[Type[BaseOptions]], *args, **kwargs):
     def decorator(__f):
         @wraps(__f)
         def wrapper(*__args, **__kwargs):
             if len(__args) > 0:
                 raise RuntimeError("Positional arguments are not supported")
 
-            __kwargs = _patch_wrapper_kwargs(options_type, **__kwargs)
+            for options_type in options_types:
+                __kwargs = _patch_wrapper_kwargs(options_type, **__kwargs)
 
             return __f(*__args, **__kwargs)
 
-        _patch_command_sig(wrapper, options_type)
+        for options_type in options_types:
+            _patch_command_sig(wrapper, options_type)
 
         return typer_app.command(*args, **kwargs)(wrapper)
 
     return decorator
 
 
-def _patch_wrapper_kwargs(options_type: Type[CommonOptions], **kwargs):
+def _patch_wrapper_kwargs(options_type: Type[BaseOptions], **kwargs):
     if (ctx := kwargs.get("ctx")) is None:
         raise RuntimeError("Context should be provided")
 
@@ -70,7 +97,7 @@ def _patch_wrapper_kwargs(options_type: Type[CommonOptions], **kwargs):
     return {"ctx": ctx, **kwargs}
 
 
-def _patch_command_sig(__w, options_type: Type[CommonOptions]) -> None:
+def _patch_command_sig(__w, options_type: Type[BaseOptions]) -> None:
     sig = signature(__w)
     new_parameters = sig.parameters.copy()
 

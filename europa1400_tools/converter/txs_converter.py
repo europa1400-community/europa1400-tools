@@ -2,19 +2,15 @@ from pathlib import Path
 
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
-from europa1400_tools.const import JSON_EXTENSION, TargetFormat
+from europa1400_tools.const import JSON_EXTENSION
 from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.txs import Txs
 from europa1400_tools.converter.base_converter import BaseConverter
-from europa1400_tools.decoder.txs_decoder import TxsDecoder
 from europa1400_tools.helpers import rebase_path
 
 
-class TxsConverter(BaseConverter[Txs, TxsDecoder]):
+class TxsConverter(BaseConverter):
     """Convert TXS files."""
-
-    def __init__(self):
-        super().__init__(Txs, TxsDecoder)
 
     @property
     def decoded_path(self) -> Path:

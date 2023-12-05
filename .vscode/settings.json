@@ -18,8 +18,14 @@
         "**/__pycache__": true,
     },
     "python.testing.pytestArgs": [
-        "tests"
+        "-v",
+        // "--cov=europa1400_tools",
+        // "--cov-report=xml",
+        "tests",
+        "-s"
     ],
+    "python.testing.cwd": "${workspaceFolder}",
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "coverage-gutters.showGutterCoverage": true,
 }

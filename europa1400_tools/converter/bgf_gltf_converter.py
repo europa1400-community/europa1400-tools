@@ -36,23 +36,16 @@ from pygltflib import Texture as GltfTexture
 from pygltflib import TextureInfo
 
 from europa1400_tools.cli.convert_options import ConvertOptions
-from europa1400_tools.const import (
-    GLB_EXTENSION,
-    PICKLE_EXTENSION,
-    PNG_EXTENSION,
-    TargetFormat,
-)
+from europa1400_tools.const import GLB_EXTENSION, PICKLE_EXTENSION, PNG_EXTENSION
 from europa1400_tools.construct.baf import Baf
 from europa1400_tools.construct.bgf import Bgf, BgfTexture
 from europa1400_tools.converter.bgf_converter import BgfConverter
-from europa1400_tools.decoder.baf_decoder import BafDecoder
-from europa1400_tools.decoder.bgf_decoder import BgfDecoder
 from europa1400_tools.helpers import (
     bitmap_to_gltf_uri,
     bytes_to_gltf_uri,
-    normalize,
     png_to_gltf_uri,
 )
+from europa1400_tools.models.target_format import TargetFormats
 from europa1400_tools.preprocessor.commands import preprocess_animations
 from europa1400_tools.preprocessor.objects_preprocessor import (
     ObjectMetadata,
@@ -146,7 +139,7 @@ class BgfGltfConverter(BgfConverter):
 
         bafs: list[Baf] = []
 
-        if ConvertOptions.instance.target_format == TargetFormat.GLTF:
+        if ConvertOptions.instance.target_format == TargetFormats.GLTF:
             baf_paths = [
                 (
                     ConvertOptions.instance.decoded_animations_path / baf_path

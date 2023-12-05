@@ -52,7 +52,10 @@ class Progress:
         return self._file_path
 
     @file_path.setter
-    def file_path(self, value: str) -> None:
+    def file_path(self, value: str | Path) -> None:
+        if isinstance(value, Path):
+            value = value.as_posix()
+
         self._file_path = value
         self.panel_title = f"{self.title}: {value}"
         self.refresh()

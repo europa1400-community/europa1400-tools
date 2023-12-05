@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from europa1400_tools.cli.convert_options import ConvertOptions
-from europa1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION, TargetFormat
+from europa1400_tools.const import MTL_EXTENSION, OBJ_EXTENSION
 from europa1400_tools.construct.baf import Vector3
 from europa1400_tools.construct.bgf import Bgf, BgfModel, Face, TextureMapping
 from europa1400_tools.converter.bgf_converter import BgfConverter

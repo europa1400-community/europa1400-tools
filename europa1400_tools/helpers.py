@@ -14,50 +14,6 @@ from PIL import Image
 from europa1400_tools.const import OBJECTS_STRING_ENCODING
 
 
-def normalize(
-    path: Path | str,
-    perform_strip_non_ascii: bool = True,
-    perform_lower: bool = True,
-    perform_remove_suffix: bool = True,
-) -> str:
-    """Normalizes the specified string."""
-
-    value: str = str(path)
-
-    if isinstance(value, Path):
-        value = value.as_posix()
-
-    if perform_strip_non_ascii:
-        value = strip_non_ascii(value)
-
-    if perform_lower:
-        value = value.lower()
-
-    if perform_remove_suffix:
-        value = Path(value).stem
-
-    return value
-
-
-def strip_non_ascii(input_string):
-    stripped_string = re.sub(r"[^\x00-\x7F]+", "", input_string)
-    return stripped_string
-
-
-def ask_for_game_path() -> Path:
-    """Ask the user for the game path using a file dialog."""
-
-    root = tk.Tk()
-    root.withdraw()
-
-    game_path = filedialog.askdirectory(title="Select the game directory")
-
-    if not game_path:
-        raise RuntimeError("No game path selected")
-
-    return Path(game_path)
-
-
 def find_texture_path(texture_name: str, search_path: Path) -> Path | None:
     texture_name = texture_name.lower()
 
@@ -245,30 +201,6 @@ def sanitize_filename(path, replacement="_"):
 
     sanitized_path = re.sub(f"[{re.escape(illegal_characters)}]", replacement, path)
     return sanitized_path
-
-
-def get_files(
-    path: Path, file_suffix: str | None = None, exclude: list[Path] | None = None
-) -> list[Path]:
-    """Returns a list of files in the specified directory and its subdirectories."""
-
-    file_paths: list[Path] = []
-
-    for root, _, files in os.walk(path):
-        for file in files:
-            file_path = Path(root) / file
-
-            if exclude is not None and file_path in exclude:
-                continue
-
-            if file_suffix is not None and normalize(file_path.suffix) != normalize(
-                file_suffix.lower()
-            ):
-                continue
-
-            file_paths.append(file_path)
-
-    return file_paths
 
 
 def load_image_with_transparency(filepath):

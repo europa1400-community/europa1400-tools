@@ -6,14 +6,11 @@ import typer
 
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
-from europa1400_tools.const import TXS_EXTENSION, TargetFormat
+from europa1400_tools.const import TXS_EXTENSION
 from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.bgf import Bgf
 from europa1400_tools.construct.txs import Txs
 from europa1400_tools.converter.base_converter import BaseConverter
-from europa1400_tools.decoder.baf_decoder import BafDecoder
-from europa1400_tools.decoder.bgf_decoder import BgfDecoder
-from europa1400_tools.decoder.txs_decoder import TxsDecoder
 from europa1400_tools.extractor.file_extractor import FileExtractor
 from europa1400_tools.helpers import rebase_path
 from europa1400_tools.preprocessor.animations_preprocessor import AnimationsPreprocessor
@@ -23,13 +20,10 @@ from europa1400_tools.preprocessor.objects_preprocessor import (
 )
 
 
-class BgfConverter(BaseConverter[Bgf, BgfDecoder], ABC):
+class BgfConverter(BaseConverter, ABC):
     """Converter for BGF files."""
 
     object_metadatas: list[ObjectMetadata]
-
-    def __init__(self):
-        super().__init__(Bgf, BgfDecoder)
 
     @property
     def decoded_path(self) -> Path:
@@ -50,7 +44,7 @@ class BgfConverter(BaseConverter[Bgf, BgfDecoder], ABC):
         file_extractor = FileExtractor()
 
         baf_decoder = BafDecoder()
-        animations_pickle_paths = baf_decoder.decode_files()
+        animations_pickle_paths = baf_decoder.decode_assets()
 
         animations_preprocessor = AnimationsPreprocessor()
         animation_metadatas = animations_preprocessor.preprocess_animations(
@@ -69,7 +63,7 @@ class BgfConverter(BaseConverter[Bgf, BgfDecoder], ABC):
             for file_path in pickle_file_paths
         ]
         txs_decoder = TxsDecoder()
-        txs_pickle_file_paths = txs_decoder.decode_files(txs_file_paths)
+        txs_pickle_file_paths = txs_decoder.decode_assets(txs_file_paths)
 
         objects_preprocessor = ObjectsPreprocessor()
         self.object_metadatas = objects_preprocessor.preprocess_objects(

@@ -5,14 +5,10 @@ from europa1400_tools.cli.convert_options import ConvertOptions
 from europa1400_tools.construct.aobj import AObj
 from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.converter.base_converter import BaseConverter
-from europa1400_tools.decoder.aobj_decoder import AObjDecoder
 
 
-class AObjConverter(BaseConverter[AObj, AObjDecoder]):
+class AObjConverter(BaseConverter):
     """Convert AObj files."""
-
-    def __init__(self):
-        super().__init__(AObj, AObjDecoder)
 
     @property
     def decoded_path(self) -> Path:

@@ -5,14 +5,10 @@ from europa1400_tools.const import JSON_EXTENSION
 from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.ogr import Ogr
 from europa1400_tools.converter.base_converter import BaseConverter
-from europa1400_tools.decoder.ogr_decoder import OgrDecoder
 
 
-class OgrConverter(BaseConverter[Ogr, OgrDecoder]):
+class OgrConverter(BaseConverter):
     """Converter for OGR files."""
-
-    def __init__(self):
-        super().__init__(Ogr, OgrDecoder)
 
     @property
     def decoded_path(self) -> Path:

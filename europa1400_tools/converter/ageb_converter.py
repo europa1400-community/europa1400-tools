@@ -5,14 +5,10 @@ from europa1400_tools.cli.convert_options import ConvertOptions
 from europa1400_tools.construct.ageb import AGeb
 from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.converter.base_converter import BaseConverter
-from europa1400_tools.decoder.ageb_decoder import AGebDecoder
 
 
-class AGebConverter(BaseConverter[AGeb, AGebDecoder]):
+class AGebConverter(BaseConverter):
     """Convert AGeb files."""
-
-    def __init__(self):
-        super().__init__(AGeb, AGebDecoder)
 
     @property
     def decoded_path(self) -> Path:

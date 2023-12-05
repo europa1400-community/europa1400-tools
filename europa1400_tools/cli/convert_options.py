@@ -1,36 +1,31 @@
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
 
-from europa1400_tools.cli.common_options import CommonOptions
-from europa1400_tools.const import TargetFormat
+from europa1400_tools.cli.base_options import BaseOptions
+from europa1400_tools.models.target_format import TargetFormat, TargetFormats
 
 
 @dataclass
-class ConvertOptions(CommonOptions):
+class ConvertOptions(BaseOptions):
     _target_format: Annotated[
         Optional[str],
         typer.Option("--target-format", "-t", help="Target format."),
     ] = None
-    _file_paths: Annotated[
-        Optional[list[str]], typer.Argument(help="File paths to convert.")
-    ] = None
 
     @property
-    def target_format(self) -> TargetFormat:
+    def target_format(self) -> TargetFormat | None:
         """Return the target format."""
-        return TargetFormat.from_typer(self._target_format or "")
+
+        if self._target_format is None:
+            return None
+
+        target_format = TargetFormats.from_typer(self._target_format)
+
+        return target_format
 
     @target_format.setter
     def target_format(self, value: TargetFormat) -> None:
         """Set the target format."""
-        self._target_format = value.value[0]
-
-    @property
-    def file_paths(self) -> list[Path] | None:
-        """Return the file paths to convert."""
-        if self._file_paths is None or len(self._file_paths) == 0:
-            return None
-        return [Path(file_path) for file_path in self._file_paths]
+        self._target_format = value.command

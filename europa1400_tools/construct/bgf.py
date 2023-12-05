@@ -4,11 +4,9 @@ from pathlib import Path
 import construct as cs
 from construct_typed import DataclassMixin, DataclassStruct, csfield
 
-from europa1400_tools.const import OBJECTS_STRING_ENCODING, SourceFormat
 from europa1400_tools.construct.baf import Vector3
 from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.common import Skip0, SkipNonLatin1, ignoredcsfield
-from europa1400_tools.helpers import strip_non_ascii
 
 
 def skip_until(obj, ctx):
@@ -359,12 +357,6 @@ class Bgf(BaseConstruct):
     )
     mapping_object: BgfMappingObject = csfield(DataclassStruct(BgfMappingObject))
     footer: BgfFooter = csfield(DataclassStruct(BgfFooter))
-
-    @property
-    def format(self) -> SourceFormat:
-        """Return the format of the construct."""
-
-        return SourceFormat.BGF
 
     @property
     def name(self) -> str:

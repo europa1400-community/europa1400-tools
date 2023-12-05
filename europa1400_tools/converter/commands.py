@@ -2,9 +2,10 @@
 
 import typer
 
-from europa1400_tools.cli.command import command
+from europa1400_tools.cli.command import callback, command
+from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
-from europa1400_tools.const import TargetFormat
+from europa1400_tools.cli.file_options import FileOptions
 from europa1400_tools.converter.ageb_converter import AGebConverter
 from europa1400_tools.converter.aobj_converter import AObjConverter
 from europa1400_tools.converter.bgf_gltf_converter import BgfGltfConverter
@@ -14,101 +15,108 @@ from europa1400_tools.converter.gfx_converter import GfxConverter
 from europa1400_tools.converter.ogr_converter import OgrConverter
 from europa1400_tools.converter.sbf_converter import SbfConverter
 from europa1400_tools.converter.txs_converter import TxsConverter
+from europa1400_tools.models.target_format import TargetFormats
 
 app = typer.Typer()
 
 
-@command(app, ConvertOptions, "groups")
+@callback(
+    app, [CommonOptions, FileOptions, ConvertOptions], invoke_without_command=True
+)
+def convert(
+    ctx: typer.Context,
+):
+    """Convert files"""
+
+
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "groups")
 def cmd_convert_groups(
     ctx: typer.Context,
 ):
     """Command to convert OGR files"""
 
     ogr_converter = OgrConverter()
-    ogr_converter.convert_files()
+    ogr_converter.convert_assets()
 
 
-@command(app, ConvertOptions, "scenes")
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "scenes")
 def cmd_convert_scenes(
     ctx: typer.Context,
 ):
     """Command to convert ED3 files"""
 
     ed3_converter = Ed3Converter()
-    ed3_converter.convert_files()
+    ed3_converter.convert_assets()
 
 
-@command(app, ConvertOptions, "sfx")
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "sfx")
 def cmd_convert_sfx(
     ctx: typer.Context,
 ):
     """Command to convert SBF files"""
 
-    if ConvertOptions.instance.target_format is None:
-        ConvertOptions.instance.target_format = TargetFormat.WAV
-
     sbf_converter = SbfConverter()
-    sbf_converter.convert_files()
+    sbf_converter.convert_assets()
 
 
-@command(app, ConvertOptions, "gfx")
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "gfx")
 def cmd_convert_gfx(
     ctx: typer.Context,
 ):
     """Command to convert GFX files"""
 
     gfx_converter = GfxConverter()
-    gfx_converter.convert_files()
+    gfx_converter.convert_assets()
 
 
-@command(app, ConvertOptions, "ageb")
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "ageb")
 def cmd_convert_ageb(
     ctx: typer.Context,
 ):
     """Command to convert AGEB files"""
 
     ageb_converter = AGebConverter()
-    ageb_converter.convert_files()
+    ageb_converter.convert_assets()
 
 
-@command(app, ConvertOptions, "aobj")
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "aobj")
 def cmd_convert_aobj(
     ctx: typer.Context,
 ):
     """Command to convert AOBJ files"""
 
     aobj_converter = AObjConverter()
-    aobj_converter.convert_files()
+    aobj_converter.convert_assets()
 
 
-@command(app, ConvertOptions, "txs")
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "txs")
 def cmd_convert_txs(
     ctx: typer.Context,
 ):
     """Command to convert TXS files"""
 
     txs_converter = TxsConverter()
-    txs_converter.convert_files()
+    txs_converter.convert_assets()
 
 
-@command(app, ConvertOptions, "objects")
+@command(app, [CommonOptions, FileOptions, ConvertOptions], "objects")
 def cmd_convert_objects(
     ctx: typer.Context,
 ):
     """Command to convert BGF files"""
 
     if ConvertOptions.instance.target_format is None:
-        ConvertOptions.instance.target_format = TargetFormat.WAVEFRONT
+        ConvertOptions.instance.target_format = TargetFormats.WAVEFRONT
 
-    if ConvertOptions.instance.target_format == TargetFormat.WAVEFRONT:
+    if ConvertOptions.instance.target_format == TargetFormats.WAVEFRONT:
         bgf_wavefront_converter = BgfWavefrontConverter()
-        bgf_wavefront_converter.convert_files()
+        bgf_wavefront_converter.convert_assets()
     elif (
-        ConvertOptions.instance.target_format == TargetFormat.GLTF
-        or ConvertOptions.instance.target_format == TargetFormat.GLTF_STATIC
+        ConvertOptions.instance.target_format == TargetFormats.GLTF
+        or ConvertOptions.instance.target_format == TargetFormats.GLTF_STATIC
     ):
         bgf_gltf_converter = BgfGltfConverter()
-        bgf_gltf_converter.convert_files()
+        bgf_gltf_converter.convert_assets()
 
 
 # @app.callback(invoke_without_command=True)

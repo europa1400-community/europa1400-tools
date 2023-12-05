@@ -5,7 +5,6 @@ from construct_typed import DataclassStruct, csfield
 
 from europa1400_tools.construct.base_construct import BaseConstruct
 from europa1400_tools.construct.common import Latin1String
-from europa1400_tools.helpers import strip_non_ascii
 
 
 @dataclass

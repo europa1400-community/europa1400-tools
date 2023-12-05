@@ -6,17 +6,14 @@ import ffmpeg
 
 from europa1400_tools.cli.common_options import CommonOptions
 from europa1400_tools.cli.convert_options import ConvertOptions
-from europa1400_tools.const import SoundType, TargetFormat
+from europa1400_tools.const import SoundType
 from europa1400_tools.construct.sbf import Sbf
-from europa1400_tools.converter.base_converter import BaseConverter, ConstructType
-from europa1400_tools.decoder.sbf_decoder import SbfDecoder
+from europa1400_tools.converter.base_converter import BaseConverter
+from europa1400_tools.models.target_format import TargetFormats
 
 
-class SbfConverter(BaseConverter[Sbf, SbfDecoder]):
+class SbfConverter(BaseConverter):
     """Class for converting SBF files."""
-
-    def __init__(self):
-        super().__init__(Sbf, SbfDecoder)
 
     @property
     def decoded_path(self) -> Path:
@@ -39,7 +36,7 @@ class SbfConverter(BaseConverter[Sbf, SbfDecoder]):
         audio_bytes_dict: dict[str, list[bytes]] = {}
         audio_output_paths: list[Path] = []
 
-        if target_format == TargetFormat.MP3:
+        if target_format == TargetFormats.MP3:
             audio_bytes_dict = SbfConverter._convert_to_mp3(value)
         else:
             audio_bytes_dict = SbfConverter._convert_to_wav(value)
@@ -53,11 +50,11 @@ class SbfConverter(BaseConverter[Sbf, SbfDecoder]):
 
                 if (
                     sound_definition.sound_type == SoundType.WAV
-                    and target_format != TargetFormat.WAV
+                    and target_format != TargetFormats.WAV
                     or sound_definition.sound_type == SoundType.MP3
-                    and target_format != TargetFormat.MP3
+                    and target_format != TargetFormats.MP3
                 ):
-                    if target_format == TargetFormat.MP3:
+                    if target_format == TargetFormats.MP3:
                         audio_bytes = SbfConverter._convert_wav_to_mp3(sound)
                     else:
                         audio_bytes = SbfConverter._convert_mp3_to_wav(sound)
