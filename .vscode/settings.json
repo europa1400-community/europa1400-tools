@@ -1,26 +1,29 @@
 {
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.organizeImports": "always",
             "source.fixAll": "always"
         },
     },
-    "isort.args": [
-        "--profile",
-        "black"
-    ],
+    "editor.indentSize": 4,
     "files.exclude": {
         "**/.venv": true,
         "**/.mypy_cache": true,
         "**/.pytest_cache": true,
         "**/__pycache__": true,
+        "**/coverage.xml": true,
+        "**/.coverage": true,
+        "**/.ruff_cache": true,
+        "**/dist": true,
     },
+    "mypy.extraArguments": [
+        "--exclude=.venv",
+        "--check-untyped-defs",
+    ],
     "python.testing.pytestArgs": [
         "-v",
-        // "--cov=europa1400_tools",
-        // "--cov-report=xml",
         "tests",
         "-s"
     ],
@@ -28,4 +31,13 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "coverage-gutters.showGutterCoverage": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "",
+            "depth": 4,
+            "includeAllSymbols": true
+        }
+    ],
+    "extensions.ignoreRecommendations": false,
 }

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "europa1400-tools"
 version = "0.0.0"
-description = ""
+description = "Python tools for the Europa 1400: The Guild / Die Gilde game. Can decode, convert and export game assets."
 authors = ["Lennard Beers <l.beers@outlook.de>"]
 license = "MIT"
 readme = "README.md"
@@ -9,7 +9,6 @@ packages = [{include = "europa1400_tools"}]
 
 [tool.poetry.scripts]
 main = "europa1400_tools.main:main"
-models = "europa1400_tools.common_options_decoder:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"

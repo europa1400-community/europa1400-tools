@@ -22,13 +22,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Load cached Poetry installation
         id: cached-poetry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.local
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -42,7 +42,7 @@ jobs:
 
       - name: Load cached Poetry venv
         id: cached-poetry-venv
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -54,70 +54,6 @@ jobs:
       - name: Install package
         run: poetry install --no-interaction
 
-  black:
-    needs: cache
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Load cached Poetry installation
-        uses: actions/cache@v3
-        with:
-          path: ~/.local
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Load cached Poetry venv
-        uses: actions/cache@v3
-        with:
-          path: ~/.venv
-          key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Install package
-        run: |
-          poetry install --no-interaction
-
-      - name: Run black
-        run: |
-          poetry run black --check europa1400_tools tests --diff
-
-  isort:
-    needs: cache
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Load cached Poetry installation
-        uses: actions/cache@v3
-        with:
-          path: ~/.local
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Load cached Poetry venv
-        uses: actions/cache@v3
-        with:
-          path: ~/.venv
-          key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Install package
-        run: |
-          poetry install --no-interaction
-
-      - name: Run isort
-        run: |
-          poetry run isort --check-only --diff europa1400_tools tests
-
   mypy:
     needs: cache
     runs-on: ubuntu-latest
@@ -126,18 +62,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Load cached Poetry installation
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.local
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Load cached Poetry venv
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -158,18 +94,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Load cached Poetry installation
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.local
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Load cached Poetry venv
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -182,38 +118,6 @@ jobs:
         run: |
           poetry run bandit -r europa1400_tools -c pyproject.toml
 
-  flake8:
-    needs: cache
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Load cached Poetry installation
-        uses: actions/cache@v3
-        with:
-          path: ~/.local
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Load cached Poetry venv
-        uses: actions/cache@v3
-        with:
-          path: ~/.venv
-          key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Install package
-        run: |
-          poetry install --no-interaction
-
-      - name: Run flake8
-        run: |
-          poetry run flake8 europa1400_tools tests
-
   pytest:
     needs: cache
     runs-on: ubuntu-latest
@@ -222,18 +126,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Load cached Poetry installation
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.local
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Load cached Poetry venv
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -244,7 +148,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          poetry run pytest --cov=europa1400_tools --cov-report=xml
+          poetry run pytest --cov=europa1400_tools --cov-report=xml --cov-report=term tests
 
   sonarcloud:
     needs: cache
@@ -254,18 +158,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Load cached Poetry installation
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.local
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Load cached Poetry venv
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.venv
           key: poetry-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -273,6 +177,14 @@ jobs:
       - name: Install package
         run: |
           poetry install --no-interaction
+
+      - name: Run tests
+        run: |
+          poetry run pytest --cov=europa1400_tools --cov-report=xml --cov-report=term tests
+
+      - name: fix code coverage paths
+        run: |
+          sed -i 's/\/home\/runner\/work\/europa1400-tools\/europa1400-tools\//\/github\/workspace\//g' coverage.xml
 
       - name: Run SonarCloud analysis
         uses: sonarsource/sonarcloud-github-action@master
